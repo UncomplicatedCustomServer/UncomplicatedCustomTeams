@@ -49,6 +49,7 @@ namespace UncomplicatedCustomTeams
                 HttpManager.Start();
 
             PlayerHandler.ChangingRole += Handler.OnChangingRole;
+            //PlayerHandler.Spawning += Handler.OnSpawning;
             ServerHandler.RespawningTeam += Handler.OnRespawningTeam;
 
             LogManager.Info("===========================================");
@@ -73,6 +74,7 @@ namespace UncomplicatedCustomTeams
         public override void OnDisabled()
         {
             PlayerHandler.ChangingRole -= Handler.OnChangingRole;
+            //PlayerHandler.Spawning -= Handler.OnSpawning;
             ServerHandler.RespawningTeam -= Handler.OnRespawningTeam;
 
             Handler = null;

@@ -450,14 +450,27 @@
     <Compile Include="API\Features\SummonedTeam.cs" />
     <Compile Include="API\Features\Team.cs" />
     <Compile Include="API\Storage\Bucket.cs" />
-    <Compile Include="Commands\UCTLogShare.cs" />
+    <Compile Include="Commands\CommandParent.cs" />
+    <Compile Include="Commands\ForceNextWave.cs" />
+    <Compile Include="Commands\Owner.cs" />
+    <Compile Include="Commands\Spawn.cs" />
+    <Compile Include="Commands\LogShare.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Handler.cs" />
+    <Compile Include="Interfaces\IUCTCommand.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\FileConfigs.cs" />
     <Compile Include="Utilities\HttpManager.cs" />
     <Compile Include="Utilities\LogManager.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="EXILED">
+      <Version>8.9.6</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.3</Version>
+    </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

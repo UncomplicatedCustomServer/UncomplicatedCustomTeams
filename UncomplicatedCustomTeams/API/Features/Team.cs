@@ -1,11 +1,9 @@
-﻿using Exiled.API.Extensions;
-using Exiled.API.Features;
-using Respawning;
-using System;
+﻿using Respawning;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using UncomplicatedCustomTeams.Utilities;
+using UnityEngine;
 
 namespace UncomplicatedCustomTeams.API.Features
 {
@@ -15,6 +13,18 @@ namespace UncomplicatedCustomTeams.API.Features
         /// Gets a complete list of every custom <see cref="Team"/> registered
         /// </summary>
         public static List<Team> List { get; } = new();
+
+        /// <summary>
+        /// Register a new custom <see cref="Team"/>
+        /// </summary>
+        /// <param name="team"></param>
+        public static void Register(Team team) => List.Add(team);
+
+        /// <summary>
+        /// Unregister a custom <see cref="Team"/>
+        /// </summary>
+        /// <param name="team"></param>
+        public static void Unregister(Team team) => List.Remove(team);
 
         /// <summary>
         /// The Id of the custom <see cref="Team"/>
@@ -44,6 +54,22 @@ namespace UncomplicatedCustomTeams.API.Features
         public SpawnableTeamType SpawnWave { get; set; } = SpawnableTeamType.NineTailedFox;
 
         /// <summary>
+        /// The SpawnPosition of the wave.<br></br>
+        /// If Vector3.zero or Vector3.one then it will be retrived from the RoleTypeId
+        /// </summary>
+        public Vector3 SpawnPosition { get; set; } = Vector3.zero;
+
+        /// <summary>
+        /// The cassie message that will be sent to every player
+        /// </summary>
+        public string CassieMessage { get; set; } = "team arrived";
+
+        /// <summary>
+        /// The translation of the cassie message
+        /// </summary>
+        public string CassieTranslation { get; set; } = "Team arrived!";
+
+        /// <summary>
         /// The list of every role that will be a part of this wave
         /// </summary>
         public List<CustomRole> Roles { get; set; } = new()
@@ -71,7 +97,7 @@ namespace UncomplicatedCustomTeams.API.Features
 
             LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Where(t => t.SpawnWave == wave).Count()}]!\nIf the number is less than 100 THERE's A PROBLEM!");
 
-            int Chance = new Random().Next(0, 99);
+            int Chance = new System.Random().Next(0, 99);
             if (Teams.Count > Chance)
                 return Teams[Chance];
 

@@ -1,9 +1,9 @@
-﻿using Exiled.API.Features;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Exiled.API.Extensions;
+using Exiled.API.Features;
+using PlayerRoles;
 using UncomplicatedCustomRoles.Extensions;
 using UncomplicatedCustomTeams.Utilities;
-using UnityEngine.Rendering;
+using UnityEngine;
 
 namespace UncomplicatedCustomTeams.API.Features
 {
@@ -40,9 +40,17 @@ namespace UncomplicatedCustomTeams.API.Features
         }
 
 #pragma warning disable CS0618 // A class member was marked with the Obsolete attribute -> the [Obsolete()] attribute is only there to avoid users to use this in a wrong way!
-        public void AddRole()
+        public void AddRole(RoleTypeId proposed)
         {
             LogManager.Debug($"Changing role to player {Player.Nickname} ({Player.Id}) to {CustomRole.Name} ({CustomRole.Id}) from team {Team.Team.Name}");
+
+            Player.Role.Set(CustomRole.Role, Exiled.API.Enums.SpawnReason.Respawn, RoleSpawnFlags.None);
+
+            if (Team.Team.SpawnPosition == Vector3.zero || Team.Team.SpawnPosition == Vector3.one)
+                Player.Position = proposed.GetRandomSpawnLocation().Position;
+            else
+                Player.Position = Team.Team.SpawnPosition;
+
             Player.SetCustomRoleAttributes(CustomRole);
             IsRoleSet = true;
         }

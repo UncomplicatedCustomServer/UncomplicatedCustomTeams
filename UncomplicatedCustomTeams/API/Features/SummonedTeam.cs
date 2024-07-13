@@ -1,8 +1,8 @@
 ﻿using Exiled.API.Features;
+using PlayerRoles;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Remoting.Messaging;
 
 namespace UncomplicatedCustomTeams.API.Features
 {
@@ -28,6 +28,32 @@ namespace UncomplicatedCustomTeams.API.Features
             Id = Guid.NewGuid().ToString();
 
             List.Add(this);
+        }
+
+        public void SpawnAll()
+        {
+            foreach (SummonedCustomRole Role in Players)
+            {
+                if (Role.Player.IsAlive)
+                {
+                    Players.Remove(Role);
+                    continue;
+                }
+
+                RoleTypeId SpawnType = RoleTypeId.ChaosConscript;
+
+                if (Team.SpawnWave is Respawning.SpawnableTeamType.NineTailedFox)
+                    SpawnType = RoleTypeId.NtfPrivate;
+
+                Role.AddRole(SpawnType);
+            }
+        }
+
+        public void CheckPlayers()
+        {
+            foreach (SummonedCustomRole Role in Players)
+                if (Role.Player.IsAlive)
+                    Players.Remove(Role);
         }
 
         public void Destroy()
@@ -56,6 +82,20 @@ namespace UncomplicatedCustomTeams.API.Features
             return SummonedTeam;
         }
 
+        public void RefreshPlayers(IEnumerable<Player> players)
+        {
+            foreach (Player Player in players)
+            {
+                foreach (CustomRole Role in Team.Roles)
+                {
+                    if (SummonedPlayersCount(Role) < Role.MaxPlayers)
+                    {
+                        Players.Add(new(this, Player, Role));
+                        break;
+                    }
+                }
+            }
+        }
 
         public int SummonedPlayersCount(CustomRole role)
         {
@@ -72,7 +112,7 @@ namespace UncomplicatedCustomTeams.API.Features
             return role != null;
         }
 
-        public void TrySpawnPlayer(Player player) => SummonedPlayersGet(player)?.AddRole();
+        public void TrySpawnPlayer(Player player, RoleTypeId role) => SummonedPlayersGet(player)?.AddRole(role);
 
         public static SummonedTeam Get(string Id) => List.Where(st => st.Id == Id).FirstOrDefault();
 
