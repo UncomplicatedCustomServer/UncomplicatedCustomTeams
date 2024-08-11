@@ -45,7 +45,7 @@ namespace UncomplicatedCustomTeams
             else
             {
                 Plugin.NextTeam = SummonedTeam.Summon(Team, ev.Players);
-                UncomplicatedCustomRoles.API.Features.Behaviour.SpawnBehaviour.DisableSpawnWave();
+                UncomplicatedCustomRoles.API.Features.Spawn.DisableSpawnWave();
             }
 
             LogManager.Debug($"Next team selected: {Plugin.NextTeam?.Team?.Name}");
