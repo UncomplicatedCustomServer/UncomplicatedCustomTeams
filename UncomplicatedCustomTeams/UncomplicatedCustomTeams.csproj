@@ -87,7 +87,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="UncomplicatedCustomRoles">
-      <HintPath>..\..\..\..\Downloads\UncomplicatedCustomRoles.dll</HintPath>
+      <HintPath>..\..\UncomplicatedCustomRoles\UncomplicatedCustomRoles\bin\x64\Debug\UncomplicatedCustomRoles.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Burst, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -445,8 +445,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="API\Features\CustomRole.cs" />
-    <Compile Include="API\Features\SummonedCustomRole.cs" />
+    <Compile Include="API\Features\EssentialCustomRole.cs" />
+    <Compile Include="API\Features\InternalCustomRole.cs" />
+    <Compile Include="API\Features\InternalTeam.cs" />
     <Compile Include="API\Features\SummonedTeam.cs" />
     <Compile Include="API\Features\Team.cs" />
     <Compile Include="API\Storage\Bucket.cs" />

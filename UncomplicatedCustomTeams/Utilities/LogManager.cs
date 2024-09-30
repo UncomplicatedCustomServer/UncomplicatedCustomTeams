@@ -4,10 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net;
-using UncomplicatedCustomRoles.Interfaces;
 using Exiled.API.Features;
 using UncomplicatedCustomTeams.API.Features;
-using System.Linq;
 
 namespace UncomplicatedCustomTeams.Utilities
 {
@@ -63,7 +61,7 @@ namespace UncomplicatedCustomTeams.Utilities
             // Now let's add the separator
             Content += "\n======== BEGIN CUSTOM TEAMS ========\n";
 
-            foreach (Team Team in Team.List)
+            foreach (InternalTeam Team in Team.List)
                 Content += $"{Loader.Serializer.Serialize(Team)}\n---\n";
 
             HttpStatusCode Response = Plugin.HttpManager.ShareLogs(Content, out content);

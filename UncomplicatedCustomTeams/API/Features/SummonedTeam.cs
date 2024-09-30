@@ -1,8 +1,13 @@
-﻿using Exiled.API.Features;
+﻿using Exiled.API.Extensions;
+using Exiled.API.Features;
 using PlayerRoles;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UncomplicatedCustomRoles.API.Features;
+using UncomplicatedCustomRoles.Extensions;
+using UncomplicatedCustomTeams.Utilities;
+using UnityEngine;
 
 namespace UncomplicatedCustomTeams.API.Features
 {
@@ -17,11 +22,13 @@ namespace UncomplicatedCustomTeams.API.Features
 
         public List<SummonedCustomRole> Players { get; } = new();
 
-        public Team Team { get; }
+        public InternalTeam Team { get; }
 
         public long Time { get; }
 
-        public SummonedTeam(Team team)
+        internal List<Tuple<Player, InternalCustomRole>> SpawnRoles { get; } = new();
+
+        public SummonedTeam(InternalTeam team)
         {
             Team = team;
             Time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -32,11 +39,11 @@ namespace UncomplicatedCustomTeams.API.Features
 
         public void SpawnAll()
         {
-            foreach (SummonedCustomRole Role in Players)
+            foreach (Tuple<Player, InternalCustomRole> spawn in SpawnRoles)
             {
-                if (Role.Player.IsAlive)
+                if (spawn.Item1.IsAlive)
                 {
-                    Players.Remove(Role);
+                    SpawnRoles.Remove(spawn);
                     continue;
                 }
 
@@ -45,7 +52,7 @@ namespace UncomplicatedCustomTeams.API.Features
                 if (Team.SpawnWave is Respawning.SpawnableTeamType.NineTailedFox)
                     SpawnType = RoleTypeId.NtfPrivate;
 
-                Role.AddRole(SpawnType);
+                Spawn(spawn.Item1, spawn.Item2, SpawnType);
             }
         }
 
@@ -63,17 +70,17 @@ namespace UncomplicatedCustomTeams.API.Features
             List.Remove(this);
         }
 
-        public static SummonedTeam Summon(Team team, IEnumerable<Player> players)
+        public static SummonedTeam Summon(InternalTeam team, IEnumerable<Player> players)
         {
             SummonedTeam SummonedTeam = new(team);
 
-            foreach (Player Player in players)
+            foreach (Player player in players)
             {
-                foreach (CustomRole Role in team.Roles)
+                foreach (InternalCustomRole role in team.Roles)
                 {
-                    if (SummonedTeam.SummonedPlayersCount(Role) < Role.MaxPlayers)
+                    if (SummonedTeam.SummonedPlayersCount(role) < role.MaxPlayers)
                     {
-                        SummonedTeam.Players.Add(new(SummonedTeam, Player, Role));
+                        SummonedTeam.SpawnRoles.Add(new(player, role));
                         break;
                     }
                 }
@@ -84,25 +91,26 @@ namespace UncomplicatedCustomTeams.API.Features
 
         public void RefreshPlayers(IEnumerable<Player> players)
         {
-            foreach (Player Player in players)
+            SpawnRoles.Clear();
+            foreach (Player player in players)
             {
-                foreach (CustomRole Role in Team.Roles)
+                foreach (InternalCustomRole role in Team.Roles)
                 {
-                    if (SummonedPlayersCount(Role) < Role.MaxPlayers)
+                    if (SummonedPlayersCount(role) < role.MaxPlayers)
                     {
-                        Players.Add(new(this, Player, Role));
+                        SpawnRoles.Add(new(player, role));
                         break;
                     }
                 }
             }
         }
 
-        public int SummonedPlayersCount(CustomRole role)
+        public int SummonedPlayersCount(InternalCustomRole role)
         {
-            return Players.Where(cr => cr.CustomRole == role).Count();
+            return Players.Where(cr => cr.Role.Id == role.Id).Count();
         }
 
-        public IEnumerable<SummonedCustomRole> SummonedPlayersGet(CustomRole role) => Players.Where(cr => cr.CustomRole == role);
+        public IEnumerable<SummonedCustomRole> SummonedPlayersGet(CustomRole role) => Players.Where(cr => cr.Role.Id == role.Id);
 
         public SummonedCustomRole SummonedPlayersGet(Player player) => Players.Where(cr => cr.Player.Id == player.Id).FirstOrDefault();
 
@@ -112,7 +120,7 @@ namespace UncomplicatedCustomTeams.API.Features
             return role != null;
         }
 
-        public void TrySpawnPlayer(Player player, RoleTypeId role) => SummonedPlayersGet(player)?.AddRole(role);
+        public void TrySpawnPlayer(Player player, RoleTypeId role) => Spawn(player, SpawnRoles.FirstOrDefault(s => s.Item1.Id == player.Id).Item2, role);
 
         public static SummonedTeam Get(string Id) => List.Where(st => st.Id == Id).FirstOrDefault();
 
@@ -120,6 +128,24 @@ namespace UncomplicatedCustomTeams.API.Features
         {
             team = Get(Id);
             return team != null;
+        }
+
+        public void Spawn(Player player, InternalCustomRole customRole, RoleTypeId proposed)
+        {
+            LogManager.Debug($"Changing role to player {player.Nickname} ({player.Id}) to {customRole.Name} ({customRole.Id}) from team {Team.Name}");
+
+            player.Role.Set(customRole.Role, Exiled.API.Enums.SpawnReason.Respawn, RoleSpawnFlags.None);
+
+            if (Team.SpawnPosition == Vector3.zero || Team.SpawnPosition == Vector3.one)
+                player.Position = proposed.GetRandomSpawnLocation().Position;
+            else
+                player.Position = Team.SpawnPosition;
+
+#pragma warning disable CS0618 // Il tipo o il membro è obsoleto
+            player.SetCustomRoleAttributes(customRole);
+#pragma warning restore CS0618 // Il tipo o il membro è obsoleto
+
+            SpawnRoles.RemoveAll(s => s.Item1.Id == player.Id);
         }
     }
 }

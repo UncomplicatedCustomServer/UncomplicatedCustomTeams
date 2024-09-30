@@ -1,6 +1,5 @@
 ﻿using Exiled.API.Features;
 using Exiled.Loader;
-using Respawning;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,7 +24,7 @@ namespace UncomplicatedCustomTeams.Utilities
 
         public void LoadAll(string localDir = "")
         {
-            LoadAction(Team.List.Add, localDir);
+            LoadAction(Team.SimpleRegister, localDir);
         }
 
         public void LoadAction(Action<Team> action, string localDir = "")

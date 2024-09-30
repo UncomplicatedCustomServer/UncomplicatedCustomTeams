@@ -38,7 +38,7 @@ namespace UncomplicatedCustomTeams
             LogManager.Debug($"Next team for respawn is {ev.NextKnownTeam}");
 
             // Evaluate the team
-            Team Team = Team.EvaluateSpawn(ev.NextKnownTeam);
+            InternalTeam Team = API.Features.Team.EvaluateSpawn(ev.NextKnownTeam);
 
             if (Team is null)
                 Plugin.NextTeam = null; // No next team

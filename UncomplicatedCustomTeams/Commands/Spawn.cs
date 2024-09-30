@@ -25,7 +25,7 @@ namespace UncomplicatedCustomTeams.Commands
                 return false;
             }
 
-            Team Team = Team.List.Where(team => team.Id == uint.Parse(arguments[0])).FirstOrDefault();
+            InternalTeam Team = API.Features.Team.List.Where(team => team.Id == uint.Parse(arguments[0])).FirstOrDefault();
 
             if (Team is null)
             {

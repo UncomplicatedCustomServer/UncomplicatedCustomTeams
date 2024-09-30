@@ -45,7 +45,7 @@ namespace UncomplicatedCustomTeams
             Team.List.Clear();
             SummonedTeam.List.Clear();
 
-            if (!File.Exists(Path.Combine(ConfigPath, "UncomplicatedCustomRoles", ".nohttp")))
+            if (!File.Exists(Path.Combine(ConfigPath, "UncomplicatedCustomTeams", ".nohttp")))
                 HttpManager.Start();
 
             PlayerHandler.ChangingRole += Handler.OnChangingRole;
@@ -53,8 +53,8 @@ namespace UncomplicatedCustomTeams
             ServerHandler.RespawningTeam += Handler.OnRespawningTeam;
 
             LogManager.Info("===========================================");
-            LogManager.Info(" Thanks for using UncomplicatedCustomRoles");
-            LogManager.Info("        by FoxWorn3365 & Dr.Agenda");
+            LogManager.Info(" Thanks for using UncomplicatedCustomTeam");
+            LogManager.Info("     by FoxWorn3365 & UCS Collective");
             LogManager.Info("===========================================");
             LogManager.Info(">> Join our discord: https://discord.gg/5StRGu8EJV <<");
 

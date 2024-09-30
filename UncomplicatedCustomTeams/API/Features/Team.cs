@@ -1,7 +1,9 @@
-﻿using Respawning;
+﻿using Exiled.API.Features;
+using Respawning;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using UncomplicatedCustomRoles.API.Features;
 using UncomplicatedCustomTeams.Utilities;
 using UnityEngine;
 
@@ -12,13 +14,27 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// Gets a complete list of every custom <see cref="Team"/> registered
         /// </summary>
-        public static List<Team> List { get; } = new();
+        public static List<InternalTeam> List { get; } = new();
 
         /// <summary>
         /// Register a new custom <see cref="Team"/>
         /// </summary>
         /// <param name="team"></param>
-        public static void Register(Team team) => List.Add(team);
+        /// <returns></returns>
+        public static bool Register(Team team)
+        {
+            foreach (EssentialCustomRole role in team.Roles)
+                if (!CustomRole.TryGet(role.Id, out _))
+                {
+                    Log.Warn($"Failed to register custom team {team.Name}: Custom Role {role.Id} not found inside UCR!");
+                    return false;
+                }
+
+            List.Add(team);
+            return true;
+        }
+
+        internal static void SimpleRegister(Team team) => Register(team);
 
         /// <summary>
         /// Unregister a custom <see cref="Team"/>
@@ -60,7 +76,7 @@ namespace UncomplicatedCustomTeams.API.Features
         public Vector3 SpawnPosition { get; set; } = Vector3.zero;
 
         /// <summary>
-        /// The cassie message that will be sent to every player
+        /// The cassie message that will be sent when the team spawn - empty to disable
         /// </summary>
         public string CassieMessage { get; set; } = "team arrived";
 
@@ -72,26 +88,24 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// The list of every role that will be a part of this wave
         /// </summary>
-        public List<CustomRole> Roles { get; set; } = new()
+        public List<EssentialCustomRole> Roles { get; set; } = new()
         {
             new()
             {
-                SpawnSettings = null,
                 MaxPlayers = 1,
             },
             new()
             {
                 Id = 2,
-                SpawnSettings = null,
                 MaxPlayers = 500
             }
         };
 
-        public static Team EvaluateSpawn(SpawnableTeamType wave)
+        public static InternalTeam EvaluateSpawn(SpawnableTeamType wave)
         {
-            List<Team> Teams = new();
+            List<InternalTeam> Teams = new();
 
-            foreach (Team Team in List.Where(t => t.SpawnWave == wave))
+            foreach (InternalTeam Team in List.Where(t => t.SpawnWave == wave))
                 for (int a = 0; a < Team.SpawnChance; a++)
                     Teams.Add(Team);
 
