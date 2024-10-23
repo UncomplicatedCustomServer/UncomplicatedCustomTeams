@@ -1,9 +1,9 @@
 ﻿using Exiled.API.Enums;
 using Exiled.API.Features;
+using HarmonyLib;
 using System;
-using System.IO;
+using System.Threading.Tasks;
 using UncomplicatedCustomTeams.API.Features;
-using UncomplicatedCustomTeams.Manager;
 using UncomplicatedCustomTeams.Utilities;
 using PlayerHandler = Exiled.Events.Handlers.Player;
 using ServerHandler = Exiled.Events.Handlers.Server;
@@ -18,7 +18,7 @@ namespace UncomplicatedCustomTeams
 
         public override string Author => "FoxWorn3365";
 
-        public override Version Version => new(0, 8, 0);
+        public override Version Version => new(0, 9, 0);
 
         public override Version RequiredExiledVersion => new(8, 9, 6);
 
@@ -34,19 +34,21 @@ namespace UncomplicatedCustomTeams
 
         internal Handler Handler;
 
+        private Harmony _harmony;
+
         public override void OnEnabled()
         {
             Instance = this;
 
             Handler = new();
-            HttpManager = new("uct", uint.MaxValue);
+            HttpManager = new("uct");
             FileConfigs = new();
+
+            _harmony = new($"ucs.udi-{DateTime.Now.Ticks}");
+            _harmony.PatchAll();
 
             Team.List.Clear();
             SummonedTeam.List.Clear();
-
-            if (!File.Exists(Path.Combine(ConfigPath, "UncomplicatedCustomTeams", ".nohttp")))
-                HttpManager.Start();
 
             PlayerHandler.ChangingRole += Handler.OnChangingRole;
             //PlayerHandler.Spawning += Handler.OnSpawning;
@@ -58,8 +60,21 @@ namespace UncomplicatedCustomTeams
             LogManager.Info("===========================================");
             LogManager.Info(">> Join our discord: https://discord.gg/5StRGu8EJV <<");
 
-            if (!HttpManager.IsLatestVersion(out Version latest))
-                LogManager.Warn($"You are NOT using the latest version of UncomplicatedCustomTeams!\nCurrent: v{Version} | Latest available: v{latest}\nDownload it from GitHub: https://github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest");
+
+            Task.Run(delegate
+            {
+                if (HttpManager.LatestVersion.CompareTo(Version) > 0)
+                    LogManager.Warn($"You are NOT using the latest version of UncomplicatedCustomTeams!\nCurrent: v{Version} | Latest available: v{HttpManager.LatestVersion}\nDownload it from GitHub: https://github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest");
+                else if (HttpManager.LatestVersion.CompareTo(Version) < 0)
+                {
+                    LogManager.Info($"You are using an EXPERIMENTAL or PRE-RELEASE version of UncomplicatedCustomTeams!\nLatest stable release: {HttpManager.LatestVersion}\nWe do not assure that this version won't make your SCP:SL server crash! - Debug log has been enabled!");
+                    if (!Log.DebugEnabled.Contains(Assembly))
+                    {
+                        Config.Debug = true;
+                        Log.DebugEnabled.Add(Assembly);
+                    }
+                }
+            });
 
             FileConfigs.Welcome();
             FileConfigs.Welcome(Server.Port.ToString());
@@ -77,9 +92,10 @@ namespace UncomplicatedCustomTeams
             //PlayerHandler.Spawning -= Handler.OnSpawning;
             ServerHandler.RespawningTeam -= Handler.OnRespawningTeam;
 
+            _harmony.UnpatchAll();
+
             Handler = null;
 
-            HttpManager.Stop();
             HttpManager = null;
 
             FileConfigs = null;
