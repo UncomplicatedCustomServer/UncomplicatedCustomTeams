@@ -55,6 +55,7 @@ namespace UncomplicatedCustomTeams
             LogManager.Info("===========================================");
             LogManager.Info(" Thanks for using UncomplicatedCustomRoles");
             LogManager.Info("        by FoxWorn3365 & Dr.Agenda");
+
             LogManager.Info("===========================================");
             LogManager.Info(">> Join our discord: https://discord.gg/5StRGu8EJV <<");
 

@@ -1,4 +1,5 @@
-﻿using Exiled.API.Features;
+﻿using Exiled.API.Enums;
+using Exiled.API.Features;
 using PlayerRoles;
 using System;
 using System.Collections.Generic;
@@ -42,7 +43,7 @@ namespace UncomplicatedCustomTeams.API.Features
 
                 RoleTypeId SpawnType = RoleTypeId.ChaosConscript;
 
-                if (Team.SpawnWave is Respawning.SpawnableTeamType.NineTailedFox)
+                if (Team.NextKnownSpawnableFaction is SpawnableFaction.NtfWave)
                     SpawnType = RoleTypeId.NtfPrivate;
 
                 Role.AddRole(SpawnType);

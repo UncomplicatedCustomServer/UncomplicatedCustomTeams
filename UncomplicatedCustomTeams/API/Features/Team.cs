@@ -1,4 +1,5 @@
-﻿using Respawning;
+﻿using Exiled.API.Enums;
+using Respawning;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -51,7 +52,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// The wave that will be replaced by this custom wave
         /// </summary>
-        public SpawnableTeamType SpawnWave { get; set; } = SpawnableTeamType.NineTailedFox;
+        public SpawnableFaction NextKnownSpawnableFaction { get; set; } = SpawnableFaction.NtfWave;
 
         /// <summary>
         /// The SpawnPosition of the wave.<br></br>
@@ -87,15 +88,15 @@ namespace UncomplicatedCustomTeams.API.Features
             }
         };
 
-        public static Team EvaluateSpawn(SpawnableTeamType wave)
+        public static Team EvaluateSpawn(SpawnableFaction wave)
         {
             List<Team> Teams = new();
 
-            foreach (Team Team in List.Where(t => t.SpawnWave == wave))
+            foreach (Team Team in List.Where(t => t.NextKnownSpawnableFaction == wave))
                 for (int a = 0; a < Team.SpawnChance; a++)
                     Teams.Add(Team);
 
-            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Where(t => t.SpawnWave == wave).Count()}]!\nIf the number is less than 100 THERE's A PROBLEM!");
+            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Where(t => t.NextKnownSpawnableFaction == wave).Count()}]!\nIf the number is less than 100 THERE's A PROBLEM!");
 
             int Chance = new System.Random().Next(0, 99);
             if (Teams.Count > Chance)
