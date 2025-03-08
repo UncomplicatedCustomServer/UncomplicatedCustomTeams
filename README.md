@@ -22,6 +22,7 @@ UncomplicatedCustomTeams allows you to create custom squads that replace the def
 5. Configure your custom teams in the generated configuration files.  
 
 All credit goes to 
-`FoxWorn3365`
+## FoxWorn3365
 `Discord: @foxworn`
+
 `Email: foxworn3365@gmail.com`
