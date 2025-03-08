@@ -20,7 +20,7 @@ namespace UncomplicatedCustomTeams
 
         public override Version Version => new(0, 8, 0);
 
-        public override Version RequiredExiledVersion => new(8, 9, 6);
+        public override Version RequiredExiledVersion => new(9,5);
 
         public override PluginPriority Priority => PluginPriority.Low;
 
@@ -45,6 +45,7 @@ namespace UncomplicatedCustomTeams
             Team.List.Clear();
             SummonedTeam.List.Clear();
 
+
             if (!File.Exists(Path.Combine(ConfigPath, "UncomplicatedCustomRoles", ".nohttp")))
                 HttpManager.Start();
 
@@ -53,8 +54,8 @@ namespace UncomplicatedCustomTeams
             ServerHandler.RespawningTeam += Handler.OnRespawningTeam;
 
             LogManager.Info("===========================================");
-            LogManager.Info(" Thanks for using UncomplicatedCustomRoles");
-            LogManager.Info("        by FoxWorn3365 & Dr.Agenda");
+            LogManager.Info(" Thanks for using UncomplicatedCustomTeams");
+            LogManager.Info("        by FoxWorn3365 & Dr.Agenda & .piwnica2137");
             LogManager.Info("===========================================");
             LogManager.Info(">> Join our discord: https://discord.gg/5StRGu8EJV <<");
 
@@ -65,6 +66,16 @@ namespace UncomplicatedCustomTeams
             FileConfigs.Welcome(Server.Port.ToString());
             FileConfigs.LoadAll();
             FileConfigs.LoadAll(Server.Port.ToString());
+
+            foreach (Team team in Team.List)
+            {
+                if (!string.IsNullOrEmpty(team.SoundPath))
+                {
+                    string clipId = $"sound_{team.Id}";
+                    AudioClipStorage.LoadClip(team.SoundPath, clipId);
+                }
+            }
+
 
             LogManager.Info($"Successfully loaded {Team.List.Count} teams!");
 

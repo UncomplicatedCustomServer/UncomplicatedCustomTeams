@@ -2,7 +2,7 @@
 
 namespace UncomplicatedCustomTeams.API.Features
 {
-    public class CustomRole : UncomplicatedCustomRoles.Elements.CustomRole
+    public class CustomRole : UncomplicatedCustomRoles.API.Features.CustomRole
     {
         /// <summary>
         /// The maximum number of players that can have this role in this wave

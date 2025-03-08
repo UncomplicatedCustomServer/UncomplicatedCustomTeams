@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UncomplicatedCustomRoles.Commands;
 using UncomplicatedCustomTeams.Interfaces;
 using Exiled.API.Extensions;
 using Exiled.Permissions.Extensions;
@@ -33,7 +32,7 @@ namespace UncomplicatedCustomTeams.Commands
             if (arguments.Count() == 0)
             {
                 // Help page
-                response = $"\n>> UncomplicatedCustomTeams v{Plugin.Instance.Version} <<\nby FoxWorn3365\n\nAvailable commands:";
+                response = $"\n>> UncomplicatedCustomTeams v{Plugin.Instance.Version} <<\nby FoxWorn3365 & Piwnica\n\nAvailable commands:";
 
                 foreach (IUCTCommand Command in RegisteredCommands)
                 {

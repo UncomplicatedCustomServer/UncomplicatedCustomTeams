@@ -1,5 +1,6 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
+using GameCore;
 using MEC;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +23,11 @@ namespace UncomplicatedCustomTeams.Commands
             if (arguments.Count != 1)
             {
                 response = "Usage: uct spawn <TeamId>";
+                return false;
+            }
+            if (!Round.IsStarted)
+            {
+                response = "Round is not started yet!";
                 return false;
             }
 

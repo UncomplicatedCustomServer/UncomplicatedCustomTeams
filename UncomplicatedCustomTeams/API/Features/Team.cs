@@ -1,4 +1,5 @@
-﻿using Respawning;
+﻿using Exiled.API.Enums;
+using Respawning;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -18,7 +19,10 @@ namespace UncomplicatedCustomTeams.API.Features
         /// Register a new custom <see cref="Team"/>
         /// </summary>
         /// <param name="team"></param>
-        public static void Register(Team team) => List.Add(team);
+        public static void Register(Team team)
+        {
+            List.Add(team);
+        }
 
         /// <summary>
         /// Unregister a custom <see cref="Team"/>
@@ -51,7 +55,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// The wave that will be replaced by this custom wave
         /// </summary>
-        public SpawnableTeamType SpawnWave { get; set; } = SpawnableTeamType.NineTailedFox;
+        public SpawnableFaction SpawnWave { get; set; } = SpawnableFaction.NtfWave;
 
         /// <summary>
         /// The SpawnPosition of the wave.<br></br>
@@ -68,6 +72,17 @@ namespace UncomplicatedCustomTeams.API.Features
         /// The translation of the cassie message
         /// </summary>
         public string CassieTranslation { get; set; } = "Team arrived!";
+
+        /// <summary>
+        /// The path to the sound file provided by the user in the configuration.
+        /// </summary>
+        [Description("Requires AudioPlayerAPI. Download it here: https://github.com/Killers0992/AudioPlayerApi")]
+        public string SoundPath { get; set; } = "/path/to/your/ogg/file";
+
+        /// <summary>
+        /// Volume of the sound, should be between 1 and 100.
+        /// </summary>
+        public float SoundVolume { get; set; } = 5f;
 
         /// <summary>
         /// The list of every role that will be a part of this wave
@@ -87,7 +102,7 @@ namespace UncomplicatedCustomTeams.API.Features
             }
         };
 
-        public static Team EvaluateSpawn(SpawnableTeamType wave)
+        public static Team EvaluateSpawn(SpawnableFaction wave)
         {
             List<Team> Teams = new();
 

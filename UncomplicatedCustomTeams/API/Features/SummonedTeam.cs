@@ -42,7 +42,7 @@ namespace UncomplicatedCustomTeams.API.Features
 
                 RoleTypeId SpawnType = RoleTypeId.ChaosConscript;
 
-                if (Team.SpawnWave is Respawning.SpawnableTeamType.NineTailedFox)
+                if (Team.SpawnWave  == Exiled.API.Enums.SpawnableFaction.NtfWave)
                     SpawnType = RoleTypeId.NtfPrivate;
 
                 Role.AddRole(SpawnType);
@@ -63,6 +63,11 @@ namespace UncomplicatedCustomTeams.API.Features
             List.Remove(this);
         }
 
+        public static float Clamp(float value, float min, float max)
+        {
+            return (value < min) ? min : (value > max) ? max : value;
+        }
+
         public static SummonedTeam Summon(Team team, IEnumerable<Player> players)
         {
             SummonedTeam SummonedTeam = new(team);
@@ -77,6 +82,17 @@ namespace UncomplicatedCustomTeams.API.Features
                         break;
                     }
                 }
+            }
+            if (!string.IsNullOrEmpty(team.SoundPath))
+            {
+                AudioPlayer audioPlayer = AudioPlayer.CreateOrGet($"Global_Audio_{team.Id}", onIntialCreation: (p) =>
+                {
+                    Speaker speaker = p.AddSpeaker("Main", isSpatial: false, maxDistance: 5000f);
+                });
+
+                float volume = Clamp(team.SoundVolume, 1f, 100f);
+
+                audioPlayer.AddClip($"sound_{team.Id}", volume);
             }
 
             return SummonedTeam;

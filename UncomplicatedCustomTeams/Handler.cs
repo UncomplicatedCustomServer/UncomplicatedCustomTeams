@@ -1,12 +1,12 @@
 ﻿using Exiled.API.Features;
 using Exiled.Events.EventArgs.Player;
+using Exiled.API.Enums;
 using Exiled.Events.EventArgs.Server;
 using MEC;
 using System.Threading.Tasks;
 using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.API.Storage;
 using UncomplicatedCustomTeams.Utilities;
-using UnityEngine.UIElements;
 
 namespace UncomplicatedCustomTeams
 {
@@ -38,14 +38,20 @@ namespace UncomplicatedCustomTeams
             LogManager.Debug($"Next team for respawn is {ev.NextKnownTeam}");
 
             // Evaluate the team
-            Team Team = Team.EvaluateSpawn(ev.NextKnownTeam);
+            SpawnableFaction faction = ev.NextKnownTeam switch
+            {
+                PlayerRoles.Faction.FoundationStaff => SpawnableFaction.NtfWave,
+                PlayerRoles.Faction.FoundationEnemy => SpawnableFaction.ChaosWave,
+                _ => SpawnableFaction.None
+            };
 
-            if (Team is null)
+            Team team = Team.EvaluateSpawn(faction) ?? new Team();
+
+            if (team is null)
                 Plugin.NextTeam = null; // No next team
             else
             {
-                Plugin.NextTeam = SummonedTeam.Summon(Team, ev.Players);
-                UncomplicatedCustomRoles.API.Features.Behaviour.SpawnBehaviour.DisableSpawnWave();
+                Plugin.NextTeam = SummonedTeam.Summon(team, ev.Players);
             }
 
             LogManager.Debug($"Next team selected: {Plugin.NextTeam?.Team?.Name}");
