@@ -83,6 +83,16 @@ namespace UncomplicatedCustomTeams.API.Features
                     }
                 }
             }
+            if (!string.IsNullOrEmpty(team.CassieTranslation))
+            {
+                Cassie.Message(team.CassieTranslation, isSubtitles: true, isNoisy: team.IsNoisy, isHeld: false);
+            }
+            else if (!string.IsNullOrEmpty(team.CassieMessage))
+            {
+                Cassie.Message(team.CassieMessage, isSubtitles: true, isNoisy: team.IsNoisy, isHeld: false);
+            }
+
+            
             if (!string.IsNullOrEmpty(team.SoundPath))
             {
                 AudioPlayer audioPlayer = AudioPlayer.CreateOrGet($"Global_Audio_{team.Id}", onIntialCreation: (p) =>

@@ -5,6 +5,7 @@ using System.Linq;
 using UncomplicatedCustomTeams.Interfaces;
 using Exiled.API.Extensions;
 using Exiled.Permissions.Extensions;
+using UncomplicatedCustomRoles.Commands;
 
 namespace UncomplicatedCustomTeams.Commands
 {
@@ -23,6 +24,7 @@ namespace UncomplicatedCustomTeams.Commands
         {
             RegisteredCommands.Add(new Spawn());
             RegisteredCommands.Add(new Owner());
+            RegisteredCommands.Add(new TeamList());
         }
 
         public List<IUCTCommand> RegisteredCommands { get; } = new();

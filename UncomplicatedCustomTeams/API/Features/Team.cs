@@ -72,6 +72,11 @@ namespace UncomplicatedCustomTeams.API.Features
         /// The translation of the cassie message
         /// </summary>
         public string CassieTranslation { get; set; } = "Team arrived!";
+        
+        /// <summary>
+        /// Determines whether the Cassie message should be noisy.
+        /// </summary>
+        public bool IsNoisy { get; set; } = false;
 
         /// <summary>
         /// The path to the sound file provided by the user in the configuration.
