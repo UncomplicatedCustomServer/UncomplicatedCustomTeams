@@ -1,20 +1,22 @@
 ﻿using CommandSystem;
-using System;
+using System.Collections.Generic;
 using System.Text;
-using Exiled.API.Features;
 using UncomplicatedCustomTeams.API.Features;
+using UncomplicatedCustomTeams.Interfaces;
 
 
 namespace UncomplicatedCustomTeams.Commands
 {
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
-    public class ListTeamsCommand : ICommand
+    internal class TeamList : IUCTCommand
     {
-        public string Command { get; } = "list";
-        public string[] Aliases { get; } = new string[] { };
+        public string Name { get; } = "list";
+        
         public string Description { get; } = "Displays all registered custom teams.";
+        
+        public string RequiredPermission { get; } = "uct.list";
 
-        public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
+        public bool Executor(List<string> arguments, ICommandSender sender, out string response)
         {
             if (Team.List.Count == 0)
             {
@@ -26,7 +28,10 @@ namespace UncomplicatedCustomTeams.Commands
             sb.AppendLine("== Registered Custom Teams ==");
             foreach (var team in Team.List)
             {
-                sb.AppendLine($"- {team.Name}");
+                sb.AppendLine($"- <b>{team.Name}</b> (ID: {team.Id})");
+                sb.AppendLine($"  Min Players: {team.MinPlayers} | Spawn Chance: {team.SpawnChance}%");
+                sb.AppendLine($"  Spawn Wave: {team.SpawnWave} | Roles: {team.Roles.Count}");
+                sb.AppendLine();
             }
 
             response = sb.ToString();

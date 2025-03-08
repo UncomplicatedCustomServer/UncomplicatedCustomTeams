@@ -20,17 +20,16 @@ namespace UncomplicatedCustomTeams.Commands
 
         public bool Executor(List<string> arguments, ICommandSender sender, out string response)
         {
-            if (arguments.Count != 1)
-            {
-                response = "Usage: uct spawn <TeamId>";
-                return false;
-            }
             if (!Round.IsStarted)
             {
                 response = "Round is not started yet!";
                 return false;
             }
-
+            if (arguments.Count != 1)
+            {
+                response = "Usage: uct spawn <TeamId>";
+                return false;
+            }
             Team Team = Team.List.Where(team => team.Id == uint.Parse(arguments[0])).FirstOrDefault();
 
             if (Team is null)
