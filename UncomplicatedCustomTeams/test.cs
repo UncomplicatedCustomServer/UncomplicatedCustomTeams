@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace UncomplicatedCustomTeams
 {
-    class TestFile
+    class test
     {
     }
 }
