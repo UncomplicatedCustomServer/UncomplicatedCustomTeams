@@ -82,7 +82,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// Volume of the sound, should be between 1 and 100.
         /// </summary>
-        public float SoundVolume { get; set; } = 5f;
+        public float SoundVolume { get; set; } = 1f;
 
         /// <summary>
         /// The list of every role that will be a part of this wave
