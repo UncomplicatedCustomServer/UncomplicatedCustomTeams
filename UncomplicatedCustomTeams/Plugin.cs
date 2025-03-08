@@ -20,7 +20,7 @@ namespace UncomplicatedCustomTeams
 
         public override Version Version => new(0, 8, 0);
 
-        public override Version RequiredExiledVersion => new(9,5);
+        public override Version RequiredExiledVersion => new(9,5, 0);
 
         public override PluginPriority Priority => PluginPriority.Low;
 
