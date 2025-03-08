@@ -20,3 +20,8 @@ UncomplicatedCustomTeams allows you to create custom squads that replace the def
 3. Place the `.dll` file into your `Exiled/Plugins` directory.  
 4. Restart your server to generate the configuration files.  
 5. Configure your custom teams in the generated configuration files.  
+
+All credit goes to 
+`FoxWorn3365`
+`Discord: @foxworn`
+`Email: foxworn3365@gmail.com`
