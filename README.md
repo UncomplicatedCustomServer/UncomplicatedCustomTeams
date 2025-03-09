@@ -21,11 +21,11 @@ UncomplicatedCustomTeams allows you to create custom squads that replace the def
 4. Restart your server to generate the configuration files.  
 5. Configure your custom teams in the generated configuration files.  
 
-Credits 
-## FoxWorn3365
+## Credits 
+### FoxWorn3365
 `Discord: @foxworn`
 
 `Email: foxworn3365@gmail.com`
 
-## Piwnica
+### Piwnica
 `Discord: @.piwnica2137`
