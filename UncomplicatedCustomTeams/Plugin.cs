@@ -39,15 +39,15 @@ namespace UncomplicatedCustomTeams
             Instance = this;
 
             Handler = new();
-            HttpManager = new("uct", uint.MaxValue);
+            HttpManager = new("uct");
             FileConfigs = new();
 
             Team.List.Clear();
             SummonedTeam.List.Clear();
 
 
-            if (!File.Exists(Path.Combine(ConfigPath, "UncomplicatedCustomRoles", ".nohttp")))
-                HttpManager.Start();
+            if (!File.Exists(Path.Combine(ConfigPath, "UncomplicatedCustomTeams", ".nohttp")))
+                HttpManager.RegisterEvents();
 
             PlayerHandler.ChangingRole += Handler.OnChangingRole;
             //PlayerHandler.Spawning += Handler.OnSpawning;
@@ -100,7 +100,7 @@ namespace UncomplicatedCustomTeams
 
             Handler = null;
 
-            HttpManager.Stop();
+            HttpManager.UnregisterEvents();
             HttpManager = null;
 
             FileConfigs = null;

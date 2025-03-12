@@ -24,7 +24,7 @@ namespace UncomplicatedCustomTeams.Commands
                 return false;
             }
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             sb.AppendLine("== Registered Custom Teams ==");
             foreach (var team in Team.List)
             {

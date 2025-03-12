@@ -476,6 +476,8 @@
     <Compile Include="Utilities\FileConfigs.cs" />
     <Compile Include="Utilities\HttpManager.cs" />
     <Compile Include="Utilities\LogManager.cs" />
+    <Compile Include="Utilities\VersionInfo.cs" />
+    <Compile Include="VersionManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ExMod.Exiled">
