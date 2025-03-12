@@ -1,4 +1,5 @@
 ﻿using Exiled.API.Enums;
+using PlayerRoles;
 using Respawning;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -76,7 +77,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// Determines whether the Cassie message should be noisy.
         /// </summary>
-        public bool IsNoisy { get; set; } = false;
+        public bool IsNoisy { get; set; } = true;
 
         /// <summary>
         /// The path to the sound file provided by the user in the configuration.
@@ -88,6 +89,23 @@ namespace UncomplicatedCustomTeams.API.Features
         /// Volume of the sound, should be between 1 and 100.
         /// </summary>
         public float SoundVolume { get; set; } = 1f;
+
+        /// <summary>
+        /// A list of team names whose presence on the map guarantees victory.
+        /// </summary>
+        [Description("Here, you can define which teams will win against your custom team. Make sure to also specify the team for your custom roles.")]
+        public List<PlayerRoles.Team> TeamAliveToWin { get; set; } = new();
+
+        /// <summary>
+        /// Retrieves a list of actual Team objects based on the names in TeamAliveToWin.
+        /// </summary>
+        public static List<PlayerRoles.Team> GetWinningTeams()
+        {
+            return Team.List
+                .SelectMany(team => team.TeamAliveToWin)
+                .Distinct()
+                .ToList();
+        }
 
         /// <summary>
         /// The list of every role that will be a part of this wave

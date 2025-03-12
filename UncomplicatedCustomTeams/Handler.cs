@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.API.Storage;
 using UncomplicatedCustomTeams.Utilities;
+using System.Linq;
 
 namespace UncomplicatedCustomTeams
 {
@@ -79,6 +80,7 @@ namespace UncomplicatedCustomTeams
                     });
                 }
             }
+            Timing.CallDelayed(0.2f, () => SummonedTeam.CheckRoundEndCondition());
         }
     }
 }
