@@ -65,6 +65,8 @@ namespace UncomplicatedCustomTeams
             FileConfigs.Welcome();
             FileConfigs.Welcome(Server.Port.ToString());
             FileConfigs.LoadAll();
+            FileConfigs.AddCustomRoleTeams();
+            FileConfigs.AddCustomRoleTeams(Server.Port.ToString());
             FileConfigs.LoadAll(Server.Port.ToString());
 
             foreach (Team team in Team.List)
@@ -83,9 +85,6 @@ namespace UncomplicatedCustomTeams
                     AudioClipStorage.LoadClip(team.SoundPath, clipId);
                 }
             }
-
-
-
 
             LogManager.Info($"Successfully loaded {Team.List.Count} teams!");
 

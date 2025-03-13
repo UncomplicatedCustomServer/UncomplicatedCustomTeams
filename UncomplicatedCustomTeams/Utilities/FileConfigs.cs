@@ -1,6 +1,5 @@
 ﻿using Exiled.API.Features;
 using Exiled.Loader;
-using Respawning;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,6 +25,7 @@ namespace UncomplicatedCustomTeams.Utilities
         public void LoadAll(string localDir = "")
         {
             LoadAction(Team.List.Add, localDir);
+            AddCustomRoleTeams();
         }
 
         public void LoadAction(Action<Team> action, string localDir = "")
@@ -87,6 +87,97 @@ namespace UncomplicatedCustomTeams.Utilities
                 }));
 
                 LogManager.Info($"Plugin does not have a role folder, generated one in {Path.Combine(Dir, localDir)}");
+            }
+        }
+        public static void AddCustomRoleTeams(string localDir = "")
+        {
+            string dir = Path.Combine(Paths.Configs, "UncomplicatedCustomTeams", localDir);
+
+            if (!Directory.Exists(dir))
+            {
+                return;
+            }
+
+            foreach (string filePath in Directory.GetFiles(dir, "*.yml"))
+            {
+                try
+                {
+                    string fileContent = File.ReadAllText(filePath);
+
+                    var configData = Loader.Deserializer.Deserialize<Dictionary<string, List<Dictionary<string, object>>>>(fileContent);
+
+                    if (!configData.ContainsKey("teams") || configData["teams"] == null)
+                    {
+                        LogManager.Error($"File {filePath} does not contain a 'teams' section. Skipping.");
+                        continue;
+                    }
+
+                    foreach (var yamlTeam in configData["teams"])
+                    {
+                        if (!yamlTeam.ContainsKey("name") || yamlTeam["name"] == null)
+                            continue;
+
+                        string teamName = yamlTeam["name"].ToString();
+
+                        if (!yamlTeam.ContainsKey("team_alive_to_win") || yamlTeam["team_alive_to_win"] == null)
+                        {
+                            yamlTeam["team_alive_to_win"] = new List<string>();
+                        }
+
+                        var teamAliveToWin = yamlTeam["team_alive_to_win"] as List<object> ?? new List<object>();
+
+                        if (!yamlTeam.ContainsKey("roles") || yamlTeam["roles"] == null)
+                        {
+                            continue;
+                        }
+
+                        if (!(yamlTeam["roles"] is List<object> rolesList))
+                        {
+                            continue;
+                        }
+
+                        var roles = new List<Dictionary<string, object>>();
+                        foreach (var item in rolesList)
+                        {
+                            if (item is Dictionary<object, object> tempDict)
+                            {
+                                var fixedDict = tempDict.ToDictionary(k => k.Key.ToString(), v => v.Value);
+                                roles.Add(fixedDict);
+                            }
+                            else if (item is Dictionary<string, object> correctDict)
+                            {
+                                roles.Add(correctDict);
+                            }
+                            else
+                            {
+                                LogManager.Debug($"Error: Element in 'roles' is not a valid dictionary! Type: {item?.GetType()} | Value: {item}");
+                            }
+                        }
+
+                        foreach (var roleData in roles)
+                        {
+                            if (!roleData.ContainsKey("team") || roleData["team"] == null)
+                                continue;
+
+                            string roleTeamName = roleData["team"].ToString();
+
+                            if (!teamAliveToWin.Contains(roleTeamName))
+                            {
+                                teamAliveToWin.Add(roleTeamName);
+                            }
+                        }
+
+                        yamlTeam["team_alive_to_win"] = teamAliveToWin;
+
+                        string newYamlContent = Loader.Serializer.Serialize(configData);
+                        File.WriteAllText(filePath, newYamlContent);
+                        LogManager.Debug($"Updated file {filePath}!");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogManager.Error($"[SEND TO DEV] Error processing file {filePath}: {ex.Message}\n{ex.StackTrace}");
+                }
             }
         }
     }
