@@ -114,13 +114,18 @@ namespace UncomplicatedCustomTeams.API.Features
         {
             new()
             {
+                Id = 1,
+                Team = PlayerRoles.Team.ClassD,
                 SpawnSettings = null,
                 MaxPlayers = 1,
+                CustomFlags = null,
             },
             new()
             {
                 Id = 2,
+                Team = PlayerRoles.Team.ClassD,
                 SpawnSettings = null,
+                CustomFlags = null,
                 MaxPlayers = 500
             }
         };
