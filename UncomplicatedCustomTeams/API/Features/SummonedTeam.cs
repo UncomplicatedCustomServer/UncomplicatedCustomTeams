@@ -56,7 +56,7 @@ namespace UncomplicatedCustomTeams.API.Features
 
                 RoleTypeId SpawnType = RoleTypeId.ChaosConscript;
 
-                if (Team.SpawnWave  == Exiled.API.Enums.SpawnableFaction.NtfWave)
+                if (Team.spawnConditions?.SpawnWave == "NtfWave")
                     SpawnType = RoleTypeId.NtfPrivate;
 
                 Role.AddRole(SpawnType);
@@ -134,6 +134,25 @@ namespace UncomplicatedCustomTeams.API.Features
             return (value < min) ? min : (value > max) ? max : value;
         }
 
+        public void ForceSpawnPlayer(Player player, RoleTypeId fallbackRole = RoleTypeId.ChaosConscript)
+        {
+            LogManager.Debug($"Force spawning player {player.Nickname} for team {Team.Name}...");
+
+            SummonedCustomRole summonedRole = SummonedPlayersGet(player);
+
+            if (summonedRole != null)
+            {
+                LogManager.Debug($"Found custom role for {player.Nickname}: {summonedRole.CustomRole.Name}");
+                summonedRole.AddRole();
+            }
+            else
+            {
+                LogManager.Debug($"No assigned custom role found for {player.Nickname}, using fallback role: {fallbackRole}");
+                player.Role.Set(fallbackRole, SpawnReason.ForceClass, RoleSpawnFlags.AssignInventory);
+            }
+        }
+
+
         /// <summary>
         /// Summons a new team and assigns players to available roles.
         /// </summary>
@@ -153,18 +172,13 @@ namespace UncomplicatedCustomTeams.API.Features
                 }
 
             }
-            if (!string.IsNullOrEmpty(team.CassieTranslation))
-            {
-                Cassie.Message(team.CassieTranslation, isSubtitles: true, isNoisy: team.IsNoisy, isHeld: false);
-            }
-            else if (!string.IsNullOrEmpty(team.CassieMessage))
-            {
-                Cassie.Message(team.CassieMessage, isSubtitles: true, isNoisy: team.IsNoisy, isHeld: false);
-            }
+                if (!string.IsNullOrEmpty(team.CassieTranslation))
+                {
+                    Cassie.MessageTranslated(team.CassieMessage, team.CassieTranslation, isNoisy: team.IsNoisy, isSubtitles: true);
+                }
 
-            
-            if (!string.IsNullOrEmpty(team.SoundPath))
-            {
+                if (!string.IsNullOrEmpty(team.SoundPath))
+                {
                 AudioPlayer audioPlayer = AudioPlayer.CreateOrGet($"Global_Audio_{team.Id}", onIntialCreation: (p) =>
                 {
                     Speaker speaker = p.AddSpeaker("Main", isSpatial: false, maxDistance: 5000f);
@@ -173,7 +187,7 @@ namespace UncomplicatedCustomTeams.API.Features
                 float volume = Clamp(team.SoundVolume, 1f, 100f);
 
                 audioPlayer.AddClip($"sound_{team.Id}", volume);
-            }
+                }
 
             return SummonedTeam;
         }
