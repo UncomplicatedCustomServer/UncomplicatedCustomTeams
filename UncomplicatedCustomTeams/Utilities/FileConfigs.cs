@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UncomplicatedCustomTeams.API.Features;
+using UnityEngine;
 
 namespace UncomplicatedCustomTeams.Utilities
 {
@@ -48,10 +49,38 @@ namespace UncomplicatedCustomTeams.Utilities
                         return;
                     }
 
-                    foreach (Team Team in Roles["teams"])
+                    foreach (Team team in Roles["teams"])
                     {
-                        LogManager.Debug($"Proposed to the registerer the external team {Team.Id} [{Team.Name}] from file:\n{FileName}");
-                        action(Team);
+                        bool hasCustomSound = !string.IsNullOrEmpty(team.SoundPath) && team.SoundPath != "/path/to/your/ogg/file";
+                        bool hasCassieMessage = !string.IsNullOrEmpty(team.CassieMessage) || !string.IsNullOrEmpty(team.CassieTranslation);
+
+                        if (hasCustomSound && hasCassieMessage)
+                        {
+                            LogManager.Warn($"Team \"{team.Name}\"(ID: {team.Id}) has both a custom Cassie message and a sound file set. This is not recommended, as both will play simultaneously.");
+                        }
+
+                        if (hasCustomSound)
+                        {
+                            string clipId = $"sound_{team.Id}";
+                            AudioClipStorage.LoadClip(team.SoundPath, clipId);
+                        }
+
+                        if ((team.spawnConditions.SpawnWave == "NtfSpawn" || team.spawnConditions.SpawnWave == "ChaosWave")
+                            && team.spawnConditions.Offset > 0)
+                        {
+                            LogManager.Warn($"Setting NtfSpawn or ChaosWave together with an offset will not work. Ignoring offset... (Team: {team.Name}, ID: {team.Id})");
+                            team.spawnConditions.Offset = 0f;
+                        }
+
+                        if ((team.spawnConditions.SpawnWave == "AfterWarhead" || team.spawnConditions.SpawnWave == "AfterRoundStarted")
+                            && team.spawnConditions.SpawnPosition == Vector3.zero)
+                        {
+                            LogManager.Warn($"You set AfterRoundStarted or AfterWarhead without SpawnPosition, the team will not be loaded... (Team: {team.Name}, ID: {team.Id})");
+                            continue;
+                        }
+
+                        LogManager.Debug($"Proposed to the registerer the external team {team.Id} [{team.Name}] from file:\n{FileName}");
+                        action(team);
                     }
                 }
                 catch (Exception ex)
@@ -67,6 +96,7 @@ namespace UncomplicatedCustomTeams.Utilities
                 }
             }
         }
+
 
         public void Welcome(string localDir = "")
         {
