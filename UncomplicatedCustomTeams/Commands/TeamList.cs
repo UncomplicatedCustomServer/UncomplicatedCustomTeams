@@ -30,7 +30,7 @@ namespace UncomplicatedCustomTeams.Commands
             {
                 sb.AppendLine($"- <b>{team.Name}</b> (ID: {team.Id})");
                 sb.AppendLine($"  Min Players: {team.MinPlayers} | Spawn Chance: {team.SpawnChance}%");
-                sb.AppendLine($"  Spawn Wave: {team.SpawnWave} | Roles: {team.Roles.Count}");
+                sb.AppendLine($"  Spawn Wave: {team.spawnConditions.SpawnWave} | Roles: {team.Roles.Count}");
                 sb.AppendLine();
             }
 

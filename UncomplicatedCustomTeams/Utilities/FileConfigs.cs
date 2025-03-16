@@ -65,17 +65,17 @@ namespace UncomplicatedCustomTeams.Utilities
                             AudioClipStorage.LoadClip(team.SoundPath, clipId);
                         }
 
-                        if ((team.spawnConditions.SpawnWave == "NtfSpawn" || team.spawnConditions.SpawnWave == "ChaosWave")
+                        if ((team.spawnConditions.SpawnWave == "NtfWave" || team.spawnConditions.SpawnWave == "ChaosWave")
                             && team.spawnConditions.Offset > 0)
                         {
-                            LogManager.Warn($"Setting NtfSpawn or ChaosWave together with an offset will not work. Ignoring offset... (Team: {team.Name}, ID: {team.Id})");
+                            LogManager.Warn($"Setting NtfWave or ChaosWave together with an offset will not work. Ignoring offset... (Team: {team.Name}, ID: {team.Id})");
                             team.spawnConditions.Offset = 0f;
                         }
 
-                        if ((team.spawnConditions.SpawnWave == "AfterWarhead" || team.spawnConditions.SpawnWave == "AfterRoundStarted")
+                        if ((team.spawnConditions.SpawnWave == "AfterWarhead")
                             && team.spawnConditions.SpawnPosition == Vector3.zero)
                         {
-                            LogManager.Warn($"You set AfterRoundStarted or AfterWarhead without SpawnPosition, the team will not be loaded... (Team: {team.Name}, ID: {team.Id})");
+                            LogManager.Warn($"You set AfterWarhead without SpawnPosition, the team will not be loaded... (Team: {team.Name}, ID: {team.Id})");
                             continue;
                         }
 
