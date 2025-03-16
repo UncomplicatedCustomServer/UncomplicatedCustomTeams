@@ -8,6 +8,10 @@ using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.API.Storage;
 using UncomplicatedCustomTeams.Utilities;
 using System.Linq;
+using Exiled.Events.EventArgs.Warhead;
+using System.Collections.Generic;
+using Respawning.Announcements;
+using Exiled.Events.EventArgs.Map;
 
 namespace UncomplicatedCustomTeams
 {
@@ -38,12 +42,11 @@ namespace UncomplicatedCustomTeams
 
             LogManager.Debug($"Next team for respawn is {ev.NextKnownTeam}");
 
-            // Evaluate the team
-            SpawnableFaction faction = ev.NextKnownTeam switch
+            string faction = ev.NextKnownTeam switch
             {
-                PlayerRoles.Faction.FoundationStaff => SpawnableFaction.NtfWave,
-                PlayerRoles.Faction.FoundationEnemy => SpawnableFaction.ChaosWave,
-                _ => SpawnableFaction.None
+                PlayerRoles.Faction.FoundationStaff => "NtfWave",
+                PlayerRoles.Faction.FoundationEnemy => "ChaosWave",
+                _ => "None"
             };
 
             Team team = Team.EvaluateSpawn(faction) ?? new Team();
@@ -56,6 +59,39 @@ namespace UncomplicatedCustomTeams
             }
 
             LogManager.Debug($"Next team selected: {Plugin.NextTeam?.Team?.Name}");
+        }
+
+
+        public void GetThisChaosOutOfHere(AnnouncingChaosEntranceEventArgs ev)
+        {
+            if (SummonedTeam.List.Any())
+            {
+                ev.IsAllowed = false;
+            }
+        }
+
+        public void GetThisNtfOutOfHere(AnnouncingNtfEntranceEventArgs ev)
+        {
+            if (SummonedTeam.List.Any())
+            {
+                ev.IsAllowed = false;
+            }
+        }
+
+        public void OnDetonated()
+        {
+            Cassie.Announcer.ClearQueue();
+            LogManager.Debug("Warhead detonated, checking for AfterWarhead spawns...");
+            Team team = Team.EvaluateSpawn("AfterWarhead");
+
+            if (team != null)
+            {
+                Timing.CallDelayed(team.spawnConditions.Offset, () =>
+                {
+                    Plugin.NextTeam = SummonedTeam.Summon(team, Player.List);
+                    LogManager.Debug($"Spawned AfterWarhead team: {Plugin.NextTeam?.Team?.Name}");
+                });
+            }
         }
 
         public void OnChangingRole(ChangingRoleEventArgs ev)
