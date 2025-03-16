@@ -56,7 +56,7 @@ namespace UncomplicatedCustomTeams.API.Features
 
                 RoleTypeId SpawnType = RoleTypeId.ChaosConscript;
 
-                if (Team.spawnConditions?.SpawnWave == "NtfWave")
+                if (Team.SpawnWave  == Exiled.API.Enums.SpawnableFaction.NtfWave)
                     SpawnType = RoleTypeId.NtfPrivate;
 
                 Role.AddRole(SpawnType);
@@ -153,24 +153,18 @@ namespace UncomplicatedCustomTeams.API.Features
                 }
 
             }
+            if (!string.IsNullOrEmpty(team.CassieTranslation))
+            {
+                Cassie.Message(team.CassieTranslation, isSubtitles: true, isNoisy: team.IsNoisy, isHeld: false);
+            }
+            else if (!string.IsNullOrEmpty(team.CassieMessage))
+            {
+                Cassie.Message(team.CassieMessage, isSubtitles: true, isNoisy: team.IsNoisy, isHeld: false);
+            }
 
-                if (!string.IsNullOrEmpty(team.CassieMessage))
-                {
-                    if (!string.IsNullOrEmpty(team.CassieTranslation))
-                    {
-                        Cassie.MessageTranslated(team.CassieMessage, team.CassieTranslation, isNoisy: team.IsNoisy, isSubtitles: true);
-                    }
-                    else
-                    {
-                        Cassie.Message(team.CassieMessage, isSubtitles: true, isNoisy: team.IsNoisy, isHeld: false);
-                    }
-                }
-
-
-
-
+            
             if (!string.IsNullOrEmpty(team.SoundPath))
-                {
+            {
                 AudioPlayer audioPlayer = AudioPlayer.CreateOrGet($"Global_Audio_{team.Id}", onIntialCreation: (p) =>
                 {
                     Speaker speaker = p.AddSpeaker("Main", isSpatial: false, maxDistance: 5000f);
@@ -179,7 +173,7 @@ namespace UncomplicatedCustomTeams.API.Features
                 float volume = Clamp(team.SoundVolume, 1f, 100f);
 
                 audioPlayer.AddClip($"sound_{team.Id}", volume);
-                }
+            }
 
             return SummonedTeam;
         }

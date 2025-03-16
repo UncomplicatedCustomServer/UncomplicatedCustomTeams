@@ -53,7 +53,16 @@ namespace UncomplicatedCustomTeams.API.Features
         /// </summary>
         public uint SpawnChance { get; set; } = 100;
 
-        public SpawnConditions spawnConditions { get; set; } = new();
+        /// <summary>
+        /// The wave that will be replaced by this custom wave
+        /// </summary>
+        public SpawnableFaction SpawnWave { get; set; } = SpawnableFaction.NtfWave;
+
+        /// <summary>
+        /// The SpawnPosition of the wave.<br></br>
+        /// If Vector3.zero or Vector3.one then it will be retrived from the RoleTypeId
+        /// </summary>
+        public Vector3 SpawnPosition { get; set; } = Vector3.zero;
 
         /// <summary>
         /// The cassie message that will be sent to every player
@@ -64,7 +73,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// The translation of the cassie message
         /// </summary>
         public string CassieTranslation { get; set; } = "Team arrived!";
-
+        
         /// <summary>
         /// Determines whether the Cassie message should be noisy.
         /// </summary>
@@ -121,28 +130,21 @@ namespace UncomplicatedCustomTeams.API.Features
             }
         };
 
-        public static Team EvaluateSpawn(string wave)
+        public static Team EvaluateSpawn(SpawnableFaction wave)
         {
             List<Team> Teams = new();
 
-            foreach (Team Team in List.Where(t => t.spawnConditions.SpawnWave == wave))
+            foreach (Team Team in List.Where(t => t.SpawnWave == wave))
                 for (int a = 0; a < Team.SpawnChance; a++)
                     Teams.Add(Team);
 
-            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Count(t => t.spawnConditions.SpawnWave == wave)}]!\nIf the number is less than 100 THERE's A PROBLEM!");
+            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Where(t => t.SpawnWave == wave).Count()}]!\nIf the number is less than 100 THERE's A PROBLEM!");
 
-            if (Teams.Count == 0)
-                return null;
+            int Chance = new System.Random().Next(0, 99);
+            if (Teams.Count > Chance)
+                return Teams[Chance];
 
-            System.Random random = new System.Random();
-            int Chance = random.Next(0, Teams.Count);
-            return Teams[Chance];
+            return null;
         }
-    }
-    public class SpawnConditions
-    {
-        public string SpawnWave { get; set; } = "NtfWave";
-        public Vector3 SpawnPosition { get; set; } = Vector3.zero;
-        public float Offset { get; set; } = 0f;
     }
 }
