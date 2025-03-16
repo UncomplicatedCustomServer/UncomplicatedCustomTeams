@@ -40,16 +40,21 @@ namespace UncomplicatedCustomTeams.API.Features
         }
 
 #pragma warning disable CS0618 // A class member was marked with the Obsolete attribute -> the [Obsolete()] attribute is only there to avoid users to use this in a wrong way!
-        public void AddRole(RoleTypeId proposed)
+        public void AddRole(RoleTypeId? proposed = null)
         {
-            LogManager.Debug($"Changing role to player {Player.Nickname} ({Player.Id}) to {CustomRole.Name} ({CustomRole.Id}) from team {Team.Team.Name}");
+            RoleTypeId finalRole = proposed ?? RoleTypeId.ChaosConscript;
+            LogManager.Debug($"Changing role to {finalRole} for player {Player.Nickname} ({Player.Id})");
 
             Player.Role.Set(CustomRole.Role, Exiled.API.Enums.SpawnReason.Respawn, RoleSpawnFlags.None);
 
-            if (Team.Team.SpawnPosition == Vector3.zero || Team.Team.SpawnPosition == Vector3.one)
-                Player.Position = proposed.GetRandomSpawnLocation().Position;
-            else
-                Player.Position = Team.Team.SpawnPosition;
+            if (Player.Role != CustomRole.Role)
+            {
+                LogManager.Debug($"Role assignment failed! Falling back to {finalRole}.");
+                Player.Role.Set(finalRole, Exiled.API.Enums.SpawnReason.ForceClass, RoleSpawnFlags.AssignInventory);
+            }
+
+            Player.Position = Team.Team.spawnConditions.SpawnPosition == Vector3.zero ?
+                finalRole.GetRandomSpawnLocation().Position : Team.Team.spawnConditions.SpawnPosition;
 
             Player.SetCustomRoleAttributes(CustomRole);
             IsRoleSet = true;

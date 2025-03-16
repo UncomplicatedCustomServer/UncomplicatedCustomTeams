@@ -7,6 +7,8 @@ using UncomplicatedCustomTeams.Manager;
 using UncomplicatedCustomTeams.Utilities;
 using PlayerHandler = Exiled.Events.Handlers.Player;
 using ServerHandler = Exiled.Events.Handlers.Server;
+using MapHandler = Exiled.Events.Handlers.Map;
+using WarheadHandler = Exiled.Events.Handlers.Warhead;
 
 namespace UncomplicatedCustomTeams
 {
@@ -18,7 +20,7 @@ namespace UncomplicatedCustomTeams
 
         public override string Author => "FoxWorn3365 & .piwnica2137";
 
-        public override Version Version => new(0, 9, 0);
+        public override Version Version => new(0, 9, 5);
 
         public override Version RequiredExiledVersion => new(9,5, 0);
 
@@ -51,6 +53,9 @@ namespace UncomplicatedCustomTeams
 
             PlayerHandler.ChangingRole += Handler.OnChangingRole;
             //PlayerHandler.Spawning += Handler.OnSpawning;
+            WarheadHandler.Detonated += Handler.OnDetonated;
+            MapHandler.AnnouncingChaosEntrance += Handler.GetThisChaosOutOfHere;
+            MapHandler.AnnouncingNtfEntrance += Handler.GetThisNtfOutOfHere;
             ServerHandler.RespawningTeam += Handler.OnRespawningTeam;
 
             LogManager.Info("===========================================");
@@ -69,23 +74,6 @@ namespace UncomplicatedCustomTeams
             FileConfigs.AddCustomRoleTeams(Server.Port.ToString());
             FileConfigs.LoadAll(Server.Port.ToString());
 
-            foreach (Team team in Team.List)
-            {
-                bool hasCustomSound = !string.IsNullOrEmpty(team.SoundPath) && team.SoundPath != "/path/to/your/ogg/file";
-                bool hasCassieMessage = !string.IsNullOrEmpty(team.CassieMessage) || !string.IsNullOrEmpty(team.CassieTranslation);
-
-                if (hasCustomSound && hasCassieMessage)
-                {
-                    LogManager.Warn($"Team \"{team.Name}\"(ID: {team.Id}) has both a custom Cassie message and a sound file set. This is not recommended, as both will play simultaneously.");
-                }
-
-                if (hasCustomSound)
-                {
-                    string clipId = $"sound_{team.Id}";
-                    AudioClipStorage.LoadClip(team.SoundPath, clipId);
-                }
-            }
-
             LogManager.Info($"Successfully loaded {Team.List.Count} teams!");
 
             base.OnEnabled();
@@ -95,6 +83,9 @@ namespace UncomplicatedCustomTeams
         {
             PlayerHandler.ChangingRole -= Handler.OnChangingRole;
             //PlayerHandler.Spawning -= Handler.OnSpawning;
+            WarheadHandler.Detonated -= Handler.OnDetonated;
+            MapHandler.AnnouncingChaosEntrance -= Handler.GetThisChaosOutOfHere;
+            MapHandler.AnnouncingNtfEntrance -= Handler.GetThisNtfOutOfHere;
             ServerHandler.RespawningTeam -= Handler.OnRespawningTeam;
 
             Handler = null;

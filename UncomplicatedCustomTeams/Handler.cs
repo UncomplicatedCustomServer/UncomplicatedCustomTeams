@@ -7,7 +7,13 @@ using System.Threading.Tasks;
 using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.API.Storage;
 using UncomplicatedCustomTeams.Utilities;
+using Exiled.Events.EventArgs.Warhead;
+using System.Collections.Generic;
+using Respawning.Announcements;
+using Exiled.Events.EventArgs.Map;
 using System.Linq;
+using UncomplicatedCustomRoles.API.Features;
+using PlayerRoles;
 
 namespace UncomplicatedCustomTeams
 {
@@ -38,15 +44,14 @@ namespace UncomplicatedCustomTeams
 
             LogManager.Debug($"Next team for respawn is {ev.NextKnownTeam}");
 
-            // Evaluate the team
-            SpawnableFaction faction = ev.NextKnownTeam switch
+            string faction = ev.NextKnownTeam switch
             {
-                PlayerRoles.Faction.FoundationStaff => SpawnableFaction.NtfWave,
-                PlayerRoles.Faction.FoundationEnemy => SpawnableFaction.ChaosWave,
-                _ => SpawnableFaction.None
+                PlayerRoles.Faction.FoundationStaff => "NtfWave",
+                PlayerRoles.Faction.FoundationEnemy => "ChaosWave",
+                _ => "None"
             };
 
-            Team team = Team.EvaluateSpawn(faction) ?? new Team();
+            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn(faction) ?? new UncomplicatedCustomTeams.API.Features.Team();
 
             if (team is null)
                 Plugin.NextTeam = null; // No next team
@@ -57,6 +62,56 @@ namespace UncomplicatedCustomTeams
 
             LogManager.Debug($"Next team selected: {Plugin.NextTeam?.Team?.Name}");
         }
+
+        public void GetThisChaosOutOfHere(AnnouncingChaosEntranceEventArgs ev)
+        {
+            if (SummonedTeam.List.Any())
+            {
+                ev.IsAllowed = false;
+            }
+        }
+
+        public void GetThisNtfOutOfHere(AnnouncingNtfEntranceEventArgs ev)
+        {
+            if (SummonedTeam.List.Any())
+            {
+                ev.IsAllowed = false;
+            }
+        }
+
+        public void OnDetonated()
+        {
+            LogManager.Debug("Warhead detonated, checking for AfterWarhead spawns...");
+
+            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn("AfterWarhead");
+
+            if (team == null) return;
+
+            LogManager.Debug($"EvaluateSpawn found team: {team.Name}");
+
+            Timing.CallDelayed(team.spawnConditions.Offset, () =>
+            {
+                var spectators = Player.List.Where(p => p.Role == RoleTypeId.Spectator).ToList();
+
+                if (spectators.Count == 0) return;
+
+                Plugin.NextTeam = SummonedTeam.Summon(team, spectators);
+
+                if (Plugin.NextTeam == null) return;
+
+                LogManager.Debug($"Spawned AfterWarhead team: {Plugin.NextTeam.Team.Name} for {spectators.Count} players.");
+
+                foreach (var summonedRole in Plugin.NextTeam.Players)
+                {
+                    LogManager.Debug($"Assigning role to {summonedRole.Player.Nickname} ({summonedRole.Player.Id})...");
+                    summonedRole.AddRole();
+                }
+
+                LogManager.Debug("All players have been assigned roles.");
+            });
+        }
+
+
 
         public void OnChangingRole(ChangingRoleEventArgs ev)
         {

@@ -52,17 +52,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// 0 is 0% and 100 is 100%!
         /// </summary>
         public uint SpawnChance { get; set; } = 100;
-
-        /// <summary>
-        /// The wave that will be replaced by this custom wave
-        /// </summary>
-        public SpawnableFaction SpawnWave { get; set; } = SpawnableFaction.NtfWave;
-
-        /// <summary>
-        /// The SpawnPosition of the wave.<br></br>
-        /// If Vector3.zero or Vector3.one then it will be retrived from the RoleTypeId
-        /// </summary>
-        public Vector3 SpawnPosition { get; set; } = Vector3.zero;
+        public SpawnConditions spawnConditions { get; set; } = new();
 
         /// <summary>
         /// The cassie message that will be sent to every player
@@ -130,21 +120,27 @@ namespace UncomplicatedCustomTeams.API.Features
             }
         };
 
-        public static Team EvaluateSpawn(SpawnableFaction wave)
+        public static Team EvaluateSpawn(string wave)
         {
             List<Team> Teams = new();
 
-            foreach (Team Team in List.Where(t => t.SpawnWave == wave))
+            foreach (Team Team in List.Where(t => t.spawnConditions.SpawnWave == wave))
                 for (int a = 0; a < Team.SpawnChance; a++)
                     Teams.Add(Team);
 
-            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Where(t => t.SpawnWave == wave).Count()}]!\nIf the number is less than 100 THERE's A PROBLEM!");
+            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Count(t => t.spawnConditions.SpawnWave == wave)}]!\nIf the number is less than 100 THERE's A PROBLEM!");
 
             int Chance = new System.Random().Next(0, 99);
             if (Teams.Count > Chance)
                 return Teams[Chance];
 
             return null;
+        }
+        public class SpawnConditions
+        {
+            public string SpawnWave { get; set; } = "NtfWave";
+            public Vector3 SpawnPosition { get; set; } = Vector3.zero;
+            public float Offset { get; set; } = 0f;
         }
     }
 }
