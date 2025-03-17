@@ -52,7 +52,11 @@ namespace UncomplicatedCustomTeams.API.Features
         /// 0 is 0% and 100 is 100%!
         /// </summary>
         public uint SpawnChance { get; set; } = 100;
-        public SpawnConditions spawnConditions { get; set; } = new();
+
+        /// <summary>
+        /// Defines the spawn conditions for a custom team.
+        /// </summary>
+        public SpawnData SpawnConditions { get; set; } = new();
 
         /// <summary>
         /// The cassie message that will be sent to every player
@@ -81,9 +85,9 @@ namespace UncomplicatedCustomTeams.API.Features
         public float SoundVolume { get; set; } = 1f;
 
         /// <summary>
-        /// A list of team names whose presence on the map guarantees victory.
+        /// A list of team names whose presence on the map guarantees victory with custom team.
         /// </summary>
-        [Description("Here, you can define which teams will win against your custom team. Make sure to also specify the team for your custom roles.")]
+        [Description("Here, you can define which teams will win against your custom team.")]
         public List<PlayerRoles.Team> TeamAliveToWin { get; set; } = new();
 
         /// <summary>
@@ -107,6 +111,8 @@ namespace UncomplicatedCustomTeams.API.Features
                 Id = 1,
                 Team = PlayerRoles.Team.ClassD,
                 SpawnSettings = null,
+                CanEscape = false,
+                RoleAfterEscape = null,
                 MaxPlayers = 1,
                 CustomFlags = null,
             },
@@ -115,6 +121,8 @@ namespace UncomplicatedCustomTeams.API.Features
                 Id = 2,
                 Team = PlayerRoles.Team.ClassD,
                 SpawnSettings = null,
+                CanEscape = false,
+                RoleAfterEscape = null,
                 CustomFlags = null,
                 MaxPlayers = 500
             }
@@ -124,11 +132,11 @@ namespace UncomplicatedCustomTeams.API.Features
         {
             List<Team> Teams = new();
 
-            foreach (Team Team in List.Where(t => t.spawnConditions.SpawnWave == wave))
+            foreach (Team Team in List.Where(t => t.SpawnConditions.SpawnWave == wave))
                 for (int a = 0; a < Team.SpawnChance; a++)
                     Teams.Add(Team);
 
-            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Count(t => t.spawnConditions.SpawnWave == wave)}]!\nIf the number is less than 100 THERE's A PROBLEM!");
+            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Count(t => t.SpawnConditions.SpawnWave == wave)}]!\nIf the number is less than 100 THERE's A PROBLEM!");
 
             int Chance = new System.Random().Next(0, 99);
             if (Teams.Count > Chance)
@@ -136,10 +144,11 @@ namespace UncomplicatedCustomTeams.API.Features
 
             return null;
         }
-        public class SpawnConditions
+        public class SpawnData
         {
             public string SpawnWave { get; set; } = "NtfWave";
             public Vector3 SpawnPosition { get; set; } = Vector3.zero;
+            [Description("Setting an offset greater than 0 will not work when using NtfWave or ChaosWave!")]
             public float Offset { get; set; } = 0f;
         }
     }

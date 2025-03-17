@@ -56,7 +56,7 @@ namespace UncomplicatedCustomTeams.API.Features
 
                 RoleTypeId SpawnType = RoleTypeId.ChaosConscript;
 
-                if (Team.spawnConditions?.SpawnWave == "NtfWave")
+                if (Team.SpawnConditions?.SpawnWave == "NtfWave")
                     SpawnType = RoleTypeId.NtfPrivate;
 
                 Role.AddRole(SpawnType);
@@ -134,7 +134,7 @@ namespace UncomplicatedCustomTeams.API.Features
             return (value < min) ? min : (value > max) ? max : value;
         }
 
-        public void ForceSpawnPlayer(Player player, RoleTypeId fallbackRole = RoleTypeId.ChaosConscript)
+        public void ForceSpawnPlayer(Player player, RoleTypeId fallbackRole = RoleTypeId.ClassD)
         {
             LogManager.Debug($"Force spawning player {player.Nickname} for team {Team.Name}...");
 

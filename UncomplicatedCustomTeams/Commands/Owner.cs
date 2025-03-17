@@ -9,7 +9,7 @@ namespace UncomplicatedCustomTeams.Commands
     {
         public string Name { get; } = "owner";
 
-        public string Description { get; } = "Get the 'Server Owner' role on our Discord server";
+        public string Description { get; } = "Get the 'Server Owner' role on our Discord server.";
 
         public string RequiredPermission { get; } = "uct.owner";
 

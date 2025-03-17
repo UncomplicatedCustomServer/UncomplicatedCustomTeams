@@ -11,7 +11,7 @@ namespace UncomplicatedCustomTeams.Commands
     {
         public string Name { get; } = "force_next_wave";
 
-        public string Description { get; } = "Force the next wave to be a custom Team";
+        public string Description { get; } = "Force the next wave to be a custom Team.";
 
         public string RequiredPermission { get; } = "uct.force_next_wave";
 

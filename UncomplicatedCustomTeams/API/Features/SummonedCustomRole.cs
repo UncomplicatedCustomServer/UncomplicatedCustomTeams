@@ -53,8 +53,8 @@ namespace UncomplicatedCustomTeams.API.Features
                 Player.Role.Set(finalRole, Exiled.API.Enums.SpawnReason.ForceClass, RoleSpawnFlags.AssignInventory);
             }
 
-            Player.Position = Team.Team.spawnConditions.SpawnPosition == Vector3.zero ?
-                finalRole.GetRandomSpawnLocation().Position : Team.Team.spawnConditions.SpawnPosition;
+            Player.Position = Team.Team.SpawnConditions.SpawnPosition == Vector3.zero ?
+                finalRole.GetRandomSpawnLocation().Position : Team.Team.SpawnConditions.SpawnPosition;
 
             Player.SetCustomRoleAttributes(CustomRole);
             IsRoleSet = true;

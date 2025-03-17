@@ -464,6 +464,7 @@
     <Compile Include="API\Storage\Bucket.cs" />
     <Compile Include="Commands\CommandParent.cs" />
     <Compile Include="Commands\ForceNextWave.cs" />
+    <Compile Include="Commands\Reload.cs" />
     <Compile Include="Commands\TeamList.cs" />
     <Compile Include="Commands\Owner.cs" />
     <Compile Include="Commands\Spawn.cs" />

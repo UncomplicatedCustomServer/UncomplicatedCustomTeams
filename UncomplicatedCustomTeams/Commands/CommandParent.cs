@@ -18,13 +18,14 @@ namespace UncomplicatedCustomTeams.Commands
 
         public override string[] Aliases { get; } = new string[] { };
 
-        public override string Description { get; } = "Manage the UCT features";
+        public override string Description { get; } = "Manage the UCT features.";
 
         public override void LoadGeneratedCommands()
         {
             RegisteredCommands.Add(new Spawn());
             RegisteredCommands.Add(new Owner());
             RegisteredCommands.Add(new TeamList());
+            RegisteredCommands.Add(new ReloadCommand());
         }
 
         public List<IUCTCommand> RegisteredCommands { get; } = new();

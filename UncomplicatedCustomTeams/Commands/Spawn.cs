@@ -14,7 +14,7 @@ namespace UncomplicatedCustomTeams.Commands
     {
         public string Name { get; } = "spawn";
 
-        public string Description { get; } = "Force spawn a custom team";
+        public string Description { get; } = "Force spawn a custom team.";
 
         public string RequiredPermission { get; } = "uct.spawn";
 

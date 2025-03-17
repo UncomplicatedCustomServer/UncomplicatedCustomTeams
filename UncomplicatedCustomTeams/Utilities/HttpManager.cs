@@ -161,7 +161,7 @@ namespace UncomplicatedCustomTeams.Manager
         public void LoadLatestVersion()
         {
             LogManager.Warn("Proceeding to check first verion [B] [MACCPR]");
-            string Version = RetriveString(HttpGetRequest($"{Endpoint}/{Prefix}/version?vts=5"));
+            string Version = RetriveString(HttpGetRequest($"{Endpoint}/{Prefix}/version?vts=1"));
 
             if (Version is not null && Version != string.Empty && Version.Contains("."))
                 _latestVersion = new(Version);
