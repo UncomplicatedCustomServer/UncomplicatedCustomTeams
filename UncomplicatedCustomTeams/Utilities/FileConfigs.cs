@@ -66,16 +66,31 @@ namespace UncomplicatedCustomTeams.Utilities
                         }
 
                         if ((team.SpawnConditions.SpawnWave == "NtfWave" || team.SpawnConditions.SpawnWave == "ChaosWave")
-                            && team.SpawnConditions.Offset > 0)
+                            && team.SpawnConditions.SpawnDelay > 0)
                         {
-                            LogManager.Warn($"Setting NtfWave or ChaosWave together with an offset will not work. Ignoring offset... (Team: {team.Name}, ID: {team.Id})");
-                            team.SpawnConditions.Offset = 0f;
+                            LogManager.Warn($"Setting NtfWave or ChaosWave together with an SpawnDelay will not work. Ignoring SpawnDelay... (Team: {team.Name}, ID: {team.Id})");
+                            team.SpawnConditions.SpawnDelay = 0f;
                         }
 
-                        if ((team.SpawnConditions.SpawnWave == "AfterWarhead")
+                        if ((team.SpawnConditions.SpawnWave == "AfterWarhead" || team.SpawnConditions.SpawnWave == "AfterDecontamination" || team.SpawnConditions.SpawnWave == "UsedItem")
                             && team.SpawnConditions.SpawnPosition == Vector3.zero)
                         {
-                            LogManager.Warn($"You set AfterWarhead without SpawnPosition, the team will not be loaded... (Team: {team.Name}, ID: {team.Id})");
+                            LogManager.Warn($"You set AfterWarhead, AfterDecontamination or UsedItem without SpawnPosition, the team will not be loaded... (Team: {team.Name}, ID: {team.Id})");
+                            continue;
+                        }
+
+                        if (team.SpawnConditions.SpawnWave == "UsedItem" &&
+                            team.SpawnConditions.GetUsedItemType() == ItemType.None &&
+                            team.SpawnConditions.GetCustomItemId() == null)
+                        {
+                            LogManager.Warn($"You set 'UsedItem' spawn type but didn't specify an item. The team will not be loaded... (Team: {team.Name}, ID: {team.Id})");
+                            continue;
+                        }
+
+                        if ((team.SpawnConditions.GetUsedItemType() != ItemType.None || team.SpawnConditions.GetCustomItemId() != null) &&
+                            team.SpawnConditions.SpawnWave != "UsedItem")
+                        {
+                            LogManager.Warn($"You set an item ({team.SpawnConditions.GetUsedItemType()}{(team.SpawnConditions.GetCustomItemId() != null ? $" or Custom Item ID: {team.SpawnConditions.GetCustomItemId()}" : "")}) but didn't set 'UsedItem' as the spawn type. The team will not be loaded... (Team: {team.Name}, ID: {team.Id})");
                             continue;
                         }
 
@@ -206,7 +221,7 @@ namespace UncomplicatedCustomTeams.Utilities
                 }
                 catch (Exception ex)
                 {
-                    LogManager.Error($"[SEND TO DEV] Error processing file {filePath}: {ex.Message}\n{ex.StackTrace}");
+                    LogManager.Error($"[SEND TO UCT DEV] Error processing file {filePath}: {ex.Message}\n{ex.StackTrace}");
                 }
             }
         }

@@ -9,6 +9,7 @@ using PlayerHandler = Exiled.Events.Handlers.Player;
 using ServerHandler = Exiled.Events.Handlers.Server;
 using MapHandler = Exiled.Events.Handlers.Map;
 using WarheadHandler = Exiled.Events.Handlers.Warhead;
+using System.Threading.Tasks;
 
 namespace UncomplicatedCustomTeams
 {
@@ -22,9 +23,9 @@ namespace UncomplicatedCustomTeams
 
         public override Version Version => new(0, 9, 5);
 
-        public override Version RequiredExiledVersion => new(9,5, 0);
+        public override Version RequiredExiledVersion => new(9, 5, 0);
 
-        public override PluginPriority Priority => PluginPriority.Low;
+        public override PluginPriority Priority => PluginPriority.Medium;
 
         public static SummonedTeam NextTeam { get; set; } = null;
 
@@ -52,10 +53,13 @@ namespace UncomplicatedCustomTeams
                 HttpManager.RegisterEvents();
 
             PlayerHandler.ChangingRole += Handler.OnChangingRole;
-            //PlayerHandler.Spawning += Handler.OnSpawning;
+            PlayerHandler.Verified += Handler.OnVerified;
             WarheadHandler.Detonated += Handler.OnDetonated;
+            PlayerHandler.Destroying += Handler.OnDestroying;
             MapHandler.AnnouncingChaosEntrance += Handler.GetThisChaosOutOfHere;
             MapHandler.AnnouncingNtfEntrance += Handler.GetThisNtfOutOfHere;
+            MapHandler.Decontaminating += Handler.OnDecontaminating;
+            PlayerHandler.UsedItem += Handler.OnItemUsed;
             ServerHandler.RespawningTeam += Handler.OnRespawningTeam;
 
             LogManager.Info("===========================================");
@@ -64,8 +68,20 @@ namespace UncomplicatedCustomTeams
             LogManager.Info("===========================================");
             LogManager.Info(">> Join our discord: https://discord.gg/5StRGu8EJV <<");
 
-            if (!HttpManager.IsLatestVersion(out Version latest))
-                LogManager.Warn($"You are NOT using the latest version of UncomplicatedCustomTeams!\nCurrent: v{Version} | Latest available: v{latest}\nDownload it from GitHub: https://github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest");
+            Task.Run(delegate
+            {
+                if (HttpManager.LatestVersion.CompareTo(Version) > 0)
+                    LogManager.Warn($"You are NOT using the latest version of UncomplicatedCustomTeams!\nCurrent: v{Version} | Latest available: v{HttpManager.LatestVersion}\nDownload it from GitHub: https://github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest");
+                else if (HttpManager.LatestVersion.CompareTo(Version) < 0)
+                {
+                    LogManager.Warn($"You are using an EXPERIMENTAL or PRE-RELEASE version of UncomplicatedCustomTeams!\nLatest stable release: {HttpManager.LatestVersion}\nWe do not assure that this version won't make your SCP:SL server crash! - Debug log has been enabled!");
+                    if (!Log.DebugEnabled.Contains(Assembly))
+                    {
+                        Config.Debug = true;
+                        Log.DebugEnabled.Add(Assembly);
+                    }
+                }
+            });
 
             FileConfigs.Welcome();
             FileConfigs.Welcome(Server.Port.ToString());
@@ -82,11 +98,14 @@ namespace UncomplicatedCustomTeams
         public override void OnDisabled()
         {
             PlayerHandler.ChangingRole -= Handler.OnChangingRole;
-            //PlayerHandler.Spawning -= Handler.OnSpawning;
+            PlayerHandler.Verified -= Handler.OnVerified;
+            PlayerHandler.Destroying -= Handler.OnDestroying;
             WarheadHandler.Detonated -= Handler.OnDetonated;
             MapHandler.AnnouncingChaosEntrance -= Handler.GetThisChaosOutOfHere;
+            MapHandler.Decontaminating -= Handler.OnDecontaminating;
             MapHandler.AnnouncingNtfEntrance -= Handler.GetThisNtfOutOfHere;
             ServerHandler.RespawningTeam -= Handler.OnRespawningTeam;
+            PlayerHandler.UsedItem -= Handler.OnItemUsed;
 
             Handler = null;
 

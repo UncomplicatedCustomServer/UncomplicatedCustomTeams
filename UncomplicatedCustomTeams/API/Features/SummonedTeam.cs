@@ -152,12 +152,16 @@ namespace UncomplicatedCustomTeams.API.Features
             }
         }
 
-
         /// <summary>
         /// Summons a new team and assigns players to available roles.
         /// </summary>
         public static SummonedTeam Summon(Team team, IEnumerable<Player> players)
         {
+            if (team == null)
+            {
+                LogManager.Debug("Summon: Attempted to create a SummonedTeam with a null team! Returning...");
+                return null;
+            }
             SummonedTeam SummonedTeam = new(team);
 
             foreach (Player Player in players)
@@ -170,26 +174,46 @@ namespace UncomplicatedCustomTeams.API.Features
                         break;
                     }
                 }
-
             }
-                if (!string.IsNullOrEmpty(team.CassieTranslation))
-                {
-                    Cassie.MessageTranslated(team.CassieMessage, team.CassieTranslation, isNoisy: team.IsNoisy, isSubtitles: true);
-                }
-
-                if (!string.IsNullOrEmpty(team.SoundPath))
-                {
+            if (!string.IsNullOrEmpty(team.CassieTranslation))
+            {
+                Cassie.MessageTranslated(team.CassieMessage, team.CassieTranslation, isNoisy: team.IsNoisy, isSubtitles: true);
+            }
+            if (!string.IsNullOrEmpty(team.SoundPath))
+            {
                 AudioPlayer audioPlayer = AudioPlayer.CreateOrGet($"Global_Audio_{team.Id}", onIntialCreation: (p) =>
                 {
                     Speaker speaker = p.AddSpeaker("Main", isSpatial: false, maxDistance: 5000f);
                 });
-
                 float volume = Clamp(team.SoundVolume, 1f, 100f);
-
                 audioPlayer.AddClip($"sound_{team.Id}", volume);
-                }
-
+            }
             return SummonedTeam;
+        }
+
+
+        /// <summary>
+        /// Checks if a team can spawn based on the number of spectators.
+        /// </summary>
+        public static List<Player> CanSpawnTeam(Team team)
+        {
+            if (team == null)
+                return new List<Player>();
+
+            List<Player> allPlayers = Player.List.ToList();
+            int totalPlayers = allPlayers.Count;
+            LogManager.Debug($"Total players: {totalPlayers}, MinPlayers required: {team.MinPlayers}");
+            if (totalPlayers < team.MinPlayers)
+            {
+                LogManager.Debug($"Not enough players on the server to spawn team {team.Name}.");
+                return new List<Player>();
+            }
+            List<Player> spectators = allPlayers
+                .Where(p => !p.IsAlive && p.Role.Type == RoleTypeId.Spectator && !p.IsOverwatchEnabled)
+                .ToList();
+            LogManager.Debug($"Spectators available: {spectators.Count}");
+            LogManager.Debug($"Spawning all {spectators.Count} spectators for team {team.Name}.");
+            return spectators;
         }
 
         /// <summary>

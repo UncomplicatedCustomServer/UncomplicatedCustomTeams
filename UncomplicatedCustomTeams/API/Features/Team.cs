@@ -1,6 +1,8 @@
 ﻿using Exiled.API.Enums;
+using Exiled.API.Features.Items;
 using PlayerRoles;
 using Respawning;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -131,25 +133,64 @@ namespace UncomplicatedCustomTeams.API.Features
         public static Team EvaluateSpawn(string wave)
         {
             List<Team> Teams = new();
-
             foreach (Team Team in List.Where(t => t.SpawnConditions.SpawnWave == wave))
+            {
                 for (int a = 0; a < Team.SpawnChance; a++)
                     Teams.Add(Team);
+            }
+            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Count(t => t.SpawnConditions.SpawnWave == wave)}]! If the number is less than 100 THERE'S A PROBLEM!");
 
-            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Count(t => t.SpawnConditions.SpawnWave == wave)}]!\nIf the number is less than 100 THERE's A PROBLEM!");
-
+            if (Teams.Count == 0)
+            {
+                LogManager.Debug("No valid team found, returning...");
+                return null;
+            }
             int Chance = new System.Random().Next(0, 99);
-            if (Teams.Count > Chance)
-                return Teams[Chance];
-
-            return null;
+            return Teams.Count > Chance ? Teams[Chance] : null;
         }
+
         public class SpawnData
         {
             public string SpawnWave { get; set; } = "NtfWave";
             public Vector3 SpawnPosition { get; set; } = Vector3.zero;
-            [Description("Setting an offset greater than 0 will not work when using NtfWave or ChaosWave!")]
-            public float Offset { get; set; } = 0f;
+
+            private ItemType _usedItem = ItemType.None;
+            private int? _customItemId = null;
+
+            [Description("This setting will be applied only if the SpawnWave is set to 'UsedItem'.")]
+            public string UsedItem
+            {
+                get
+                {
+                    if (_customItemId.HasValue)
+                        return _customItemId.Value.ToString();
+                    return _usedItem.ToString();
+                }
+                set
+                {
+                    if (int.TryParse(value, out int customItemId))
+                    {
+                        _customItemId = customItemId;
+                        _usedItem = ItemType.None;
+                    }
+                    else if (Enum.TryParse(value, true, out ItemType itemType))
+                    {
+                        _usedItem = itemType;
+                        _customItemId = null;
+                    }
+                    else
+                    {
+                        LogManager.Error($"Invalid UsedItem value: {value}");
+                    }
+                }
+            }
+
+            public ItemType GetUsedItemType() => _usedItem;
+            public int? GetCustomItemId() => _customItemId;
+
+            [Description("Setting a SpawnDelay greater than 0 will not work when using NtfWave or ChaosWave!")]
+            public float SpawnDelay { get; set; } = 0f;
         }
+
     }
 }

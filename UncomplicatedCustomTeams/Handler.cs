@@ -14,6 +14,11 @@ using Exiled.Events.EventArgs.Map;
 using System.Linq;
 using UncomplicatedCustomRoles.API.Features;
 using PlayerRoles;
+using static UncomplicatedCustomTeams.API.Features.Team;
+using UnityEngine;
+using Exiled.API.Features.Items;
+using Exiled.CustomItems.API.Features;
+using System;
 
 namespace UncomplicatedCustomTeams
 {
@@ -24,7 +29,6 @@ namespace UncomplicatedCustomTeams
         internal bool TeamCleanerEnabled = false;
 
         internal bool ForcedNextWave = false;
-
         public void OnRespawningTeam(RespawningTeamEventArgs ev)
         {
             Bucket.SpawnBucket = new();
@@ -48,18 +52,31 @@ namespace UncomplicatedCustomTeams
             {
                 PlayerRoles.Faction.FoundationStaff => "NtfWave",
                 PlayerRoles.Faction.FoundationEnemy => "ChaosWave",
-                _ => "None"
+                _ => null
             };
 
-            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn(faction) ?? new UncomplicatedCustomTeams.API.Features.Team();
-
-            if (team is null)
-                Plugin.NextTeam = null; // No next team
-            else
+            if (faction is null)
             {
-                Plugin.NextTeam = SummonedTeam.Summon(team, ev.Players);
+                Plugin.NextTeam = null; // no team
+                return;
             }
 
+            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn(faction);
+            if (team == null)
+            {
+                LogManager.Debug("No valid team found in EvaluateSpawn, aborting team selection.");
+                Plugin.NextTeam = null;
+            }
+            else if (team.SpawnConditions?.SpawnWave == faction)
+            {
+                Plugin.NextTeam = SummonedTeam.Summon(team, ev.Players);
+                LogManager.Debug($"Next team selected: {Plugin.NextTeam?.Team?.Name}");
+            }
+            else
+            {
+                Plugin.NextTeam = null;
+                LogManager.Debug("No valid custom team found for this wave.");
+            }
             LogManager.Debug($"Next team selected: {Plugin.NextTeam?.Team?.Name}");
         }
 
@@ -89,7 +106,7 @@ namespace UncomplicatedCustomTeams
 
             LogManager.Debug($"EvaluateSpawn found team: {team.Name}");
 
-            Timing.CallDelayed(team.SpawnConditions.Offset, () =>
+            Timing.CallDelayed(team.SpawnConditions.SpawnDelay, () =>
             {
                 Bucket.SpawnBucket = new();
                 foreach (Player player in Player.List.Where(p => !p.IsAlive && p.Role.Type == RoleTypeId.Spectator && !p.IsOverwatchEnabled))
@@ -112,17 +129,160 @@ namespace UncomplicatedCustomTeams
             });
         }
 
+        public void OnDecontaminating(DecontaminatingEventArgs ev)
+        {
+            LogManager.Debug("Decontamination in progress, checking for AfterDecontamination spawns...");
 
+            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn("AfterDecontamination");
 
+            if (team == null) return;
+
+            LogManager.Debug($"EvaluateSpawn found team: {team.Name}");
+
+            Timing.CallDelayed(team.SpawnConditions.SpawnDelay, () =>
+            {
+                Bucket.SpawnBucket = new();
+                foreach (Player player in Player.List.Where(p => !p.IsAlive && p.Role.Type == RoleTypeId.Spectator && !p.IsOverwatchEnabled))
+                    Bucket.SpawnBucket.Add(player.Id);
+
+                if (Bucket.SpawnBucket.Count == 0) return;
+                Plugin.NextTeam = SummonedTeam.Summon(team, Player.List.Where(p => Bucket.SpawnBucket.Contains(p.Id)));
+
+                if (Plugin.NextTeam == null) return;
+
+                LogManager.Debug($"Spawned AfterDecontamination team: {Plugin.NextTeam.Team.Name} for {Bucket.SpawnBucket.Count} players.");
+
+                foreach (var summonedRole in Plugin.NextTeam.Players)
+                {
+                    LogManager.Debug($"Assigning role to {summonedRole.Player.Nickname} ({summonedRole.Player.Id})...");
+                    summonedRole.AddRole();
+                }
+
+                LogManager.Debug("All players have been assigned roles.");
+            });
+        }
+
+        public bool IsCustomItem(Item item, int? customItemId)
+        {
+            if (customItemId == null) return false;
+            int itemId = GetCustomItemId(item);
+
+            return itemId == customItemId;
+        }
+
+        public int GetCustomItemId(Item item)
+        {
+            return CustomItem.TryGet(item, out var customItem) ? unchecked((int)customItem.Id) : 0;
+        }
+
+        public void OnItemUsed(UsedItemEventArgs ev)
+        {
+            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.List.FirstOrDefault(t => t.SpawnConditions.SpawnWave == "UsedItem");
+
+            if (team == null)
+            {
+                LogManager.Debug("No team with 'UsedItem' spawn condition found.");
+                return;
+            }
+
+            SpawnData spawnData = team.SpawnConditions;
+
+            ItemType usedItemType = spawnData.GetUsedItemType();
+            int? usedCustomItemId = spawnData.GetCustomItemId();
+
+            bool isStandardItem = ev.Item.Type == usedItemType;
+            bool isCustomItem = usedCustomItemId.HasValue && IsCustomItem(ev.Item, usedCustomItemId.Value);
+
+            if (!isStandardItem && !isCustomItem)
+            {
+                LogManager.Debug($"Item {ev.Item.Type} (Custom ID: {GetCustomItemId(ev.Item)}) does not match required item ({spawnData.UsedItem}). Ignoring.");
+                return;
+            }
+
+            LogManager.Debug($"Player used {ev.Item.Type} (Custom ID: {GetCustomItemId(ev.Item)}), checking for team spawn...");
+
+            UncomplicatedCustomTeams.API.Features.Team selectedTeam = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn(spawnData.SpawnWave);
+
+            if (selectedTeam == null) return;
+
+            LogManager.Debug($"EvaluateSpawn found team: {selectedTeam.Name}");
+
+            Timing.CallDelayed(spawnData.SpawnDelay, () =>
+            {
+                Bucket.SpawnBucket = new();
+                foreach (Player player in Player.List.Where(p => !p.IsAlive && p.Role.Type == RoleTypeId.Spectator && !p.IsOverwatchEnabled))
+                {
+                    Bucket.SpawnBucket.Add(player.Id);
+                }
+
+                if (Bucket.SpawnBucket.Count == 0) return;
+
+                Plugin.NextTeam = SummonedTeam.Summon(selectedTeam, Player.List.Where(p => Bucket.SpawnBucket.Contains(p.Id)));
+
+                if (Plugin.NextTeam == null) return;
+
+                LogManager.Debug($"Spawned {spawnData.SpawnWave} team for {Bucket.SpawnBucket.Count} players.");
+
+                foreach (var summonedRole in Plugin.NextTeam.Players)
+                {
+                    LogManager.Debug($"Assigning role to {summonedRole.Player.Nickname} ({summonedRole.Player.Id})...");
+                    summonedRole.AddRole();
+                }
+
+                LogManager.Debug("All players have been assigned roles.");
+            });
+        }
+
+        public void OnVerified(VerifiedEventArgs ev)
+        {
+            if (ev.Player == null)
+                return;
+
+            if (!Round.IsStarted)
+                return;
+
+            if (!Bucket.SpawnBucket.Contains(ev.Player.Id))
+            {
+                LogManager.Debug($"Player {ev.Player.Nickname} is verified, adding to spawn bucket.");
+                Bucket.SpawnBucket.Add(ev.Player.Id);
+            }
+            SummonedTeam.CanSpawnTeam(null);
+        }
+
+        public void OnDestroying(DestroyingEventArgs ev)
+        {
+            if (ev.Player == null)
+                return;
+
+            if (!Round.IsStarted)
+                return;
+
+            if (Bucket.SpawnBucket.Contains(ev.Player.Id))
+            {
+                LogManager.Debug($"Player {ev.Player.Nickname} is being destroyed, removing from spawn bucket.");
+                Bucket.SpawnBucket.Remove(ev.Player.Id);
+            }
+            SummonedTeam.CanSpawnTeam(null);
+        }
 
         public void OnChangingRole(ChangingRoleEventArgs ev)
         {
-            if (Plugin.NextTeam is not null && Bucket.SpawnBucket.Contains(ev.Player.Id))
+            if (Plugin.NextTeam is not null && Bucket.SpawnBucket.Contains(ev.Player.Id) && Plugin.NextTeam.Team != null)
             {
                 LogManager.Debug($"Player {ev.Player} is changing role, let's do something to it! v2");
                 Bucket.SpawnBucket.Remove(ev.Player.Id);
-                Timing.CallDelayed(0.1f, () => { Plugin.NextTeam.TrySpawnPlayer(ev.Player, ev.NewRole); });
-                ev.IsAllowed = false;
+
+                List<Player> selectedPlayers = SummonedTeam.CanSpawnTeam(Plugin.NextTeam.Team);
+
+                if (selectedPlayers.Contains(ev.Player))
+                {
+                    Timing.CallDelayed(0.1f, () => { Plugin.NextTeam.TrySpawnPlayer(ev.Player, ev.NewRole); });
+                    ev.IsAllowed = false;
+                }
+                else
+                {
+                    LogManager.Debug($"Skipping respawn for {ev.Player.Nickname}, not selected for spawn.");
+                }
 
                 if (!TeamCleanerEnabled)
                 {

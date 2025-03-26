@@ -9,7 +9,6 @@ using UncomplicatedCustomTeams.Utilities;
 
 namespace UncomplicatedCustomTeams.Commands
 {
-    [CommandHandler(typeof(GameConsoleCommandHandler))]
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
     internal class ReloadCommand : IUCTCommand
     {
@@ -22,12 +21,14 @@ namespace UncomplicatedCustomTeams.Commands
             if (!Round.IsStarted)
             {
                 response = "Round is not started yet!";
+                sender.Respond(response, false);
                 return false;
             }
 
             if (SummonedTeam.List.Any(team => team.HasAlivePlayers()))
             {
                 response = "An active custom team has been detected. Reloading has been cancelled.";
+                sender.Respond(response, false);
                 return false;
             }
 
@@ -44,23 +45,24 @@ namespace UncomplicatedCustomTeams.Commands
 
                 if (Team.List.Count == 0)
                 {
-                    string warningMessage = "! WARNING !: No teams were loaded! Check your config files!";
-                    LogManager.Warn(warningMessage);
-                    response = warningMessage;
+                    response = "! WARNING !: No teams were loaded! Check your config files!";
+                    LogManager.Warn(response);
+                    sender.Respond(response, false);
                     return false;
                 }
 
                 LogManager.Info($"✔️  Successfully loaded {Team.List.Count} teams.");
                 response = $"✔️  All custom teams have been reloaded successfully. Loaded {Team.List.Count} teams.";
+                sender.Respond(response, true);
                 return true;
             }
             catch (System.Exception ex)
             {
-                string errorMessage = $"An error occurred while reloading teams: {ex.Message}. This was likely caused by a configuration mistake.";
-                LogManager.Error(errorMessage);
+                response = $"An error occurred while reloading teams: {ex.Message}. This was likely caused by a configuration mistake.";
+                LogManager.Error(response);
                 LogManager.Error($"Stack Trace:\n{ex.StackTrace}");
 
-                response = "An error occurred while reloading teams. This was likely caused by a configuration mistake.";
+                sender.Respond(response, false);
                 return false;
             }
         }

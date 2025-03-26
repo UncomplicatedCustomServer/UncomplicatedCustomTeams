@@ -55,9 +55,6 @@
     <Reference Include="AudioPlayerApi">
       <HintPath>..\..\..\..\Downloads\AudioPlayerApi.dll</HintPath>
     </Reference>
-    <Reference Include="UncomplicatedCustomRoles">
-      <HintPath>C:\Users\fiuty\Downloads\UncomplicatedCustomRoles.dll</HintPath>
-    </Reference>
     <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
@@ -91,7 +88,7 @@
     </Reference>
     <Reference Include="Mono.Security, Version=4.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(EXILED_REFERENCES)\Mono.Security.dll</HintPath>
+      <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\Mono.Security.dll</HintPath>
     </Reference>
     <Reference Include="Pooling, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -100,6 +97,10 @@
     <Reference Include="System" />
     <Reference Include="UncomplicatedCustomRoles">
       <HintPath>..\..\..\..\Downloads\UncomplicatedCustomRoles.dll</HintPath>
+    </Reference>
+    <Reference Include="UncomplicatedCustomRoles, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\UncomplicatedCustomRoles.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Burst, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -464,6 +465,7 @@
     <Compile Include="API\Storage\Bucket.cs" />
     <Compile Include="Commands\CommandParent.cs" />
     <Compile Include="Commands\ForceNextWave.cs" />
+    <Compile Include="Commands\Generate.cs" />
     <Compile Include="Commands\Reload.cs" />
     <Compile Include="Commands\TeamList.cs" />
     <Compile Include="Commands\Owner.cs" />
