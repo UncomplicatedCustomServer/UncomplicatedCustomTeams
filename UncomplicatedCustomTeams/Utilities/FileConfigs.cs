@@ -134,7 +134,7 @@ namespace UncomplicatedCustomTeams.Utilities
                 LogManager.Info($"Plugin does not have a role folder, generated one in {Path.Combine(Dir, localDir)}");
             }
         }
-        public static void AddCustomRoleTeams(string localDir = "")
+        public void AddCustomRoleTeams(string localDir = "")
         {
             string dir = Path.Combine(Paths.Configs, "UncomplicatedCustomTeams", localDir);
 
@@ -225,5 +225,47 @@ namespace UncomplicatedCustomTeams.Utilities
                 }
             }
         }
+
+        public void AddCommentsToYaml(string localDir = "")
+        {
+            string dir = Path.Combine(Paths.Configs, "UncomplicatedCustomTeams", localDir);
+
+            if (!Directory.Exists(dir))
+                return;
+
+            foreach (string filePath in Directory.GetFiles(dir, "*.yml"))
+            {
+                try
+                {
+                    string[] lines = File.ReadAllLines(filePath);
+                    List<string> newLines = new();
+
+                    foreach (string line in lines)
+                    {
+                        string trimmedLine = line.Trim();
+                        if (trimmedLine.StartsWith("team_alive_to_win:"))
+                        {
+                            newLines.Add("# Here, you can define which teams will win against your custom team.");
+                        }
+                        else if (trimmedLine.StartsWith("used_item:"))
+                        {
+                            newLines.Add("# This setting will be applied only if the SpawnWave is set to 'UsedItem'.");
+                        }
+                        else if (trimmedLine.StartsWith("spawn_delay:"))
+                        {
+                            newLines.Add("# Setting a SpawnDelay greater than 0 will not work when using NtfWave or ChaosWave!");
+                        }
+                        newLines.Add(line);
+                    }
+                    File.WriteAllLines(filePath, newLines);
+                    LogManager.Debug($"Added comments to {filePath}!");
+                }
+                catch (Exception ex)
+                {
+                    LogManager.Error($"Error while adding comments to {filePath}: {ex.Message}");
+                }
+            }
+        }
+
     }
 }
