@@ -61,6 +61,7 @@ namespace UncomplicatedCustomTeams
             MapHandler.Decontaminating += Handler.OnDecontaminating;
             PlayerHandler.UsedItem += Handler.OnItemUsed;
             ServerHandler.RespawningTeam += Handler.OnRespawningTeam;
+            ServerHandler.RoundStarted += Handler.OnRoundStarted;
 
             LogManager.Info("===========================================");
             LogManager.Info(" Thanks for using UncomplicatedCustomTeams");
@@ -88,6 +89,8 @@ namespace UncomplicatedCustomTeams
             FileConfigs.LoadAll();
             FileConfigs.AddCustomRoleTeams();
             FileConfigs.AddCustomRoleTeams(Server.Port.ToString());
+            FileConfigs.AddCommentsToYaml();
+            FileConfigs.AddCommentsToYaml(Server.Port.ToString());
             FileConfigs.LoadAll(Server.Port.ToString());
 
             LogManager.Info($"Successfully loaded {Team.List.Count} teams!");
@@ -104,8 +107,9 @@ namespace UncomplicatedCustomTeams
             MapHandler.AnnouncingChaosEntrance -= Handler.GetThisChaosOutOfHere;
             MapHandler.Decontaminating -= Handler.OnDecontaminating;
             MapHandler.AnnouncingNtfEntrance -= Handler.GetThisNtfOutOfHere;
-            ServerHandler.RespawningTeam -= Handler.OnRespawningTeam;
             PlayerHandler.UsedItem -= Handler.OnItemUsed;
+            ServerHandler.RespawningTeam -= Handler.OnRespawningTeam;
+            ServerHandler.RoundStarted -= Handler.OnRoundStarted;
 
             Handler = null;
 

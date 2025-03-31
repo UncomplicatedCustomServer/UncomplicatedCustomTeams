@@ -95,6 +95,45 @@ namespace UncomplicatedCustomTeams
                 ev.IsAllowed = false;
             }
         }
+        public void OnRoundStarted()
+        {
+            LogManager.Debug("Round started, checking for RoundStarted spawns...");
+
+            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn("RoundStarted");
+
+            if (team == null)
+            {
+                LogManager.Debug("No valid team found for RoundStarted.");
+                return;
+            }
+
+            LogManager.Debug($"EvaluateSpawn found team: {team.Name}");
+
+            Timing.CallDelayed(team.SpawnConditions.SpawnDelay, () =>
+            {
+                Bucket.SpawnBucket = new();
+                foreach (Player player in Player.List.Where(p => !p.IsAlive && p.Role.Type == RoleTypeId.Spectator && !p.IsOverwatchEnabled))
+                {
+                    Bucket.SpawnBucket.Add(player.Id);
+                }
+
+                if (Bucket.SpawnBucket.Count == 0) return;
+
+                Plugin.NextTeam = SummonedTeam.Summon(team, Player.List.Where(p => Bucket.SpawnBucket.Contains(p.Id)));
+
+                if (Plugin.NextTeam == null) return;
+
+                LogManager.Debug($"Spawned RoundStarted team: {Plugin.NextTeam.Team.Name} for {Bucket.SpawnBucket.Count} players.");
+
+                foreach (var summonedRole in Plugin.NextTeam.Players)
+                {
+                    LogManager.Debug($"Assigning role to {summonedRole.Player.Nickname} ({summonedRole.Player.Id})...");
+                    summonedRole.AddRole();
+                }
+
+                LogManager.Debug("All players have been assigned roles.");
+            });
+        }
 
         public void OnDetonated()
         {
