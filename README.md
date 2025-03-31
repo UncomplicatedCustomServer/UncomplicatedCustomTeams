@@ -3,7 +3,7 @@
 UncomplicatedCustomTeams allows you to create custom squads that replace the default respawn teams in SCP: Secret Laboratory. With this plugin, you can define unique teams with custom roles, spawn settings, Cassie announcements, and even custom sound effects.  
 
 ## Requirements  
-- [UncomplicatedCustomRoles](https://github.com/UncomplicatedCustomServer/UncomplicatedCustomRoles) **>= 5.0.0**  
+- [UncomplicatedCustomRoles](https://github.com/UncomplicatedCustomServer/UncomplicatedCustomRoles) **>= 6.0.0**  
 - [AudioPlayerAPI](https://github.com/Killers0992/AudioPlayerApi) (required for custom sound playback)
 
 ## Features  
@@ -21,10 +21,11 @@ UncomplicatedCustomTeams allows you to create custom squads that replace the def
 4. Restart your server to generate the configuration files.  
 5. Configure your custom teams in the generated configuration files.  
 
-All credit goes to 
-## FoxWorn3365
+## Credits 
+### FoxWorn3365
 `Discord: @foxworn`
 
 `Email: foxworn3365@gmail.com`
 
-for creating UCT
+### Piwnica
+`Discord: @.piwnica2137`
