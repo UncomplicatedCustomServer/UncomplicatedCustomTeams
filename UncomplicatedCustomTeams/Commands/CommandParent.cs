@@ -25,7 +25,8 @@ namespace UncomplicatedCustomTeams.Commands
             RegisteredCommands.Add(new Spawn());
             RegisteredCommands.Add(new Owner());
             RegisteredCommands.Add(new TeamList());
-            RegisteredCommands.Add(new ReloadCommand());
+            RegisteredCommands.Add(new Reload());
+            RegisteredCommands.Add(new Generate());
         }
 
         public List<IUCTCommand> RegisteredCommands { get; } = new();
@@ -35,7 +36,7 @@ namespace UncomplicatedCustomTeams.Commands
             if (arguments.Count() == 0)
             {
                 // Help page
-                response = $"\n>> UncomplicatedCustomTeams v{Plugin.Instance.Version} <<\nby FoxWorn3365 & Piwnica\n\nAvailable commands:";
+                response = $"\n>> UncomplicatedCustomTeams v{Plugin.Instance.Version} <<\nby FoxWorn3365 & .Piwnica\n\nAvailable commands:";
 
                 foreach (IUCTCommand Command in RegisteredCommands)
                 {
