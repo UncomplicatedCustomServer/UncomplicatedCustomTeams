@@ -1,15 +1,10 @@
 ﻿using Exiled.API.Enums;
 using Exiled.API.Features;
-using Exiled.CustomItems.API.Features;
-using Exiled.CustomRoles;
 using PlayerRoles;
-using RemoteAdmin.Communication;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UncomplicatedCustomRoles.API.Interfaces;
 using UncomplicatedCustomTeams.Utilities;
-using UnityEngine;
 using Utils.NonAllocLINQ;
 
 namespace UncomplicatedCustomTeams.API.Features
@@ -93,7 +88,6 @@ namespace UncomplicatedCustomTeams.API.Features
                 .ToList();
 
             var winningTeams = Team.GetWinningTeams();
-
             bool hasWinningTeamAlive = aliveTeams.Any(team => winningTeams.Contains(team));
             bool onlyWinningTeamsRemain = aliveTeams.All(team => winningTeams.Contains(team));
             bool hasAliveCustomTeam = SummonedTeam.List.Any(team => team.HasAlivePlayers());
@@ -106,7 +100,6 @@ namespace UncomplicatedCustomTeams.API.Features
                 }
             }
         }
-
 
         /// <summary>
         /// Checks if this summoned team has any alive players.
@@ -190,7 +183,6 @@ namespace UncomplicatedCustomTeams.API.Features
             }
             return SummonedTeam;
         }
-
 
         /// <summary>
         /// Checks if a team can spawn based on the number of spectators.
