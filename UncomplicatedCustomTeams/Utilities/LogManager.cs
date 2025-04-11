@@ -59,9 +59,6 @@ namespace UncomplicatedCustomTeams.Utilities
                 Content += $"[{Date.Year}-{Date.Month}-{Date.Day} {Date.Hour}:{Date.Minute}:{Date.Second} {Date.Offset}]  [{Element.Key.Value.ToString().ToUpper()}]  [UncomplicatedCustomTeams] {Element.Value}\n";
             }
 
-            
-            
-            
             //Now let's add the separator
             Content += "\n======== BEGIN CUSTOM TEAMS ========\n";
 
