@@ -168,6 +168,53 @@ namespace UncomplicatedCustomTeams
             });
         }
 
+        public void OnPlayerDying(DyingEventArgs ev)
+        {
+            if (ev.Player == null || !ev.Player.IsScp)
+                return;
+            LogManager.Debug($"{ev.Player.Role.Type} is dying, checking for ScpDeath spawn condition...");
+
+            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn("ScpDeath");
+            if (team == null)
+            {
+                LogManager.Debug("No valid team found with ScpDeath condition.");
+                return;
+            }
+            var spawnData = team.SpawnConditions;
+
+            if (Enum.TryParse(spawnData.TargetScp, true, out RoleTypeId targetRole) && targetRole != RoleTypeId.None)
+            {
+                if (targetRole != ev.Player.Role.Type)
+                {
+                    LogManager.Debug($"{ev.Player.Role.Type} does not match required SCP {targetRole}.");
+                    return;
+                }
+            }
+            LogManager.Debug($"ScpDeath spawn condition met. Team to be spawned: {team.Name}");
+
+            Timing.CallDelayed(spawnData.SpawnDelay, () =>
+            {
+                Bucket.SpawnBucket = new();
+                foreach (Player player in Player.List.Where(p => !p.IsAlive && p.Role.Type == RoleTypeId.Spectator && !p.IsOverwatchEnabled))
+                    Bucket.SpawnBucket.Add(player.Id);
+
+                if (Bucket.SpawnBucket.Count == 0) return;
+
+                Plugin.NextTeam = SummonedTeam.Summon(team, Player.List.Where(p => Bucket.SpawnBucket.Contains(p.Id)));
+
+                if (Plugin.NextTeam == null) return;
+
+                LogManager.Debug($"Spawned ScpDeath team: {Plugin.NextTeam.Team.Name} for {Bucket.SpawnBucket.Count} players.");
+
+                foreach (var summonedRole in Plugin.NextTeam.Players)
+                {
+                    LogManager.Debug($"Assigning role to {summonedRole.Player.Nickname} ({summonedRole.Player.Id})...");
+                    summonedRole.AddRole();
+                }
+                LogManager.Debug("All players have been assigned roles.");
+            });
+        }
+
         public void OnDecontaminating(DecontaminatingEventArgs ev)
         {
             LogManager.Debug("Decontamination in progress, checking for AfterDecontamination spawns...");

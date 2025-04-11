@@ -10,6 +10,8 @@ using ServerHandler = Exiled.Events.Handlers.Server;
 using MapHandler = Exiled.Events.Handlers.Map;
 using WarheadHandler = Exiled.Events.Handlers.Warhead;
 using System.Threading.Tasks;
+using Exiled.Loader;
+using System.Linq;
 
 namespace UncomplicatedCustomTeams
 {
@@ -21,9 +23,9 @@ namespace UncomplicatedCustomTeams
 
         public override string Author => "FoxWorn3365 & .piwnica2137";
 
-        public override Version Version => new(0, 9, 5);
+        public override Version Version => new(1, 0, 0);
 
-        public override Version RequiredExiledVersion => new(9, 5, 0);
+        public override Version RequiredExiledVersion => new(9, 4, 0);
 
         public override PluginPriority Priority => PluginPriority.Medium;
 
@@ -34,6 +36,8 @@ namespace UncomplicatedCustomTeams
         internal static HttpManager HttpManager;
 
         internal FileConfigs FileConfigs;
+
+        internal CommentsSystem CommentsSystem;
 
         internal Handler Handler;
 
@@ -48,12 +52,12 @@ namespace UncomplicatedCustomTeams
             Team.List.Clear();
             SummonedTeam.List.Clear();
 
-
             if (!File.Exists(Path.Combine(ConfigPath, "UncomplicatedCustomTeams", ".nohttp")))
                 HttpManager.RegisterEvents();
 
             PlayerHandler.ChangingRole += Handler.OnChangingRole;
             PlayerHandler.Verified += Handler.OnVerified;
+            PlayerHandler.Dying += Handler.OnPlayerDying;
             WarheadHandler.Detonated += Handler.OnDetonated;
             PlayerHandler.Destroying += Handler.OnDestroying;
             MapHandler.AnnouncingChaosEntrance += Handler.GetThisChaosOutOfHere;
@@ -65,7 +69,7 @@ namespace UncomplicatedCustomTeams
 
             LogManager.Info("===========================================");
             LogManager.Info(" Thanks for using UncomplicatedCustomTeams");
-            LogManager.Info("        by FoxWorn3365 & Dr.Agenda & .piwnica2137");
+            LogManager.Info("        by FoxWorn3365 & Dr.Agenda & .Piwnica");
             LogManager.Info("===========================================");
             LogManager.Info(">> Join our discord: https://discord.gg/5StRGu8EJV <<");
 
@@ -84,16 +88,19 @@ namespace UncomplicatedCustomTeams
                 }
             });
 
-            FileConfigs.Welcome();
             FileConfigs.Welcome(Server.Port.ToString());
             FileConfigs.LoadAll();
             FileConfigs.AddCustomRoleTeams();
             FileConfigs.AddCustomRoleTeams(Server.Port.ToString());
-            FileConfigs.AddCommentsToYaml();
-            FileConfigs.AddCommentsToYaml(Server.Port.ToString());
+            CommentsSystem.AddCommentsToYaml();
+            CommentsSystem.AddCommentsToYaml(Server.Port.ToString());
             FileConfigs.LoadAll(Server.Port.ToString());
 
             LogManager.Info($"Successfully loaded {Team.List.Count} teams!");
+            foreach (var team in Team.List)
+            {
+                LogManager.Debug($"Loaded team: Name: {team.Name} | ID: {team.Id}");
+            }
 
             base.OnEnabled();
         }
@@ -102,6 +109,7 @@ namespace UncomplicatedCustomTeams
         {
             PlayerHandler.ChangingRole -= Handler.OnChangingRole;
             PlayerHandler.Verified -= Handler.OnVerified;
+            PlayerHandler.Dying -= Handler.OnPlayerDying;
             PlayerHandler.Destroying -= Handler.OnDestroying;
             WarheadHandler.Detonated -= Handler.OnDetonated;
             MapHandler.AnnouncingChaosEntrance -= Handler.GetThisChaosOutOfHere;
