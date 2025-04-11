@@ -1,4 +1,5 @@
 ﻿using CommandSystem;
+using Exiled.API.Features;
 using Exiled.Loader;
 using System.Collections.Generic;
 using System.IO;
@@ -17,23 +18,19 @@ namespace UncomplicatedCustomTeams.Commands
 
         public bool Executor(List<string> arguments, ICommandSender sender, out string response)
         {
-            if (arguments.Count < 1 || arguments.Count > 2)
+            if (arguments.Count != 1)
             {
-                response = "Unexpected number of args!\nUsage: uct generate (FileName) (Server-port)";
+                response = "Unexpected number of arguments!\nUsage: uct generate <FileName>";
                 return false;
             }
 
             string fileName = arguments[0].Replace(".yml", "") + ".yml";
-            string directory = Plugin.Instance.FileConfigs.Dir;
-            string filePath = Path.Combine(directory, fileName);
-
-            if (arguments.Count == 2 && int.TryParse(arguments[1], out int port))
-            {
-                directory = Path.Combine(directory, port.ToString());
-            }
+            string directory = Path.Combine(Plugin.Instance.FileConfigs.Dir, Server.Port.ToString());
 
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
+
+            string filePath = Path.Combine(directory, fileName);
 
             if (File.Exists(filePath))
             {
@@ -46,17 +43,16 @@ namespace UncomplicatedCustomTeams.Commands
                 {
                     "teams", new List<Team>
                     {
-                       new() { 
+                       new() {
                         Id = 1,
                         Name = "NewTeam",
                        }
                     }
                 }
             };
-
             File.WriteAllText(filePath, Loader.Serializer.Serialize(defaultTeamConfig));
 
-            response = $"A new YAML file has been generated at {filePath}, but it has not been loaded yet!";
+            response = $"New YAML file generated at {filePath}, but it has not been loaded yet!";
             return true;
         }
     }
