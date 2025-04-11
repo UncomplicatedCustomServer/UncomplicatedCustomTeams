@@ -1,7 +1,4 @@
-﻿using Exiled.API.Enums;
-using Exiled.API.Features.Items;
-using PlayerRoles;
-using Respawning;
+﻿using PlayerRoles;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -87,13 +84,13 @@ namespace UncomplicatedCustomTeams.API.Features
         public float SoundVolume { get; set; } = 1f;
 
         /// <summary>
-        /// A list of team names whose presence on the map guarantees victory with custom team.
+        /// A list of PlayerRoles.Team whose presence on the map guarantees victory with custom team.
         /// </summary>
         [Description("Here, you can define which teams will win against your custom team.")]
         public List<PlayerRoles.Team> TeamAliveToWin { get; set; } = new();
 
         /// <summary>
-        /// Retrieves a list of actual Team objects based on the names in TeamAliveToWin.
+        /// Retrieves a list of actual PlayerRoles.Team enums based on the teams in TeamAliveToWin.
         /// </summary>
         public static List<PlayerRoles.Team> GetWinningTeams()
         {
@@ -126,7 +123,7 @@ namespace UncomplicatedCustomTeams.API.Features
                 CanEscape = false,
                 RoleAfterEscape = null,
                 CustomFlags = null,
-                MaxPlayers = 500
+                MaxPlayers = 1
             }
         };
 
@@ -138,7 +135,7 @@ namespace UncomplicatedCustomTeams.API.Features
                 for (int a = 0; a < Team.SpawnChance; a++)
                     Teams.Add(Team);
             }
-            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Count(t => t.SpawnConditions.SpawnWave == wave)}]! If the number is less than 100 THERE'S A PROBLEM!");
+            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Count(t => t.SpawnConditions.SpawnWave == wave)}]!\n If the number is less than 100 THERE'S A PROBLEM!");
 
             if (Teams.Count == 0)
             {
@@ -157,7 +154,7 @@ namespace UncomplicatedCustomTeams.API.Features
             private ItemType _usedItem = ItemType.None;
             private int? _customItemId = null;
 
-            [Description("This setting will be applied only if the SpawnWave is set to 'UsedItem'.")]
+            [Description("Specify the item or custom item ID that triggers this team spawn. Only works if SpawnWave is set to 'UsedItem'.")]
             public string UsedItem
             {
                 get
@@ -178,18 +175,23 @@ namespace UncomplicatedCustomTeams.API.Features
                         _usedItem = itemType;
                         _customItemId = null;
                     }
-                    else
-                    {
-                        LogManager.Error($"Invalid UsedItem value: {value}");
-                    }
                 }
             }
 
             public ItemType GetUsedItemType() => _usedItem;
             public int? GetCustomItemId() => _customItemId;
 
+            [Description("Specify the SCP role whose death triggers this team spawn. Only works if SpawnWave is set to 'ScpDeath'.")]
+            public string TargetScp { get; set; } = "None";
+
             [Description("Setting a SpawnDelay greater than 0 will not work when using NtfWave or ChaosWave!")]
             public float SpawnDelay { get; set; } = 0f;
+
+            public bool RequiresSpawnType()
+            {
+                return SpawnWave is "AfterWarhead" or "AfterDecontamination" or "UsedItem" or "RoundStarted" or "ScpDeath";
+            }
+
         }
 
     }
