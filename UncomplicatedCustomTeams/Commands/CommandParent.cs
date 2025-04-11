@@ -3,9 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UncomplicatedCustomTeams.Interfaces;
-using Exiled.API.Extensions;
 using Exiled.Permissions.Extensions;
-using UncomplicatedCustomRoles.Commands;
 
 namespace UncomplicatedCustomTeams.Commands
 {
@@ -24,9 +22,11 @@ namespace UncomplicatedCustomTeams.Commands
         {
             RegisteredCommands.Add(new Spawn());
             RegisteredCommands.Add(new Owner());
-            RegisteredCommands.Add(new TeamList());
+            RegisteredCommands.Add(new List());
             RegisteredCommands.Add(new Reload());
+            RegisteredCommands.Add(new Errors());
             RegisteredCommands.Add(new Generate());
+            RegisteredCommands.Add(new Active());
         }
 
         public List<IUCTCommand> RegisteredCommands { get; } = new();
