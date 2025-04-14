@@ -3,6 +3,7 @@ using PlayerRoles;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using UncomplicatedCustomTeams.API.Features;
@@ -159,22 +160,6 @@ namespace UncomplicatedCustomTeams.Utilities
                         ErrorManager.Add(filePath, message, suggestion: suggestion);
                         LogManager.Error($"{message}\n {suggestion}");
                         return false;
-                    }
-
-                    string UsedItem = team.SpawnConditions.UsedItem;
-                    if (!string.IsNullOrWhiteSpace(UsedItem))
-                    {
-                        bool isInt = int.TryParse(UsedItem, out _);
-                        bool isItemType = Enum.TryParse(UsedItem, ignoreCase: true, out ItemType _);
-
-                        if (!isInt && !isItemType)
-                        {
-                            string message = $"Invalid UsedItem value '{UsedItem}' for team {team.Name} (ID: {team.Id}).";
-                            string suggestion = "UsedItem must be a valid ItemType name or an integer ID of a custom item.";
-                            ErrorManager.Add(filePath, message, suggestion: suggestion);
-                            LogManager.Error($"{message}\n {suggestion}");
-                            return false;
-                        }
                     }
 
                     string targetScp = team.SpawnConditions.TargetScp;

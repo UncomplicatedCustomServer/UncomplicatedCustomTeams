@@ -35,38 +35,35 @@ namespace UncomplicatedCustomTeams.Utilities
 
         public void LoadAction(Action<Team> action, string localDir = "")
         {
-            foreach (string FileName in List(localDir))
+            foreach (string file in List(localDir))
             {
                 try
                 {
-                    if (Directory.Exists(FileName))
+                    if (Directory.Exists(file))
                         continue;
 
-                    if (FileName.Split().First() == ".")
+                    if (file.Split().First() == ".")
                         return;
 
-                    if (!ErrorManager.CustomTypeChecker(FileName))
+                    if (!ErrorManager.CustomTypeChecker(file))
                     {
-                        LogManager.Error($"Skipping file {FileName} due to validation errors.");
+                        LogManager.Error($"Skipping file {file} due to validation errors.");
                         continue;
                     }
 
-                    Dictionary<string, List<Team>> Roles = Loader.Deserializer.Deserialize<Dictionary<string, List<Team>>>(File.ReadAllText(FileName));
+                    Dictionary<string, List<Team>> data = Loader.Deserializer.Deserialize<Dictionary<string, List<Team>>>(File.ReadAllText(file));
 
-                    if (!Roles.ContainsKey("teams"))
-                    {
-                        LogManager.Error($"Error during the deserialization of file {FileName}: Node name 'teams' not found!");
-                        return;
-                    }
-
-                    foreach (Team team in Roles["teams"])
+                    foreach (Team team in data["teams"])
                     {
                         bool hasCustomSound = !string.IsNullOrEmpty(team.SoundPath) && team.SoundPath != "/path/to/your/ogg/file";
                         bool hasCassieMessage = !string.IsNullOrEmpty(team.CassieMessage) || !string.IsNullOrEmpty(team.CassieTranslation);
 
                         if (hasCustomSound && hasCassieMessage)
                         {
-                            LogManager.Warn($"Team \"{team.Name}\"(ID: {team.Id}) has both a custom Cassie message and a sound file set. This is not recommended, as both will play simultaneously.");
+                            string warning = $"Team \"{team.Name}\" (ID: {team.Id}) has both a custom Cassie message and a sound file. Both will play simultaneously.";
+                            string suggestion = "Use only one of 'CassieMessage' or 'SoundPath' for clarity. Team will be loaded. You have been warned.";
+                            ErrorManager.Add(file, warning, suggestion: suggestion);
+                            LogManager.Warn($"{warning}\n {suggestion}");
                         }
 
                         if (hasCustomSound)
@@ -78,21 +75,19 @@ namespace UncomplicatedCustomTeams.Utilities
                         if ((team.SpawnConditions.SpawnWave == "NtfWave" || team.SpawnConditions.SpawnWave == "ChaosWave")
                             && team.SpawnConditions.SpawnDelay > 0)
                         {
-                            LogManager.Warn($"Setting NtfWave or ChaosWave together with an SpawnDelay will not work. Ignoring SpawnDelay... (Team: {team.Name}, ID: {team.Id})");
+                            string warning = $"Setting SpawnWave '{team.SpawnConditions.SpawnWave}' with SpawnDelay won't work.";
+                            string suggestion = "Remove 'SpawnDelay' if you're using NtfWave or ChaosWave.";
+                            ErrorManager.Add(file, warning, suggestion: suggestion);
+                            LogManager.Warn($"{warning}\n {suggestion} \nIgnoring delay for team '{team.Name}' (ID: {team.Id}).");
                             team.SpawnConditions.SpawnDelay = 0f;
                         }
 
                         if (team.SpawnConditions.RequiresSpawnType() && team.SpawnConditions.SpawnPosition == Vector3.zero)
                         {
-                            LogManager.Error($"SpawnWave '{team.SpawnConditions.SpawnWave}' requires a custom SpawnPosition, but none was set. The team '{team.Name}' (ID: {team.Id}) will not be loaded...");
-                            continue;
-                        }
-
-                        if (team.SpawnConditions.SpawnWave == "UsedItem" &&
-                            team.SpawnConditions.GetUsedItemType() == ItemType.None &&
-                            team.SpawnConditions.GetCustomItemId() == null)
-                        {
-                            LogManager.Error($"You set 'UsedItem' spawn type but didn't specify an item. The team will not be loaded... (Team: {team.Name}, ID: {team.Id})");
+                            string message = $"SpawnWave '{team.SpawnConditions.SpawnWave}' requires a SpawnPosition, but none was set.";
+                            string suggestion = "Set a valid SpawnPosition (x,y,z) for custom spawn waves.";
+                            ErrorManager.Add(file, message, suggestion: suggestion);
+                            LogManager.Error($"{message}\n {suggestion}\nCheck team -> {team.Name} with ID {team.Id}");
                             continue;
                         }
 
@@ -100,46 +95,40 @@ namespace UncomplicatedCustomTeams.Utilities
                             (string.IsNullOrWhiteSpace(team.SpawnConditions.TargetScp) ||
                              team.SpawnConditions.TargetScp.Equals("None", StringComparison.OrdinalIgnoreCase)))
                         {
-                            LogManager.Error($"You set 'ScpDeath' spawn type but didn't specify an SCP Role. The team will not be loaded... (Team: {team.Name}, ID: {team.Id})");
+                            string message = "You set 'ScpDeath' as spawn type but didn't specify an SCP role.";
+                            string suggestion = "Set the 'TargetScp' field to an existing SCP role name.";
+                            ErrorManager.Add(file, message, suggestion: suggestion);
+                            LogManager.Error($"{message}\n {suggestion}\nCheck team -> {team.Name} with ID {team.Id}");
                             continue;
                         }
 
                         if ((team.SpawnConditions.GetUsedItemType() != ItemType.None || team.SpawnConditions.GetCustomItemId() != null) &&
                             team.SpawnConditions.SpawnWave != "UsedItem")
                         {
-                            LogManager.Error($"You set an item ({team.SpawnConditions.GetUsedItemType()}{(team.SpawnConditions.GetCustomItemId() != null ? $" or Custom Item ID: {team.SpawnConditions.GetCustomItemId()}" : "")}) but didn't set 'UsedItem' as the spawn type. The team will not be loaded... (Team: {team.Name}, ID: {team.Id})");
+                            string message = $"Item set but 'UsedItem' not used as spawn wave.";
+                            string suggestion = "Change SpawnWave to 'UsedItem' or remove the item requirement.";
+                            ErrorManager.Add(file, message, suggestion: suggestion);
+                            LogManager.Error($"{message}\n {suggestion}\nCheck team ->  {team.Name}  with ID  {team.Id}");
                             continue;
                         }
 
                         if (Team.List.Any(t => t.Id == team.Id))
                         {
-                            string message = $"Duplicate team ID detected! ID: {team.Id} already exists.";
-                            string suggestion = $"Change the ID of the team \"{team.Name}\" in file {Path.GetFileName(FileName)} to a unique value";
-                            LoadErrors.Add($"{Path.GetFileName(FileName)}: {message}");
-
-                            ErrorManager.Add(
-                                file: FileName,
-                                message: message,
-                                suggestion: suggestion
-                            );
-
-                            LogManager.Error($"{message} Skipping team \"{team.Name}\"");
+                            string message = $"Duplicate team ID detected: {team.Id}";
+                            string suggestion = $"Change the ID of team '{team.Name}' to a unique one.";
+                            LoadErrors.Add($"{Path.GetFileName(file)}: {message}");
+                            ErrorManager.Add(file, message, suggestion: suggestion);
+                            LogManager.Error($"{message}\n {suggestion}\nCheck team -> {team.Name} with ID {team.Id}");
                             continue;
                         }
 
-                        if (Team.List.Any(t => t.Name.Equals(team.Name, StringComparison.OrdinalIgnoreCase)))
+                        if ((team.SpawnConditions.GetUsedItemType() == ItemType.None && team.SpawnConditions.GetCustomItemId() == null) &&
+                            team.SpawnConditions.SpawnWave == "UsedItem")
                         {
-                            string message = $"Duplicate team name detected! Name: \"{team.Name}\" already exists.";
-                            string suggestion = $"Change the name of the team in file {Path.GetFileName(FileName)} to something unique.";
-                            LoadErrors.Add($"{Path.GetFileName(FileName)}: {message}");
-
-                            ErrorManager.Add(
-                                file: FileName,
-                                message: message,
-                                suggestion: suggestion
-                            );
-
-                            LogManager.Error($"{message} Skipping team with ID {team.Id}");
+                            string message = "UsedItem value is invalid or missing.";
+                            string suggestion = "Provide a valid ItemType or Custom Item ID.";
+                            ErrorManager.Add(file, message, suggestion: suggestion);
+                            LogManager.Error($"{message}\n{suggestion}\nCheck team -> {team.Name} with ID {team.Id}");
                             continue;
                         }
 
@@ -148,17 +137,16 @@ namespace UncomplicatedCustomTeams.Utilities
                         {
                             if (Team.List.SelectMany(t => t.Roles).Any(r => r.Id == role.Id))
                             {
-                                string message = $"Duplicate Custom Role ID {role.Id} detected in team \"{team.Name}\"!";
+                                string message = $"Duplicate Custom Role ID {role.Id} in team \"{team.Name}\"";
                                 string suggestion = "Each Custom Role ID must be unique across all teams.";
-                                LoadErrors.Add($"{Path.GetFileName(FileName)}: {message}");
-
-                                ErrorManager.Add(FileName, message, suggestion: suggestion);
-                                LogManager.Error($"{message}\n{suggestion}");
+                                LoadErrors.Add($"{Path.GetFileName(file)}: {message}");
+                                ErrorManager.Add(file, message, suggestion: suggestion);
+                                LogManager.Error($"{message}\n{suggestion}\nCheck team -> {team.Name} with ID {team.Id}");
                                 continue;
                             }
                         }
 
-                        LogManager.Debug($"Proposed to the registerer the external team {team.Name} (ID: {team.Id}) from file:\n{FileName}");
+                        LogManager.Debug($"Proposed to the registerer the external team '{team.Name}' (ID: {team.Id}) from file: {file}");
                         action(team);
                     }
                 }
@@ -168,16 +156,17 @@ namespace UncomplicatedCustomTeams.Utilities
                     var column = (ex is YamlDotNet.Core.YamlException yamlEx2) ? yamlEx2.Start.Column : (int?)null;
 
                     ErrorManager.Add(
-                        file: FileName,
+                        file: file,
                         message: ex.Message,
                         line: line,
                         column: column,
                         suggestion: ErrorManager.GetSuggestionFromMessage(ex.Message)
                     );
-                    LogManager.Error($"Failed to parse {FileName}. YAML Exception: {ex.Message}");
+                    LogManager.Error($"Failed to parse {file}. YAML Exception: {ex.Message}");
                 }
             }
         }
+
 
         public void Welcome(string localDir = "")
         {

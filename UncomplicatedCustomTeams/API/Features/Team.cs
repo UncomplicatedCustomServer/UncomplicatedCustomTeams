@@ -170,9 +170,14 @@ namespace UncomplicatedCustomTeams.API.Features
                         _customItemId = customItemId;
                         _usedItem = ItemType.None;
                     }
-                    else if (Enum.TryParse(value, true, out ItemType itemType))
+                    else if (Enum.GetNames(typeof(ItemType)).Any(name => name.Equals(value, StringComparison.OrdinalIgnoreCase)))
                     {
-                        _usedItem = itemType;
+                        _usedItem = (ItemType)Enum.Parse(typeof(ItemType), value, true);
+                        _customItemId = null;
+                    }
+                    else
+                    {
+                        _usedItem = ItemType.None;
                         _customItemId = null;
                     }
                 }
@@ -193,6 +198,5 @@ namespace UncomplicatedCustomTeams.API.Features
             }
 
         }
-
     }
 }
