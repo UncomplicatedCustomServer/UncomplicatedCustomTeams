@@ -29,12 +29,13 @@ namespace UncomplicatedCustomTeams.Utilities
         public void LoadAll(string localDir = "")
         {
             LoadErrors.Clear();
+            AddCustomRoleTeams(localDir);
             LoadAction(Team.List.Add, localDir);
-            AddCustomRoleTeams();
         }
 
         public void LoadAction(Action<Team> action, string localDir = "")
         {
+            Team.List.Clear();
             foreach (string file in List(localDir))
             {
                 try
@@ -114,12 +115,19 @@ namespace UncomplicatedCustomTeams.Utilities
 
                         if (Team.List.Any(t => t.Id == team.Id))
                         {
-                            string message = $"Duplicate team ID detected: {team.Id}";
-                            string suggestion = $"Change the ID of team '{team.Name}' to a unique one.";
-                            LoadErrors.Add($"{Path.GetFileName(file)}: {message}");
-                            ErrorManager.Add(file, message, suggestion: suggestion);
-                            LogManager.Error($"{message}\n {suggestion}\nCheck team -> {team.Name} with ID {team.Id}");
-                            continue;
+                            uint originalId = team.Id;
+                            uint newId = 1;
+                            HashSet<uint> usedIds = Team.List.Select(t => t.Id).ToHashSet();
+
+                            while (usedIds.Contains(newId))
+                                newId++;
+
+                            string warning = $"Duplicate team ID detected: {originalId}. Automatically assigned new ID: {newId}.";
+                            string suggestion = $"Ensure team '{team.Name}' has a unique ID next time to avoid auto-correction.";
+                            ErrorManager.Add(file, warning, suggestion: suggestion);
+                            LogManager.Warn($"{warning}\n{suggestion}");
+
+                            team.Id = newId;
                         }
 
                         if ((team.SpawnConditions.GetUsedItemType() == ItemType.None && team.SpawnConditions.GetCustomItemId() == null) &&
@@ -132,20 +140,30 @@ namespace UncomplicatedCustomTeams.Utilities
                             continue;
                         }
 
-                        HashSet<int> roleIds = new();
+                        HashSet<int> usedRoleIds = Team.List.SelectMany(t => t.Roles).Select(r => r.Id).ToHashSet();
+
                         foreach (var role in team.Roles)
                         {
-                            if (Team.List.SelectMany(t => t.Roles).Any(r => r.Id == role.Id))
+                            if (usedRoleIds.Contains(role.Id))
                             {
-                                string message = $"Duplicate Custom Role ID {role.Id} in team \"{team.Name}\"";
-                                string suggestion = "Each Custom Role ID must be unique across all teams.";
-                                LoadErrors.Add($"{Path.GetFileName(file)}: {message}");
-                                ErrorManager.Add(file, message, suggestion: suggestion);
-                                LogManager.Error($"{message}\n{suggestion}\nCheck team -> {team.Name} with ID {team.Id}");
-                                continue;
+                                int originalRoleId = role.Id;
+                                int newRoleId = 1;
+                                while (usedRoleIds.Contains(newRoleId))
+                                    newRoleId++;
+
+                                string warning = $"Duplicate Custom Role ID detected: {originalRoleId}. Automatically assigned new ID: {newRoleId}.";
+                                string suggestion = "Use unique role IDs to avoid this in the future.";
+                                ErrorManager.Add(file, warning, suggestion: suggestion);
+                                LogManager.Warn($"{warning}\n{suggestion}");
+
+                                role.Id = newRoleId;
+                                usedRoleIds.Add(newRoleId);
+                            }
+                            else
+                            {
+                                usedRoleIds.Add(role.Id);
                             }
                         }
-
                         LogManager.Debug($"Proposed to the registerer the external team '{team.Name}' (ID: {team.Id}) from file: {file}");
                         action(team);
                     }
@@ -231,7 +249,7 @@ namespace UncomplicatedCustomTeams.Utilities
                             continue;
                         }
 
-                        if (!(yamlTeam["roles"] is List<object> rolesList))
+                        if (yamlTeam["roles"] is not List<object> rolesList)
                         {
                             continue;
                         }
@@ -270,8 +288,11 @@ namespace UncomplicatedCustomTeams.Utilities
                         yamlTeam["team_alive_to_win"] = teamAliveToWin;
 
                         string newYamlContent = Loader.Serializer.Serialize(configData);
-                        File.WriteAllText(filePath, newYamlContent);
-                        LogManager.Debug($"Updated file {filePath}!");
+                        if (File.ReadAllText(filePath) != newYamlContent)
+                        {
+                            File.WriteAllText(filePath, newYamlContent);
+                            LogManager.Debug($"Updated file {filePath}!");
+                        }
                     }
                 }
                 catch (Exception ex)
