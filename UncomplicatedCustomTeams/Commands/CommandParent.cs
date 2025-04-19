@@ -24,6 +24,7 @@ namespace UncomplicatedCustomTeams.Commands
             RegisteredCommands.Add(new Owner());
             RegisteredCommands.Add(new List());
             RegisteredCommands.Add(new Reload());
+            RegisteredCommands.Add(new Role());
             RegisteredCommands.Add(new Errors());
             RegisteredCommands.Add(new Generate());
             RegisteredCommands.Add(new Active());

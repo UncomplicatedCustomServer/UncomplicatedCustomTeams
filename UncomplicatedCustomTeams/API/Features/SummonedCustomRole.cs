@@ -52,10 +52,33 @@ namespace UncomplicatedCustomTeams.API.Features
                 LogManager.Debug($"Role assignment failed! Falling back to {finalRole}.");
                 Player.Role.Set(finalRole, Exiled.API.Enums.SpawnReason.ForceClass, RoleSpawnFlags.AssignInventory);
             }
+            Vector3 spawnPos;
+            if (Team.Team.SpawnConditions.SpawnPosition != Vector3.zero)
+            {
+                spawnPos = Team.Team.SpawnConditions.SpawnPosition;
+                LogManager.Debug($"Using custom Vector3 spawn position: {spawnPos}");
+            }
+            else
+            {
+                switch (Team.Team.SpawnConditions.SpawnWave)
+                {
+                    case "NtfWave":
+                        spawnPos = RoleTypeId.NtfCaptain.GetRandomSpawnLocation().Position;
+                        LogManager.Debug($"Using NTF spawn position for role: {CustomRole.Role}");
+                        break;
 
-            Player.Position = Team.Team.SpawnConditions.SpawnPosition == Vector3.zero ?
-                finalRole.GetRandomSpawnLocation().Position : Team.Team.SpawnConditions.SpawnPosition;
+                    case "ChaosWave":
+                        spawnPos = RoleTypeId.ChaosConscript.GetRandomSpawnLocation().Position;
+                        LogManager.Debug($"Using Chaos spawn position for role: {CustomRole.Role}");
+                        break;
 
+                    default:
+                        spawnPos = finalRole.GetRandomSpawnLocation().Position;
+                        LogManager.Debug($"Using fallback spawn for role: {CustomRole.Role}");
+                        break;
+                }
+            }
+            Player.Position = spawnPos;
             Player.SetCustomRoleAttributes(CustomRole);
             IsRoleSet = true;
         }
