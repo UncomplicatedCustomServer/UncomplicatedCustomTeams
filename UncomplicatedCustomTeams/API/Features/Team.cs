@@ -1,9 +1,9 @@
-﻿using PlayerRoles;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using UncomplicatedCustomTeams.Utilities;
+using UncomplicatedCustomTeams.API.Enums;
 using UnityEngine;
 
 namespace UncomplicatedCustomTeams.API.Features
@@ -33,7 +33,6 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// The Id of the custom <see cref="Team"/>
         /// </summary>
-        [Description("The Id of the custom Team")]
         public uint Id { get; set; } = 1;
 
         /// <summary>
@@ -113,6 +112,7 @@ namespace UncomplicatedCustomTeams.API.Features
                 CanEscape = false,
                 RoleAfterEscape = null,
                 MaxPlayers = 1,
+                Priority = RolePriority.First,
                 CustomFlags = null,
             },
             new()
@@ -123,6 +123,7 @@ namespace UncomplicatedCustomTeams.API.Features
                 CanEscape = false,
                 RoleAfterEscape = null,
                 CustomFlags = null,
+                Priority = RolePriority.Second,
                 MaxPlayers = 1
             }
         };

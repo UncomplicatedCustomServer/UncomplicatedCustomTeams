@@ -456,6 +456,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\Enums\RolePriority.cs" />
     <Compile Include="API\Features\CustomRole.cs" />
     <Compile Include="API\Features\SummonedCustomRole.cs" />
     <Compile Include="API\Features\SummonedTeam.cs" />
@@ -468,6 +469,7 @@
     <Compile Include="Commands\Reload.cs" />
     <Compile Include="Commands\List.cs" />
     <Compile Include="Commands\Owner.cs" />
+    <Compile Include="Commands\Role.cs" />
     <Compile Include="Commands\Spawn.cs" />
     <Compile Include="Commands\LogShare.cs" />
     <Compile Include="Commands\Active.cs" />

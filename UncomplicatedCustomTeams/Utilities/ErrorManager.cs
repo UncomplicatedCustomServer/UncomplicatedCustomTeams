@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Features;
 using UnityEngine;
 
@@ -249,6 +250,24 @@ namespace UncomplicatedCustomTeams.Utilities
                         {
                             string message = $"Duplicate role ID {role.Id} in team {team.Name}!";
                             string suggestion = "Each role ID must be unique within its team.";
+                            ErrorManager.Add(filePath, message, suggestion: suggestion);
+                            LogManager.Error($"{message}\n {suggestion}");
+                            return false;
+                        }
+
+                        if (role.MaxPlayers <= 0)
+                        {
+                            string message = $"Role '{role.Name}' in team {team.Name} (ID: {team.Id}) has invalid MaxPlayers: {role.MaxPlayers}.";
+                            string suggestion = "Set 'MaxPlayers' to a value greater than 0.";
+                            ErrorManager.Add(filePath, message, suggestion: suggestion);
+                            LogManager.Error($"{message}\n {suggestion}");
+                            return false;
+                        }
+
+                        if (!Enum.IsDefined(typeof(RolePriority), role.Priority))
+                        {
+                            string message = $"Role '{role.Name}' in team {team.Name} (ID: {team.Id}) has an invalid Priority value: {role.Priority}.";
+                            string suggestion = $"Valid values are: {string.Join(", ", Enum.GetNames(typeof(RolePriority)))}.";
                             ErrorManager.Add(filePath, message, suggestion: suggestion);
                             LogManager.Error($"{message}\n {suggestion}");
                             return false;

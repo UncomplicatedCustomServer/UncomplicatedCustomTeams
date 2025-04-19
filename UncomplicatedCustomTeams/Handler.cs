@@ -36,14 +36,13 @@ namespace UncomplicatedCustomTeams
                 Bucket.SpawnBucket.Add(Player.Id);
 
             Plugin.NextTeam?.RefreshPlayers(ev.Players);
-
-            if (ForcedNextWave)
+            if (ForcedNextWave && Plugin.NextTeam is not null)
             {
-                LogManager.Debug("Can't spawn this wave because the wave has been forced!");
                 ForcedNextWave = false;
+                Plugin.NextTeam.RefreshPlayers(ev.Players);
+                LogManager.Debug($"Forced wave executed for {Plugin.NextTeam.Team.Name} with ID {Plugin.NextTeam.Team.Id}");
                 return;
             }
-
             LogManager.Debug($"Respawning team event, let's propose our team\nTeams: {API.Features.Team.List.Count}");
 
             LogManager.Debug($"Next team for respawn is {ev.NextKnownTeam}");

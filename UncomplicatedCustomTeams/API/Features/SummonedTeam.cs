@@ -152,18 +152,18 @@ namespace UncomplicatedCustomTeams.API.Features
         {
             if (team == null)
             {
-                LogManager.Debug("Summon: Attempted to create a SummonedTeam with a null team! Returning...");
                 return null;
             }
             SummonedTeam SummonedTeam = new(team);
 
             foreach (Player Player in players)
             {
-                foreach (CustomRole role in team.Roles)
+                foreach (CustomRole role in team.Roles.OrderBy(r => r.Priority))
                 {
                     if (SummonedTeam.SummonedPlayersCount(role) < role.MaxPlayers)
                     {
                         SummonedTeam.Players.Add(new(SummonedTeam, Player, role));
+                        LogManager.Debug($"{Player.Nickname} -> {role.Name} (Priority: {role.Priority})");
                         break;
                     }
                 }
@@ -215,7 +215,7 @@ namespace UncomplicatedCustomTeams.API.Features
         {
             foreach (Player Player in players)
             {
-                foreach (CustomRole Role in Team.Roles)
+                foreach (CustomRole Role in Team.Roles.OrderBy(r => r.Priority))
                 {
                     if (SummonedPlayersCount(Role) < Role.MaxPlayers)
                     {
