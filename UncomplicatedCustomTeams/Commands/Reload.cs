@@ -41,6 +41,8 @@ namespace UncomplicatedCustomTeams.Commands
                 FileConfigs fileConfigs = new();
                 fileConfigs.LoadAll();
                 fileConfigs.LoadAll(Server.Port.ToString());
+                CommentsSystem.AddCommentsToYaml();
+                CommentsSystem.AddCommentsToYaml(Server.Port.ToString());
                 LogManager.Info($"Reloaded teams from the config. Current count: {Team.List.Count}");
 
                 if (Team.List.Count == 0)

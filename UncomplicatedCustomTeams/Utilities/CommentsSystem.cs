@@ -71,7 +71,7 @@ namespace UncomplicatedCustomTeams.Utilities
             }
             catch (Exception ex)
             {
-                LogManager.Error($"Critical error in AddCommentsToYaml: {ex.Message}");
+                LogManager.Error($"Critical error in Comments System: {ex.Message}");
             }
         }
     }
