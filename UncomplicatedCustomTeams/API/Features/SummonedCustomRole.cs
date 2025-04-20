@@ -40,17 +40,45 @@ namespace UncomplicatedCustomTeams.API.Features
         }
 
 #pragma warning disable CS0618 // A class member was marked with the Obsolete attribute -> the [Obsolete()] attribute is only there to avoid users to use this in a wrong way!
-        public void AddRole(RoleTypeId proposed)
+        public void AddRole(RoleTypeId? proposed = null)
         {
-            LogManager.Debug($"Changing role to player {Player.Nickname} ({Player.Id}) to {CustomRole.Name} ({CustomRole.Id}) from team {Team.Team.Name}");
+            RoleTypeId finalRole = proposed ?? RoleTypeId.ChaosConscript;
+            LogManager.Debug($"Changing role to {finalRole} for player {Player.Nickname} ({Player.Id})");
 
             Player.Role.Set(CustomRole.Role, Exiled.API.Enums.SpawnReason.Respawn, RoleSpawnFlags.None);
 
-            if (Team.Team.SpawnPosition == Vector3.zero || Team.Team.SpawnPosition == Vector3.one)
-                Player.Position = proposed.GetRandomSpawnLocation().Position;
+            if (Player.Role != CustomRole.Role)
+            {
+                LogManager.Debug($"Role assignment failed! Falling back to {finalRole}.");
+                Player.Role.Set(finalRole, Exiled.API.Enums.SpawnReason.ForceClass, RoleSpawnFlags.AssignInventory);
+            }
+            Vector3 spawnPos;
+            if (Team.Team.SpawnConditions.SpawnPosition != Vector3.zero)
+            {
+                spawnPos = Team.Team.SpawnConditions.SpawnPosition;
+                LogManager.Debug($"Using custom Vector3 spawn position: {spawnPos}");
+            }
             else
-                Player.Position = Team.Team.SpawnPosition;
+            {
+                switch (Team.Team.SpawnConditions.SpawnWave)
+                {
+                    case "NtfWave":
+                        spawnPos = RoleTypeId.NtfCaptain.GetRandomSpawnLocation().Position;
+                        LogManager.Debug($"Using NTF spawn position for role: {CustomRole.Role}");
+                        break;
 
+                    case "ChaosWave":
+                        spawnPos = RoleTypeId.ChaosConscript.GetRandomSpawnLocation().Position;
+                        LogManager.Debug($"Using Chaos spawn position for role: {CustomRole.Role}");
+                        break;
+
+                    default:
+                        spawnPos = finalRole.GetRandomSpawnLocation().Position;
+                        LogManager.Debug($"Using fallback spawn for role: {CustomRole.Role}");
+                        break;
+                }
+            }
+            Player.Position = spawnPos;
             Player.SetCustomRoleAttributes(CustomRole);
             IsRoleSet = true;
         }

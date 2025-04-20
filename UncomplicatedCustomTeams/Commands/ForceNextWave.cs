@@ -4,44 +4,57 @@ using System.Collections.Generic;
 using System.Linq;
 using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.API.Storage;
+using UncomplicatedCustomTeams.Interfaces;
+using Respawning;
+using Exiled.API.Enums;
 
 namespace UncomplicatedCustomTeams.Commands
 {
-    internal class ForceNextWave
+    [CommandHandler(typeof(RemoteAdminCommandHandler))]
+    internal class ForceNextWave // Broken
     {
-        public string Name { get; } = "force_next_wave";
+        public string Name { get; } = "fnw";
 
-        public string Description { get; } = "Force the next wave to be a custom Team";
+        public string Description { get; } = "Force the next wave to be a custom Team AKA \"fnw\".";
 
-        public string RequiredPermission { get; } = "uct.force_next_wave";
+        public string RequiredPermission { get; } = "uct.fnw";
 
         public bool Executor(List<string> arguments, ICommandSender _, out string response)
         {
             if (arguments.Count != 1)
             {
-                response = "Usage: uct force_next_wave <TeamId>";
+                response = "Usage: uct fnw <TeamId>";
                 return false;
             }
 
-            Team Team = Team.List.Where(team => team.Id == uint.Parse(arguments[0])).FirstOrDefault();
-
-            if (Team is null)
+            if (!uint.TryParse(arguments[0], out var id))
             {
-                response = $"Team {uint.Parse(arguments[0])} is not registered!";
+                response = "Invalid team ID!";
                 return false;
             }
-            else
+
+            Team team = Team.List.FirstOrDefault(t => t.Id == id);
+
+            if (team is null)
             {
-                Bucket.SpawnBucket = new();
-                foreach (Player Player in Player.List.Where(p => !p.IsAlive && p.Role.Type is PlayerRoles.RoleTypeId.Spectator && !p.IsOverwatchEnabled))
-                    Bucket.SpawnBucket.Add(Player.Id);
-
-                Plugin.NextTeam = SummonedTeam.Summon(Team, Player.List.Where(p => !p.IsAlive && p.Role.Type is PlayerRoles.RoleTypeId.Spectator && !p.IsOverwatchEnabled));
-
-                response = $"Successfully forced the team {Team.Name} to be the next respawn wave!";
-
-                return true;
+                response = $"Team {id} is not registered!";
+                return false;
             }
+
+            if (team.SpawnConditions.SpawnWave != "NtfWave" && team.SpawnConditions.SpawnWave != "ChaosWave")
+            {
+                response = $"This team cannot be forced because its SpawnWave is not 'NtfWave' or 'ChaosWave'.";
+                return false;
+            }
+
+            Plugin.NextTeam = new SummonedTeam(team);
+            Handler handler = new()
+            {
+                ForcedNextWave = true
+            };
+
+            response = $"Successfully forced the team {team.Name} to be the next respawn wave!";
+            return true;
         }
     }
 }

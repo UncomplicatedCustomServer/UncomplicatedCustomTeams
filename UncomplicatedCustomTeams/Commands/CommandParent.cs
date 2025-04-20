@@ -3,9 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UncomplicatedCustomTeams.Interfaces;
-using Exiled.API.Extensions;
 using Exiled.Permissions.Extensions;
-using UncomplicatedCustomRoles.Commands;
 
 namespace UncomplicatedCustomTeams.Commands
 {
@@ -18,13 +16,18 @@ namespace UncomplicatedCustomTeams.Commands
 
         public override string[] Aliases { get; } = new string[] { };
 
-        public override string Description { get; } = "Manage the UCT features";
+        public override string Description { get; } = "Manage the UCT features.";
 
         public override void LoadGeneratedCommands()
         {
             RegisteredCommands.Add(new Spawn());
             RegisteredCommands.Add(new Owner());
-            RegisteredCommands.Add(new TeamList());
+            RegisteredCommands.Add(new List());
+            RegisteredCommands.Add(new Reload());
+            RegisteredCommands.Add(new Role());
+            RegisteredCommands.Add(new Errors());
+            RegisteredCommands.Add(new Generate());
+            RegisteredCommands.Add(new Active());
         }
 
         public List<IUCTCommand> RegisteredCommands { get; } = new();
@@ -34,7 +37,7 @@ namespace UncomplicatedCustomTeams.Commands
             if (arguments.Count() == 0)
             {
                 // Help page
-                response = $"\n>> UncomplicatedCustomTeams v{Plugin.Instance.Version} <<\nby FoxWorn3365 & Piwnica\n\nAvailable commands:";
+                response = $"\n>> UncomplicatedCustomTeams v{Plugin.Instance.Version} <<\nby FoxWorn3365 & .Piwnica\n\nAvailable commands:";
 
                 foreach (IUCTCommand Command in RegisteredCommands)
                 {

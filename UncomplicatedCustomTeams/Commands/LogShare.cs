@@ -17,7 +17,7 @@ namespace UncomplicatedCustomTeams.Commands
 
         public override string[] Aliases { get; } = new string[] { };
 
-        public override string Description { get; } = "Share the UCT Debug logs with the developers";
+        public override string Description { get; } = "Share the UCT Debug logs with the developers.";
 
         public override void LoadGeneratedCommands() { }
 

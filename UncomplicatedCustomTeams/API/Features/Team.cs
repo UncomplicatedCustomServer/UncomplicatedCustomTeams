@@ -1,9 +1,9 @@
-﻿using Exiled.API.Enums;
-using Respawning;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using UncomplicatedCustomTeams.Utilities;
+using UncomplicatedCustomTeams.API.Enums;
 using UnityEngine;
 
 namespace UncomplicatedCustomTeams.API.Features
@@ -33,7 +33,6 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// The Id of the custom <see cref="Team"/>
         /// </summary>
-        [Description("The Id of the custom Team")]
         public uint Id { get; set; } = 1;
 
         /// <summary>
@@ -53,15 +52,9 @@ namespace UncomplicatedCustomTeams.API.Features
         public uint SpawnChance { get; set; } = 100;
 
         /// <summary>
-        /// The wave that will be replaced by this custom wave
+        /// Defines the spawn conditions for a custom team.
         /// </summary>
-        public SpawnableFaction SpawnWave { get; set; } = SpawnableFaction.NtfWave;
-
-        /// <summary>
-        /// The SpawnPosition of the wave.<br></br>
-        /// If Vector3.zero or Vector3.one then it will be retrived from the RoleTypeId
-        /// </summary>
-        public Vector3 SpawnPosition { get; set; } = Vector3.zero;
+        public SpawnData SpawnConditions { get; set; } = new();
 
         /// <summary>
         /// The cassie message that will be sent to every player
@@ -76,7 +69,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// Determines whether the Cassie message should be noisy.
         /// </summary>
-        public bool IsNoisy { get; set; } = false;
+        public bool IsNoisy { get; set; } = true;
 
         /// <summary>
         /// The path to the sound file provided by the user in the configuration.
@@ -90,38 +83,121 @@ namespace UncomplicatedCustomTeams.API.Features
         public float SoundVolume { get; set; } = 1f;
 
         /// <summary>
+        /// A list of PlayerRoles.Team whose presence on the map guarantees victory with custom team.
+        /// </summary>
+        [Description("Here, you can define which teams will win against your custom team.")]
+        public List<PlayerRoles.Team> TeamAliveToWin { get; set; } = new();
+
+        /// <summary>
+        /// Retrieves a list of actual PlayerRoles.Team enums based on the teams in TeamAliveToWin.
+        /// </summary>
+        public static List<PlayerRoles.Team> GetWinningTeams()
+        {
+            return Team.List
+                .SelectMany(team => team.TeamAliveToWin)
+                .Distinct()
+                .ToList();
+        }
+
+        /// <summary>
         /// The list of every role that will be a part of this wave
         /// </summary>
         public List<CustomRole> Roles { get; set; } = new()
         {
             new()
             {
+                Id = 1,
+                Team = PlayerRoles.Team.ClassD,
                 SpawnSettings = null,
+                CanEscape = false,
+                RoleAfterEscape = null,
                 MaxPlayers = 1,
+                Priority = RolePriority.First,
+                CustomFlags = null,
             },
             new()
             {
                 Id = 2,
+                Team = PlayerRoles.Team.ClassD,
                 SpawnSettings = null,
-                MaxPlayers = 500
+                CanEscape = false,
+                RoleAfterEscape = null,
+                CustomFlags = null,
+                Priority = RolePriority.Second,
+                MaxPlayers = 1
             }
         };
 
-        public static Team EvaluateSpawn(SpawnableFaction wave)
+        public static Team EvaluateSpawn(string wave)
         {
             List<Team> Teams = new();
-
-            foreach (Team Team in List.Where(t => t.SpawnWave == wave))
+            foreach (Team Team in List.Where(t => t.SpawnConditions.SpawnWave == wave))
+            {
                 for (int a = 0; a < Team.SpawnChance; a++)
                     Teams.Add(Team);
+            }
+            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Count(t => t.SpawnConditions.SpawnWave == wave)}]!\n If the number is less than 100 THERE'S A PROBLEM!");
 
-            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Where(t => t.SpawnWave == wave).Count()}]!\nIf the number is less than 100 THERE's A PROBLEM!");
-
+            if (Teams.Count == 0)
+            {
+                LogManager.Debug("No valid team found, returning...");
+                return null;
+            }
             int Chance = new System.Random().Next(0, 99);
-            if (Teams.Count > Chance)
-                return Teams[Chance];
+            return Teams.Count > Chance ? Teams[Chance] : null;
+        }
 
-            return null;
+        public class SpawnData
+        {
+            public string SpawnWave { get; set; } = "NtfWave";
+            public Vector3 SpawnPosition { get; set; } = Vector3.zero;
+
+            private ItemType _usedItem = ItemType.None;
+            private int? _customItemId = null;
+
+            [Description("Specify the item or custom item ID that triggers this team spawn. Only works if SpawnWave is set to 'UsedItem'.")]
+            public string UsedItem
+            {
+                get
+                {
+                    if (_customItemId.HasValue)
+                        return _customItemId.Value.ToString();
+                    return _usedItem.ToString();
+                }
+                set
+                {
+                    if (int.TryParse(value, out int customItemId))
+                    {
+                        _customItemId = customItemId;
+                        _usedItem = ItemType.None;
+                    }
+                    else if (Enum.GetNames(typeof(ItemType)).Any(name => name.Equals(value, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        _usedItem = (ItemType)Enum.Parse(typeof(ItemType), value, true);
+                        _customItemId = null;
+                    }
+                    else
+                    {
+                        _usedItem = ItemType.None;
+                        _customItemId = null;
+                    }
+                }
+            }
+
+            public ItemType GetUsedItemType() => _usedItem;
+            public int? GetCustomItemId() => _customItemId;
+
+            [Description("Specify the SCP role whose death triggers this team spawn. Only works if SpawnWave is set to 'ScpDeath'.")]
+            public string TargetScp { get; set; } = "None";
+
+            [Description("Setting a SpawnDelay greater than 0 will not work when using NtfWave or ChaosWave!")]
+            public float SpawnDelay { get; set; } = 0f;
+
+            public bool RequiresSpawnType()
+            {
+                return SpawnWave is "AfterWarhead" or "AfterDecontamination" or "UsedItem" or "RoundStarted" or "ScpDeath";
+            }
+
         }
     }
 }

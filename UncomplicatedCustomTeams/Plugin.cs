@@ -7,6 +7,11 @@ using UncomplicatedCustomTeams.Manager;
 using UncomplicatedCustomTeams.Utilities;
 using PlayerHandler = Exiled.Events.Handlers.Player;
 using ServerHandler = Exiled.Events.Handlers.Server;
+using MapHandler = Exiled.Events.Handlers.Map;
+using WarheadHandler = Exiled.Events.Handlers.Warhead;
+using System.Threading.Tasks;
+using Exiled.Loader;
+using System.Linq;
 
 namespace UncomplicatedCustomTeams
 {
@@ -18,11 +23,11 @@ namespace UncomplicatedCustomTeams
 
         public override string Author => "FoxWorn3365 & .piwnica2137";
 
-        public override Version Version => new(0, 9, 0);
+        public override Version Version => new(1, 0, 0);
 
-        public override Version RequiredExiledVersion => new(9,5, 0);
+        public override Version RequiredExiledVersion => new(9, 4, 0);
 
-        public override PluginPriority Priority => PluginPriority.Low;
+        public override PluginPriority Priority => PluginPriority.Medium;
 
         public static SummonedTeam NextTeam { get; set; } = null;
 
@@ -32,6 +37,8 @@ namespace UncomplicatedCustomTeams
 
         internal FileConfigs FileConfigs;
 
+        internal CommentsSystem CommentsSystem;
+
         internal Handler Handler;
 
         public override void OnEnabled()
@@ -39,55 +46,61 @@ namespace UncomplicatedCustomTeams
             Instance = this;
 
             Handler = new();
-            HttpManager = new("uct", uint.MaxValue);
+            HttpManager = new("uct");
             FileConfigs = new();
 
             Team.List.Clear();
             SummonedTeam.List.Clear();
 
-
-            if (!File.Exists(Path.Combine(ConfigPath, "UncomplicatedCustomRoles", ".nohttp")))
-                HttpManager.Start();
+            if (!File.Exists(Path.Combine(ConfigPath, "UncomplicatedCustomTeams", ".nohttp")))
+                HttpManager.RegisterEvents();
 
             PlayerHandler.ChangingRole += Handler.OnChangingRole;
-            //PlayerHandler.Spawning += Handler.OnSpawning;
+            PlayerHandler.Verified += Handler.OnVerified;
+            PlayerHandler.Dying += Handler.OnPlayerDying;
+            WarheadHandler.Detonated += Handler.OnDetonated;
+            PlayerHandler.Destroying += Handler.OnDestroying;
+            MapHandler.AnnouncingChaosEntrance += Handler.GetThisChaosOutOfHere;
+            MapHandler.AnnouncingNtfEntrance += Handler.GetThisNtfOutOfHere;
+            MapHandler.Decontaminating += Handler.OnDecontaminating;
+            PlayerHandler.UsedItem += Handler.OnItemUsed;
             ServerHandler.RespawningTeam += Handler.OnRespawningTeam;
+            ServerHandler.RoundStarted += Handler.OnRoundStarted;
 
             LogManager.Info("===========================================");
             LogManager.Info(" Thanks for using UncomplicatedCustomTeams");
-            LogManager.Info("        by FoxWorn3365 & Dr.Agenda & .piwnica2137");
+            LogManager.Info("        by FoxWorn3365 & Dr.Agenda & .Piwnica");
             LogManager.Info("===========================================");
             LogManager.Info(">> Join our discord: https://discord.gg/5StRGu8EJV <<");
 
-            if (!HttpManager.IsLatestVersion(out Version latest))
-                LogManager.Warn($"You are NOT using the latest version of UncomplicatedCustomTeams!\nCurrent: v{Version} | Latest available: v{latest}\nDownload it from GitHub: https://github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest");
+            Task.Run(delegate
+            {
+                if (HttpManager.LatestVersion.CompareTo(Version) > 0)
+                    LogManager.Warn($"You are NOT using the latest version of UncomplicatedCustomTeams!\nCurrent: v{Version} | Latest available: v{HttpManager.LatestVersion}\nDownload it from GitHub: https://github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest");
+                else if (HttpManager.LatestVersion.CompareTo(Version) < 0)
+                {
+                    LogManager.Warn($"You are using an EXPERIMENTAL or PRE-RELEASE version of UncomplicatedCustomTeams!\nLatest stable release: {HttpManager.LatestVersion}\nWe do not assure that this version won't make your SCP:SL server crash! - Debug log has been enabled!");
+                    if (!Log.DebugEnabled.Contains(Assembly))
+                    {
+                        Config.Debug = true;
+                        Log.DebugEnabled.Add(Assembly);
+                    }
+                }
+            });
 
-            FileConfigs.Welcome();
             FileConfigs.Welcome(Server.Port.ToString());
             FileConfigs.LoadAll();
+            FileConfigs.AddCustomRoleTeams();
+            FileConfigs.AddCustomRoleTeams(Server.Port.ToString());
+            CommentsSystem.AddCommentsToYaml();
+            CommentsSystem.AddCommentsToYaml(Server.Port.ToString());
             FileConfigs.LoadAll(Server.Port.ToString());
 
-            foreach (Team team in Team.List)
-            {
-                bool hasCustomSound = !string.IsNullOrEmpty(team.SoundPath) && team.SoundPath != "/path/to/your/ogg/file";
-                bool hasCassieMessage = !string.IsNullOrEmpty(team.CassieMessage) || !string.IsNullOrEmpty(team.CassieTranslation);
-
-                if (hasCustomSound && hasCassieMessage)
-                {
-                    LogManager.Warn($"Team \"{team.Name}\"(ID: {team.Id}) has both a custom Cassie message and a sound file set. This is not recommended, as both will play simultaneously.");
-                }
-
-                if (hasCustomSound)
-                {
-                    string clipId = $"sound_{team.Id}";
-                    AudioClipStorage.LoadClip(team.SoundPath, clipId);
-                }
-            }
-
-
-
-
             LogManager.Info($"Successfully loaded {Team.List.Count} teams!");
+            foreach (var team in Team.List)
+            {
+                LogManager.Debug($"Loaded team: Name: {team.Name} | ID: {team.Id}");
+            }
 
             base.OnEnabled();
         }
@@ -95,12 +108,20 @@ namespace UncomplicatedCustomTeams
         public override void OnDisabled()
         {
             PlayerHandler.ChangingRole -= Handler.OnChangingRole;
-            //PlayerHandler.Spawning -= Handler.OnSpawning;
+            PlayerHandler.Verified -= Handler.OnVerified;
+            PlayerHandler.Dying -= Handler.OnPlayerDying;
+            PlayerHandler.Destroying -= Handler.OnDestroying;
+            WarheadHandler.Detonated -= Handler.OnDetonated;
+            MapHandler.AnnouncingChaosEntrance -= Handler.GetThisChaosOutOfHere;
+            MapHandler.Decontaminating -= Handler.OnDecontaminating;
+            MapHandler.AnnouncingNtfEntrance -= Handler.GetThisNtfOutOfHere;
+            PlayerHandler.UsedItem -= Handler.OnItemUsed;
             ServerHandler.RespawningTeam -= Handler.OnRespawningTeam;
+            ServerHandler.RoundStarted -= Handler.OnRoundStarted;
 
             Handler = null;
 
-            HttpManager.Stop();
+            HttpManager.UnregisterEvents();
             HttpManager = null;
 
             FileConfigs = null;
