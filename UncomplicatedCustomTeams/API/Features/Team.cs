@@ -187,7 +187,7 @@ namespace UncomplicatedCustomTeams.API.Features
             public ItemType GetUsedItemType() => _usedItem;
             public int? GetCustomItemId() => _customItemId;
 
-            [Description("Specify the SCP role (e.g., Scp106) or use the SCPs team (SCPs) whose death triggers this team spawn. Only SCP_TEAM is allowed when using a team. This setting only applies when SpawnWave is set to 'ScpDeath'.")]
+            [Description("Specify the SCP role (e.g., Scp106) or use the SCPs team (SCPs) whose death triggers this team spawn. Only SCPs is allowed when using a team. This setting only applies when SpawnWave is set to 'ScpDeath'.")]
             public string TargetScp { get; set; } = "None";
 
             [Description("Setting a SpawnDelay greater than 0 will not work when using NtfWave or ChaosWave!")]
