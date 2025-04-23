@@ -3,8 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace UncomplicatedCustomTeams.Utilities
 {
@@ -35,7 +33,7 @@ namespace UncomplicatedCustomTeams.Utilities
                         {
                             { "team_alive_to_win:", "# Here, you can define which teams will win against your custom team." },
                             { "used_item:", "# Specify the item or custom item ID that triggers this team spawn. Only works if SpawnWave is set to 'UsedItem'." },
-                            { "target_scp:", "# Specify the SCP role whose death triggers this team spawn. Only works if SpawnWave is set to 'ScpDeath'." },
+                            { "target_scp:", "# Specify the SCP role (e.g., Scp106) or use the SCPs team (SCPs) whose death triggers this team spawn. Only SCP_TEAM is allowed when using a team. This setting only applies when SpawnWave is set to 'ScpDeath'." },
                             { "spawn_delay:", "# Setting a SpawnDelay greater than 0 will not work when using NtfWave or ChaosWave!" }
                         };
                         for (int i = 0; i < lines.Length; i++)

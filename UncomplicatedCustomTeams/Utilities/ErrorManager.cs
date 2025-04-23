@@ -3,11 +3,8 @@ using PlayerRoles;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using UncomplicatedCustomTeams.API.Enums;
-using UncomplicatedCustomTeams.API.Features;
 using UnityEngine;
 
 namespace UncomplicatedCustomTeams.Utilities
@@ -164,16 +161,18 @@ namespace UncomplicatedCustomTeams.Utilities
                     }
 
                     string targetScp = team.SpawnConditions.TargetScp;
-                    if (!string.IsNullOrWhiteSpace(targetScp) && targetScp != "None")
+                    if (!string.IsNullOrWhiteSpace(targetScp) && !targetScp.Equals("None", StringComparison.OrdinalIgnoreCase))
                     {
-                        bool isValidScp = Enum.TryParse(targetScp, ignoreCase: true, out RoleTypeId parsedRole) && targetScp.StartsWith("Scp", StringComparison.OrdinalIgnoreCase);
+                        bool isValidScp =
+                            (Enum.TryParse(targetScp, true, out RoleTypeId parsedRole) && targetScp.StartsWith("Scp", StringComparison.OrdinalIgnoreCase))
+                            || targetScp.Equals("SCPs", StringComparison.OrdinalIgnoreCase);
 
                         if (!isValidScp)
                         {
                             string message = $"Invalid TargetSCP value '{targetScp}' for team {team.Name} (ID: {team.Id}).";
-                            string suggestion = "TargetSCP must be a valid SCP RoleTypeId (e.g., Scp173, Scp049, Scp939).";
+                            string suggestion = "TargetSCP must be a valid SCP RoleTypeId (e.g., Scp173, Scp049, Scp939) or 'SCPs'.";
                             ErrorManager.Add(filePath, message, suggestion: suggestion);
-                            LogManager.Error($"{message}\n {suggestion}");
+                            LogManager.Error($"{message}\n{suggestion}");
                             return false;
                         }
                     }

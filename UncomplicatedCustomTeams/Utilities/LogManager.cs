@@ -6,7 +6,6 @@ using System.Net.Http;
 using System.Net;
 using Exiled.API.Features;
 using UncomplicatedCustomTeams.API.Features;
-using System.Linq;
 
 namespace UncomplicatedCustomTeams.Utilities
 {

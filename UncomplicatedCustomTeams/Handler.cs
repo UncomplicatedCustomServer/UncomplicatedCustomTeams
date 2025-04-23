@@ -1,21 +1,16 @@
 ﻿using Exiled.API.Features;
 using Exiled.Events.EventArgs.Player;
-using Exiled.API.Enums;
 using Exiled.Events.EventArgs.Server;
 using MEC;
 using System.Threading.Tasks;
 using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.API.Storage;
 using UncomplicatedCustomTeams.Utilities;
-using Exiled.Events.EventArgs.Warhead;
 using System.Collections.Generic;
-using Respawning.Announcements;
 using Exiled.Events.EventArgs.Map;
 using System.Linq;
-using UncomplicatedCustomRoles.API.Features;
 using PlayerRoles;
 using static UncomplicatedCustomTeams.API.Features.Team;
-using UnityEngine;
 using Exiled.API.Features.Items;
 using Exiled.CustomItems.API.Features;
 using System;
@@ -29,8 +24,11 @@ namespace UncomplicatedCustomTeams
         internal bool TeamCleanerEnabled = false;
 
         internal bool ForcedNextWave = false;
+
+        internal bool CustomTeamSpawnedThisWave = false;
         public void OnRespawningTeam(RespawningTeamEventArgs ev)
         {
+            CustomTeamSpawnedThisWave = false;
             Bucket.SpawnBucket = new();
             foreach (Player Player in ev.Players)
                 Bucket.SpawnBucket.Add(Player.Id);
@@ -40,6 +38,7 @@ namespace UncomplicatedCustomTeams
             {
                 ForcedNextWave = false;
                 Plugin.NextTeam.RefreshPlayers(ev.Players);
+                CustomTeamSpawnedThisWave = true;
                 LogManager.Debug($"Forced wave executed for {Plugin.NextTeam.Team.Name} with ID {Plugin.NextTeam.Team.Id}");
                 return;
             }
@@ -69,6 +68,7 @@ namespace UncomplicatedCustomTeams
             else if (team.SpawnConditions?.SpawnWave == faction)
             {
                 Plugin.NextTeam = SummonedTeam.Summon(team, ev.Players);
+                CustomTeamSpawnedThisWave = Plugin.NextTeam != null;
                 LogManager.Debug($"Next team selected: {Plugin.NextTeam?.Team?.Name}");
             }
             else
@@ -81,7 +81,7 @@ namespace UncomplicatedCustomTeams
 
         public void GetThisChaosOutOfHere(AnnouncingChaosEntranceEventArgs ev)
         {
-            if (SummonedTeam.List.Any())
+            if (CustomTeamSpawnedThisWave)
             {
                 ev.IsAllowed = false;
             }
@@ -89,11 +89,12 @@ namespace UncomplicatedCustomTeams
 
         public void GetThisNtfOutOfHere(AnnouncingNtfEntranceEventArgs ev)
         {
-            if (SummonedTeam.List.Any())
+            if (CustomTeamSpawnedThisWave)
             {
                 ev.IsAllowed = false;
             }
         }
+
         public void OnRoundStarted()
         {
             LogManager.Debug("Round started, checking for RoundStarted spawns...");
@@ -180,14 +181,29 @@ namespace UncomplicatedCustomTeams
                 return;
             }
             var spawnData = team.SpawnConditions;
-
             if (Enum.TryParse(spawnData.TargetScp, true, out RoleTypeId targetRole) && targetRole != RoleTypeId.None)
             {
                 if (targetRole != ev.Player.Role.Type)
                 {
-                    LogManager.Debug($"{ev.Player.Role.Type} does not match required SCP {targetRole}.");
                     return;
                 }
+            }
+            else if (Enum.TryParse(spawnData.TargetScp, true, out PlayerRoles.Team teamEnum))
+            {
+                if (teamEnum != PlayerRoles.Team.SCPs)
+                {
+                    return;
+                }
+
+                if (ev.Player.Role.Team != teamEnum)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                LogManager.Debug($"Invalid TargetScp value: {spawnData.TargetScp}. Must be a valid RoleTypeId or Team.");
+                return;
             }
             LogManager.Debug($"ScpDeath spawn condition met. Team to be spawned: {team.Name}");
 
@@ -376,6 +392,7 @@ namespace UncomplicatedCustomTeams
                     {
                         await Task.Delay(2500);
                         Plugin.NextTeam = null;
+                        CustomTeamSpawnedThisWave = false;
                         TeamCleanerEnabled = false;
                     });
                 }

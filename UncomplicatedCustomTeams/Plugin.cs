@@ -2,16 +2,14 @@
 using Exiled.API.Features;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.Manager;
 using UncomplicatedCustomTeams.Utilities;
+using MapHandler = Exiled.Events.Handlers.Map;
 using PlayerHandler = Exiled.Events.Handlers.Player;
 using ServerHandler = Exiled.Events.Handlers.Server;
-using MapHandler = Exiled.Events.Handlers.Map;
 using WarheadHandler = Exiled.Events.Handlers.Warhead;
-using System.Threading.Tasks;
-using Exiled.Loader;
-using System.Linq;
 
 namespace UncomplicatedCustomTeams
 {

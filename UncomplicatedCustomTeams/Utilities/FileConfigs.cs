@@ -1,11 +1,9 @@
-﻿using Exiled.API.Extensions;
-using Exiled.API.Features;
+﻿using Exiled.API.Features;
 using Exiled.Loader;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using UncomplicatedCustomTeams.API.Features;
 using UnityEngine;
 
@@ -83,7 +81,7 @@ namespace UncomplicatedCustomTeams.Utilities
                             team.SpawnConditions.SpawnDelay = 0f;
                         }
 
-                        if (team.SpawnConditions.RequiresSpawnType() && team.SpawnConditions.SpawnPosition == Vector3.zero)
+                        if (team.SpawnConditions.RequiresSpawnPosition() && team.SpawnConditions.SpawnPosition == Vector3.zero)
                         {
                             string message = $"SpawnWave '{team.SpawnConditions.SpawnWave}' requires a SpawnPosition, but none was set.";
                             string suggestion = "Set a valid SpawnPosition (x,y,z) for custom spawn waves.";

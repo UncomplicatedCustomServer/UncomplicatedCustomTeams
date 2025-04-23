@@ -3,7 +3,6 @@ using Exiled.API.Features;
 using Exiled.Permissions.Extensions;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.Interfaces;
 

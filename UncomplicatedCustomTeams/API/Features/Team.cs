@@ -187,17 +187,20 @@ namespace UncomplicatedCustomTeams.API.Features
             public ItemType GetUsedItemType() => _usedItem;
             public int? GetCustomItemId() => _customItemId;
 
-            [Description("Specify the SCP role whose death triggers this team spawn. Only works if SpawnWave is set to 'ScpDeath'.")]
+            [Description("Specify the SCP role (e.g., Scp106) or use the SCPs team (SCPs) whose death triggers this team spawn. Only SCP_TEAM is allowed when using a team. This setting only applies when SpawnWave is set to 'ScpDeath'.")]
             public string TargetScp { get; set; } = "None";
 
             [Description("Setting a SpawnDelay greater than 0 will not work when using NtfWave or ChaosWave!")]
             public float SpawnDelay { get; set; } = 0f;
 
-            public bool RequiresSpawnType()
+            /// <summary>
+            /// Whether this spawn type requires a defined spawn position.
+            /// </summary>
+            ///<returns><c>true</c> if the spawn position is required; otherwise, <c>false</c>.</returns>
+            public bool RequiresSpawnPosition()
             {
                 return SpawnWave is "AfterWarhead" or "AfterDecontamination" or "UsedItem" or "RoundStarted" or "ScpDeath";
             }
-
         }
     }
 }

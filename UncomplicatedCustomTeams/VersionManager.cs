@@ -5,11 +5,9 @@ using System;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography;
-using System.Security.Policy;
 using System.Threading.Tasks;
 using UncomplicatedCustomRoles.Manager.NET;
 using UncomplicatedCustomTeams.Utilities;
-using UncomplicatedCustomTeams;
 
 namespace UncomplicatedCustomTeams.Manager
 {

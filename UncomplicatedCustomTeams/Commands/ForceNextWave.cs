@@ -1,12 +1,7 @@
 ﻿using CommandSystem;
-using Exiled.API.Features;
 using System.Collections.Generic;
 using System.Linq;
 using UncomplicatedCustomTeams.API.Features;
-using UncomplicatedCustomTeams.API.Storage;
-using UncomplicatedCustomTeams.Interfaces;
-using Respawning;
-using Exiled.API.Enums;
 
 namespace UncomplicatedCustomTeams.Commands
 {
