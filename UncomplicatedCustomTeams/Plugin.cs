@@ -21,7 +21,7 @@ namespace UncomplicatedCustomTeams
 
         public override string Author => "FoxWorn3365 & .piwnica2137";
 
-        public override Version Version => new(1, 0, 0);
+        public override Version Version => new(1, 1, 0);
 
         public override Version RequiredExiledVersion => new(9, 4, 0);
 

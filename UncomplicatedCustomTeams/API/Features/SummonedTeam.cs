@@ -185,7 +185,7 @@ namespace UncomplicatedCustomTeams.API.Features
         }
 
         /// <summary>
-        /// Checks if a team can spawn based on the number of spectators.
+        /// Checks if a team can spawn based on the number of spectators and team role limits.
         /// </summary>
         public static List<Player> CanSpawnTeam(Team team)
         {
@@ -194,16 +194,29 @@ namespace UncomplicatedCustomTeams.API.Features
 
             List<Player> allPlayers = Player.List.ToList();
             int totalPlayers = allPlayers.Count;
+
             LogManager.Debug($"Total players: {totalPlayers}, MinPlayers required: {team.MinPlayers}");
             if (totalPlayers < team.MinPlayers)
             {
                 LogManager.Debug($"Not enough players on the server to spawn team {team.Name}.");
                 return new List<Player>();
             }
+
             List<Player> spectators = allPlayers
                 .Where(p => !p.IsAlive && p.Role.Type == RoleTypeId.Spectator && !p.IsOverwatchEnabled)
                 .ToList();
-            LogManager.Debug($"Spectators available: {spectators.Count}");
+
+            int maxPlayersForTeam = team.Roles.Sum(role => role.MaxPlayers);
+            LogManager.Debug($"Spectators available: {spectators.Count}, MaxPlayers for team {team.Name}: {maxPlayersForTeam}");
+            if (spectators.Count >= maxPlayersForTeam)
+            {
+                LogManager.Info($"Team {team.Name} is eligible for spawn. Spectators available: {spectators.Count}, required: {maxPlayersForTeam}");
+            }
+            else
+            {
+                LogManager.Debug($"Not enough spectators to spawn team {team.Name}. Required: {maxPlayersForTeam}, available: {spectators.Count}");
+                return new List<Player>();
+            }
             LogManager.Debug($"Spawning all {spectators.Count} spectators for team {team.Name}.");
             return spectators;
         }
