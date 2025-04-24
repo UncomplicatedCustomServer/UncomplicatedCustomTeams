@@ -172,6 +172,7 @@ namespace UncomplicatedCustomTeams
         {
             if (ev.Player == null || !ev.Player.IsScp)
                 return;
+
             LogManager.Debug($"{ev.Player.Role.Type} is dying, checking for ScpDeath spawn condition...");
 
             UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn("ScpDeath");
@@ -180,31 +181,24 @@ namespace UncomplicatedCustomTeams
                 LogManager.Debug("No valid team found with ScpDeath condition.");
                 return;
             }
+
             var spawnData = team.SpawnConditions;
             if (Enum.TryParse(spawnData.TargetScp, true, out RoleTypeId targetRole) && targetRole != RoleTypeId.None)
             {
                 if (targetRole != ev.Player.Role.Type)
-                {
                     return;
-                }
             }
-            else if (Enum.TryParse(spawnData.TargetScp, true, out PlayerRoles.Team teamEnum))
+            else if (spawnData.TargetScp.Equals("SCPs", StringComparison.OrdinalIgnoreCase))
             {
-                if (teamEnum != PlayerRoles.Team.SCPs)
-                {
+                if (ev.Player.Role.Team != PlayerRoles.Team.SCPs)
                     return;
-                }
-
-                if (ev.Player.Role.Team != teamEnum)
-                {
-                    return;
-                }
             }
             else
             {
-                LogManager.Debug($"Invalid TargetScp value: {spawnData.TargetScp}. Must be a valid RoleTypeId or Team.");
+                LogManager.Debug($"Invalid TargetScp value: {spawnData.TargetScp}. Only valid RoleTypeIds or 'SCPs' as Team are allowed.");
                 return;
             }
+
             LogManager.Debug($"ScpDeath spawn condition met. Team to be spawned: {team.Name}");
 
             Timing.CallDelayed(spawnData.SpawnDelay, () =>
@@ -226,6 +220,7 @@ namespace UncomplicatedCustomTeams
                     LogManager.Debug($"Assigning role to {summonedRole.Player.Nickname} ({summonedRole.Player.Id})...");
                     summonedRole.AddRole();
                 }
+
                 LogManager.Debug("All players have been assigned roles.");
             });
         }
