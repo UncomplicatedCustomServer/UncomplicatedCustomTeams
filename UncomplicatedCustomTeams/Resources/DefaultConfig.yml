@@ -17,7 +17,6 @@ teams:
   is_noisy: true
   sound_path: '/path/to/your/ogg/file'
   sound_volume: 1
-  TEST: 123
   team_alive_to_win: []
   roles:
   -
