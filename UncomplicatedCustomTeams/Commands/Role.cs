@@ -51,7 +51,7 @@ namespace UncomplicatedCustomTeams.Commands
                 return false;
             }
 
-            CustomRole role = team.Roles.FirstOrDefault(r => r.Id == roleId);
+            CustomRole role = team.TeamRoles.FirstOrDefault(r => r.Id == roleId);
             if (role == null)
             {
                 response = $"Role with ID {roleId} not found in team {team.Name}.";

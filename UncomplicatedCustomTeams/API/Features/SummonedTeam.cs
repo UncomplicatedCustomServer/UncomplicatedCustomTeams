@@ -158,7 +158,7 @@ namespace UncomplicatedCustomTeams.API.Features
 
             foreach (Player Player in players)
             {
-                foreach (CustomRole role in team.Roles.OrderBy(r => r.Priority))
+                foreach (CustomRole role in team.TeamRoles.OrderBy(r => r.Priority))
                 {
                     if (SummonedTeam.SummonedPlayersCount(role) < role.MaxPlayers)
                     {
@@ -206,7 +206,7 @@ namespace UncomplicatedCustomTeams.API.Features
                 .Where(p => !p.IsAlive && p.Role.Type == RoleTypeId.Spectator && !p.IsOverwatchEnabled)
                 .ToList();
 
-            int maxPlayersForTeam = team.Roles.Sum(role => role.MaxPlayers);
+            int maxPlayersForTeam = team.TeamRoles.Sum(role => role.MaxPlayers);
             LogManager.Debug($"Spectators available: {spectators.Count}, MaxPlayers for team {team.Name}: {maxPlayersForTeam}");
             if (spectators.Count >= maxPlayersForTeam)
             {
@@ -228,7 +228,7 @@ namespace UncomplicatedCustomTeams.API.Features
         {
             foreach (Player Player in players)
             {
-                foreach (CustomRole Role in Team.Roles.OrderBy(r => r.Priority))
+                foreach (CustomRole Role in Team.TeamRoles.OrderBy(r => r.Priority))
                 {
                     if (SummonedPlayersCount(Role) < Role.MaxPlayers)
                     {
