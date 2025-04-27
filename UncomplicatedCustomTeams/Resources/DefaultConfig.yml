@@ -1,34 +1,34 @@
 teams:
 - id: 1
-  name: 'GOC'
+  name: GOC
   min_players: 1
   spawn_chance: 100
   spawn_conditions:
-    spawn_wave: 'NtfWave'
+    spawn_wave: NtfWave
     spawn_position:
       x: 0
       y: 0
       z: 0
-    used_item: 'None'
-    target_scp: 'None'
+    used_item: None
+    target_scp: None
     spawn_delay: 0
-  cassie_message: 'team arrived'
-  cassie_translation: 'Team arrived!'
+  cassie_message: team arrived
+  cassie_translation: Team arrived!
   is_noisy: true
-  sound_path: '/path/to/your/ogg/file'
+  sound_path: /path/to/your/ogg/file
   sound_volume: 1
-  team_alive_to_win: []
+  team_alive_to_win:
+  - ClassD
   roles:
-  -
-    max_players: 1
+  - max_players: 1
     priority: First
     id: 1
-    name: 'Janitor'
+    name: Janitor
     override_role_name: false
-    nickname: 'D-%dnumber%'
-    custom_info: 'Janitor'
-    badge_name: 'Janitor'
-    badge_color: 'pumpkin'
+    nickname: D-%dnumber%
+    custom_info: Janitor
+    badge_name: Janitor
+    badge_color: pumpkin
     role: ClassD
     team: ClassD
     role_appearance: ClassD
@@ -58,11 +58,12 @@ teams:
       x: 1
       y: 1
       z: 1
-    spawn_broadcast: |-
+    spawn_broadcast: >-
       You are a <color=orange><b>Janitor</b></color>!
+
       Clean the Light Containment Zone!
     spawn_broadcast_duration: 5
-    spawn_hint: 'This hint will be shown when you will spawn as a Janitor!'
+    spawn_hint: This hint will be shown when you will spawn as a Janitor!
     spawn_hint_duration: 5
     custom_inventory_limits:
       Medical: 2
@@ -76,16 +77,15 @@ teams:
     spawn_settings: 
     custom_flags: 
     ignore_spawn_system: false
-  -
-    max_players: 1
+  - max_players: 1
     priority: Second
     id: 2
-    name: 'Janitor'
+    name: Janitor
     override_role_name: false
-    nickname: 'D-%dnumber%'
-    custom_info: 'Janitor'
-    badge_name: 'Janitor'
-    badge_color: 'pumpkin'
+    nickname: D-%dnumber%
+    custom_info: Janitor
+    badge_name: Janitor
+    badge_color: pumpkin
     role: ClassD
     team: ClassD
     role_appearance: ClassD
@@ -115,11 +115,12 @@ teams:
       x: 1
       y: 1
       z: 1
-    spawn_broadcast: |-
+    spawn_broadcast: >-
       You are a <color=orange><b>Janitor</b></color>!
+
       Clean the Light Containment Zone!
     spawn_broadcast_duration: 5
-    spawn_hint: 'This hint will be shown when you will spawn as a Janitor!'
+    spawn_hint: This hint will be shown when you will spawn as a Janitor!
     spawn_hint_duration: 5
     custom_inventory_limits:
       Medical: 2
@@ -133,3 +134,7 @@ teams:
     spawn_settings: 
     custom_flags: 
     ignore_spawn_system: false
+  ecr_roles:
+  - max_players: 1
+    priority: Third
+    id: 1

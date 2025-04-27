@@ -143,7 +143,7 @@ namespace UncomplicatedCustomTeams.API.Features
         {
             new()
             {
-                Id = 41,
+                Id = 1,
                 Priority = RolePriority.Third,
                 MaxPlayers = 1,
             }
