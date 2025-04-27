@@ -165,7 +165,7 @@ namespace UncomplicatedCustomTeams.Utilities
                             }
                         }
 
-                        Timing.CallDelayed(10f, () =>
+                        Timing.CallDelayed(Plugin.Instance.Config.ExiledCustomRoleCheckDelay, () =>
                         {
                             foreach (var role in team.EcrRoles)
                             {
@@ -273,7 +273,7 @@ namespace UncomplicatedCustomTeams.Utilities
                         if (!yamlTeam.ContainsKey("ecr_roles") || yamlTeam["ecr_roles"] == null)
                         {
                             LogManager.Debug($"{teamName} has no ecr_roles entry, no EXILED roles will be added. Automatically generating empty entry...");
-                            yamlTeam.Add("ecr_roles", new List<ExiledCustomRole> { new ExiledCustomRole { Id = 999, MaxPlayers = 0, Priority = API.Enums.RolePriority.Fifth } });
+                            yamlTeam.Add("ecr_roles", new List<ExiledCustomRole> { new ExiledCustomRole { Id = 999, MaxPlayers = 1, Priority = API.Enums.RolePriority.Fifth } });
                         }
 
                         else if (yamlTeam["ecr_roles"] is not List<object> ecrRolesList)
