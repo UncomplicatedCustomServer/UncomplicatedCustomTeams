@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using UncomplicatedCustomTeams.API.Enums;
+using UncomplicatedCustomTeams.API.Features;
 using UnityEngine;
 
 namespace UncomplicatedCustomTeams.Utilities
@@ -245,7 +246,7 @@ namespace UncomplicatedCustomTeams.Utilities
                             return false;
                         }
 
-                        if (!roleIds.Add(role.Id))
+                        if (role is UncomplicatedCustomRole && !roleIds.Add(role.Id))
                         {
                             string message = $"Duplicate role ID {role.Id} in team {team.Name}!";
                             string suggestion = "Each role ID must be unique within its team.";
