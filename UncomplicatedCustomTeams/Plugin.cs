@@ -87,10 +87,7 @@ namespace UncomplicatedCustomTeams
             });
 
             FileConfigs.Welcome(Server.Port.ToString());
-            FileConfigs.LoadAll();
-            FileConfigs.AddCustomRoleTeams();
             FileConfigs.AddCustomRoleTeams(Server.Port.ToString());
-            CommentsSystem.AddCommentsToYaml();
             CommentsSystem.AddCommentsToYaml(Server.Port.ToString());
             FileConfigs.LoadAll(Server.Port.ToString());
 

@@ -202,7 +202,6 @@ namespace UncomplicatedCustomTeams.Utilities
             }
         }
 
-
         public void Welcome(string localDir = "")
         {
             if (!Is(localDir))
@@ -271,15 +270,22 @@ namespace UncomplicatedCustomTeams.Utilities
                             continue;
                         }
 
-                        if (!yamlTeam.ContainsKey("ecr_roles") || yamlTeam["ecr_roles"] == null)
+                        if (!yamlTeam.TryGetValue("ecr_roles", out var ecrRolesObj) || ecrRolesObj == null)
                         {
-                            LogManager.Debug($"{teamName} has no ecr_roles entry, no EXILED roles will be added. Automatically generating empty entry...");
-                            yamlTeam.Add("ecr_roles", new List<ExiledCustomRole> { new ExiledCustomRole { Id = 999, MaxPlayers = 1, Priority = API.Enums.RolePriority.Fifth } });
+                            LogManager.Debug($"{teamName} has no ecr_roles entry, generating default...");
+                            yamlTeam["ecr_roles"] = new List<Dictionary<string, object>> { new() { { "id", 999 }, { "max_players", 1 }, { "priority", "Fifth" } } };
                         }
-
-                        else if (yamlTeam["ecr_roles"] is not List<object> ecrRolesList)
+                        else if (ecrRolesObj is List<object> ecrRolesList)
                         {
-                            continue;
+                            if (ecrRolesList.Count == 0)
+                            {
+                                LogManager.Debug($"{teamName} has empty ecr_roles list, generating default...");
+                                ecrRolesList.Add(new Dictionary<string, object> { { "id", 999 }, { "max_players", 1 }, { "priority", "Fifth" } });
+                            }
+                        }
+                        else
+                        {
+                            LogManager.Debug($"{teamName} has invalid ecr_roles format, skipping...");
                         }
 
                         var roles = new List<Dictionary<string, object>>();

@@ -20,10 +20,24 @@ namespace UncomplicatedCustomTeams.API.Features
         public int Id { get; set; }
 
         [YamlIgnore]
-        public string Name => CustomRole.Name ?? "Unknown Role";
+        public string Name
+        {
+            get
+            {
+                var role = CustomRole;
+                return role != null ? role.Name : "Unknown Role";
+            }
+        }
 
         [YamlIgnore]
-        public RoleTypeId Role => CustomRole.Role;
+        public RoleTypeId Role
+        {
+            get
+            {
+                var role = CustomRole;
+                return role != null ? role.Role : RoleTypeId.None;
+            }
+        }
 
         public void Spawn(Player player)
         {
