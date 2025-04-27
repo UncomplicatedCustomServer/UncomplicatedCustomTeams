@@ -11,7 +11,7 @@ using YamlDotNet.Serialization;
 
 namespace UncomplicatedCustomTeams.API.Features
 {
-    public class ExiledCustomRole : CustomRole
+    public class ExiledCustomRole : IUCTCustomRole
     {
         [YamlIgnore]
         private Exiled.CustomRoles.API.Features.CustomRole CustomRole => Exiled.CustomRoles.API.Features.CustomRole.Get((uint)Id);

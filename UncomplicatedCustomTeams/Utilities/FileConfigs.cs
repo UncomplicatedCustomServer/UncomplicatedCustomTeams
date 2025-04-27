@@ -138,7 +138,7 @@ namespace UncomplicatedCustomTeams.Utilities
                             continue;
                         }
 
-                        HashSet<int> usedRoleIds = Team.List.SelectMany(t => t.TeamRoles).Select(r => r.Id).ToHashSet();
+                        HashSet<int> usedRoleIds = Team.List.SelectMany(t => t.Roles).Select(r => r.Id).ToHashSet();
 
                         foreach (var role in team.Roles)
                         {
@@ -163,10 +163,6 @@ namespace UncomplicatedCustomTeams.Utilities
                             }
                         }
 
-                        foreach (var role in team.EcrRoles)
-                        {
-                            usedRoleIds.Add(role.Id);
-                        }
                         LogManager.Debug($"Proposed to the registerer the external team '{team.Name}' (ID: {team.Id}) from file: {file}");
                         action(team);
                     }

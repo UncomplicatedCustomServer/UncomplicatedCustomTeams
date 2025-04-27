@@ -1,17 +1,12 @@
 ﻿using Exiled.API.Features;
-using System;
-using System.Collections.Generic;
+using PlayerRoles;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UncomplicatedCustomRoles.API.Features;
-using UncomplicatedCustomRoles.Extensions;
 using UncomplicatedCustomTeams.API.Enums;
+using YamlDotNet.Serialization;
 
 namespace UncomplicatedCustomTeams.API.Features
 {
-    public class UncomplicatedCustomRole : UncomplicatedCustomRoles.API.Features.CustomRole, IUCTCustomRole
+    public interface IUCTCustomRole
     {
         /// <summary>
         /// The maximum number of players that can have this role in this wave
@@ -24,11 +19,15 @@ namespace UncomplicatedCustomTeams.API.Features
         /// The lower the value, the higher the priority.
         /// </summary>
         [Description("Priority of assigning custom role in Team (First -> Fourth). The lower the value, the higher the priority.")]
-        public RolePriority Priority { get; set; } = RolePriority.First;
+        public RolePriority Priority { get; set; }
 
-        public void Spawn(Player player)
-        {
-            player.SetCustomRole(this);
-        }
+        public int Id { get; set; }
+
+        public string Name { get; }
+
+        [YamlIgnore]
+        public RoleTypeId Role { get; }
+
+        public void Spawn(Player player);
     }
 }

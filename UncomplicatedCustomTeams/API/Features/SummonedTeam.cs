@@ -158,7 +158,7 @@ namespace UncomplicatedCustomTeams.API.Features
 
             foreach (Player Player in players)
             {
-                foreach (CustomRole role in team.TeamRoles.OrderBy(r => r.Priority))
+                foreach (IUCTCustomRole role in team.TeamRoles.OrderBy(r => r.Priority))
                 {
                     if (SummonedTeam.SummonedPlayersCount(role) < role.MaxPlayers)
                     {
@@ -228,7 +228,7 @@ namespace UncomplicatedCustomTeams.API.Features
         {
             foreach (Player Player in players)
             {
-                foreach (CustomRole Role in Team.TeamRoles.OrderBy(r => r.Priority))
+                foreach (IUCTCustomRole Role in Team.TeamRoles.OrderBy(r => r.Priority))
                 {
                     if (SummonedPlayersCount(Role) < Role.MaxPlayers)
                     {
@@ -242,7 +242,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// Counts the number of players assigned to a specific custom role.
         /// </summary>
-        public int SummonedPlayersCount(CustomRole role)
+        public int SummonedPlayersCount(IUCTCustomRole role)
         {
             return Players.Where(cr => cr.CustomRole == role).Count();
         }
@@ -250,7 +250,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// Gets the list of summoned players for a specific custom role.
         /// </summary>
-        public IEnumerable<SummonedCustomRole> SummonedPlayersGet(CustomRole role) => Players.Where(cr => cr.CustomRole == role);
+        public IEnumerable<SummonedCustomRole> SummonedPlayersGet(IUCTCustomRole role) => Players.Where(cr => cr.CustomRole == role);
 
         /// <summary>
         /// Gets the summoned player role for a specific player.

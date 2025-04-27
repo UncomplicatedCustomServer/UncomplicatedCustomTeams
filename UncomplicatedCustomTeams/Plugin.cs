@@ -25,7 +25,7 @@ namespace UncomplicatedCustomTeams
 
         public override Version RequiredExiledVersion => new(9, 4, 0);
 
-        public override PluginPriority Priority => PluginPriority.Lowest;
+        public override PluginPriority Priority => PluginPriority.Medium;
 
         public static SummonedTeam NextTeam { get; set; } = null;
 

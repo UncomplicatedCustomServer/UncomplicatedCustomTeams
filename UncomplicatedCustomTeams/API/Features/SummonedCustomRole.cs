@@ -18,7 +18,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// The CustomRole instance for the given player
         /// </summary>
-        public CustomRole CustomRole { get; }
+        public IUCTCustomRole CustomRole { get; }
 
         public SummonedTeam Team { get; }
 
@@ -27,7 +27,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// </summary>
         public bool IsRoleSet { get; private set; } = false;
 
-        public SummonedCustomRole(SummonedTeam team, Player player, CustomRole role)
+        public SummonedCustomRole(SummonedTeam team, Player player, IUCTCustomRole role)
         {
             Team = team;
             Player = player;

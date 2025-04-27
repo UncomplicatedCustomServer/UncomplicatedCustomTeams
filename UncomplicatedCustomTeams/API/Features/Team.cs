@@ -104,7 +104,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// The list of every role that will be a part of this wave
         /// </summary>
         [YamlIgnore]
-        public List<CustomRole> TeamRoles => Roles.OfType<CustomRole>().Concat(EcrRoles).ToList();
+        public List<IUCTCustomRole> TeamRoles => Roles.OfType<IUCTCustomRole>().Concat(EcrRoles).ToList();
 
         /// <summary>
         /// The list of every UCR role that will be a part of this wave
