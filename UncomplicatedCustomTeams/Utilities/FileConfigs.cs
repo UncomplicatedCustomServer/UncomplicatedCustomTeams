@@ -1,9 +1,11 @@
 ﻿using Exiled.API.Features;
 using Exiled.Loader;
+using MEC;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UncomplicatedCustomRoles.API.Features;
 using UncomplicatedCustomTeams.API.Features;
 using UnityEngine;
 
@@ -164,6 +166,21 @@ namespace UncomplicatedCustomTeams.Utilities
                             }
                         }
 
+                        Timing.CallDelayed(Plugin.Instance.Config.ExiledCustomRoleCheckDelay, () =>
+                        {
+                            foreach (var role in team.EcrRoles)
+                            {
+                                if (!Exiled.CustomRoles.API.Features.CustomRole.TryGet((uint)role.Id, out var cRole))
+                                {
+                                    string warning = $"Exiled Custom Role of ID {role.Id} not found!";
+                                    string suggestion = "Ensure that the role is properly registered by its plugin in the future.";
+                                    ErrorManager.Add(file, warning, suggestion: suggestion);
+                                    LogManager.Warn($"{warning}\n{suggestion}");
+                                    team.EcrRoles.Remove(role);
+                                }
+                            }
+                        });
+
                         LogManager.Debug($"Proposed to the registerer the external team '{team.Name}' (ID: {team.Id}) from file: {file}");
                         action(team);
                     }
@@ -250,6 +267,17 @@ namespace UncomplicatedCustomTeams.Utilities
                         }
 
                         if (yamlTeam["roles"] is not List<object> rolesList)
+                        {
+                            continue;
+                        }
+
+                        if (!yamlTeam.ContainsKey("ecr_roles") || yamlTeam["ecr_roles"] == null)
+                        {
+                            LogManager.Debug($"{teamName} has no ecr_roles entry, no EXILED roles will be added. Automatically generating empty entry...");
+                            yamlTeam.Add("ecr_roles", new List<ExiledCustomRole> { new ExiledCustomRole { Id = 999, MaxPlayers = 1, Priority = API.Enums.RolePriority.Fifth } });
+                        }
+
+                        else if (yamlTeam["ecr_roles"] is not List<object> ecrRolesList)
                         {
                             continue;
                         }
