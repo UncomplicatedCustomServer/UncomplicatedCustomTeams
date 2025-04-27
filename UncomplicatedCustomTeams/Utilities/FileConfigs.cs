@@ -27,6 +27,7 @@ namespace UncomplicatedCustomTeams.Utilities
         public void LoadAll(string localDir = "")
         {
             LoadErrors.Clear();
+            AutoUpdater.EnsureConfigIsUpToDate(localDir);
             AddCustomRoleTeams(localDir);
             LoadAction(Team.List.Add, localDir);
         }
