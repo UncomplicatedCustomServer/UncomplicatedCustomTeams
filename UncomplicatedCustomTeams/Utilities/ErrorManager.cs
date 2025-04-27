@@ -206,7 +206,7 @@ namespace UncomplicatedCustomTeams.Utilities
                         return false;
                     }
 
-                    if (team.Roles == null || team.Roles.Count == 0)
+                    if (team.TeamRoles == null || team.TeamRoles.Count == 0)
                     {
                         string message = $"Team {team.Name} (ID: {team.Id}) has no roles defined!";
                         string suggestion = "Define at least one role inside each team using the 'roles:' block.";
@@ -234,7 +234,7 @@ namespace UncomplicatedCustomTeams.Utilities
                     }
 
                     HashSet<int> roleIds = new();
-                    foreach (var role in team.Roles)
+                    foreach (var role in team.TeamRoles)
                     {
                         if (string.IsNullOrWhiteSpace(role.Name))
                         {

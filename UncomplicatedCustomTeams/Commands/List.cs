@@ -45,7 +45,7 @@ namespace UncomplicatedCustomTeams.Commands
                 sb.AppendLine($"  Target SCP: {team.SpawnConditions.TargetScp}");
                 sb.AppendLine($"  Spawn Delay: {team.SpawnConditions.SpawnDelay}");
                 sb.AppendLine($"  Is Using Custom Spawn Position: {IsUsingCustomSpawnPosition}");
-                sb.AppendLine($"  Roles: {team.Roles.Count}");
+                sb.AppendLine($"  Roles: {team.TeamRoles.Count}");
                 sb.AppendLine($"  Is Audio System In Use: {IsAudioSystemInUse}");
                 sb.AppendLine($"  Audio Volume: {team.SoundVolume}");
                 sb.AppendLine($"  Team Alive To Win: {string.Join(", ", team.TeamAliveToWin)}");

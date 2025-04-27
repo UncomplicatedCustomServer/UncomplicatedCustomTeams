@@ -1,5 +1,6 @@
 ﻿using Exiled.API.Extensions;
 using Exiled.API.Features;
+using MEC;
 using PlayerRoles;
 using UncomplicatedCustomRoles.Extensions;
 using UncomplicatedCustomTeams.Utilities;
@@ -17,7 +18,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// The CustomRole instance for the given player
         /// </summary>
-        public CustomRole CustomRole { get; }
+        public IUCTCustomRole CustomRole { get; }
 
         public SummonedTeam Team { get; }
 
@@ -26,7 +27,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// </summary>
         public bool IsRoleSet { get; private set; } = false;
 
-        public SummonedCustomRole(SummonedTeam team, Player player, CustomRole role)
+        public SummonedCustomRole(SummonedTeam team, Player player, IUCTCustomRole role)
         {
             Team = team;
             Player = player;
@@ -78,8 +79,9 @@ namespace UncomplicatedCustomTeams.API.Features
                         break;
                 }
             }
-            Player.Position = spawnPos;
-            Player.SetCustomRoleAttributes(CustomRole);
+            CustomRole.Spawn(Player);
+
+            Timing.CallDelayed(0.1f, () => Player.Position = spawnPos);
             IsRoleSet = true;
         }
     }

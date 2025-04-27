@@ -163,6 +163,7 @@ namespace UncomplicatedCustomTeams.Utilities
                                 usedRoleIds.Add(role.Id);
                             }
                         }
+
                         LogManager.Debug($"Proposed to the registerer the external team '{team.Name}' (ID: {team.Id}) from file: {file}");
                         action(team);
                     }
