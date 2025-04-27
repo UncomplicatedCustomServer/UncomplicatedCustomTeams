@@ -5,6 +5,7 @@ using System.Linq;
 using UncomplicatedCustomTeams.Utilities;
 using UncomplicatedCustomTeams.API.Enums;
 using UnityEngine;
+using YamlDotNet.Serialization;
 
 namespace UncomplicatedCustomTeams.API.Features
 {
@@ -102,7 +103,13 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// The list of every role that will be a part of this wave
         /// </summary>
-        public List<CustomRole> Roles { get; set; } = new()
+        [YamlIgnore]
+        public List<IUCTCustomRole> TeamRoles => Roles.OfType<IUCTCustomRole>().Concat(EcrRoles).ToList();
+
+        /// <summary>
+        /// The list of every UCR role that will be a part of this wave
+        /// </summary>
+        public List<UncomplicatedCustomRole> Roles { get; set; } = new()
         {
             new()
             {
@@ -125,6 +132,20 @@ namespace UncomplicatedCustomTeams.API.Features
                 CustomFlags = null,
                 Priority = RolePriority.Second,
                 MaxPlayers = 1
+            }
+        };
+
+
+        /// <summary>
+        /// The list of every UCR role that will be a part of this wave
+        /// </summary>
+        public List<ExiledCustomRole> EcrRoles { get; set; } = new()
+        {
+            new()
+            {
+                Id = 41,
+                Priority = RolePriority.Third,
+                MaxPlayers = 1,
             }
         };
 
