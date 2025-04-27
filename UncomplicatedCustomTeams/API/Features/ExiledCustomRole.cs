@@ -20,7 +20,7 @@ namespace UncomplicatedCustomTeams.API.Features
         public int Id { get; set; }
 
         [YamlIgnore]
-        public string Name => CustomRole.Name;
+        public string Name => CustomRole.Name ?? "Unknown Role";
 
         [YamlIgnore]
         public RoleTypeId Role => CustomRole.Role;
