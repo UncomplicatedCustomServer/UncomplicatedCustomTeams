@@ -187,17 +187,6 @@ namespace UncomplicatedCustomTeams.Utilities
                         return false;
                     }
 
-                    static bool IsSpawnPositionPositive(Vector3 v) => v.x >= 0 && v.y >= 0 && v.z >= 0;
-
-                    if (!IsSpawnPositionPositive(team.SpawnConditions.SpawnPosition))
-                    {
-                        string message = $"Invalid SpawnPosition for team {team.Name} (ID: {team.Id}): one or more coordinates are negative ({team.SpawnConditions.SpawnPosition}).";
-                        string suggestion = "Ensure all coordinates of 'SpawnPosition' (x, y, z) are greater than or equal to 0.";
-                        ErrorManager.Add(filePath, message, suggestion: suggestion);
-                        LogManager.Error($"{message}\n{suggestion}");
-                        return false;
-                    }
-
                     if (team.MinPlayers <= 0)
                     {
                         string message = $"Invalid MinPlayers value ({team.MinPlayers}) for team {team.Name} (ID: {team.Id}).";
