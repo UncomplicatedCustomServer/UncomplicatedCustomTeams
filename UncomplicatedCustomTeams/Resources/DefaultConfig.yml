@@ -2,6 +2,7 @@ teams:
 - id: 1
   name: GOC
   min_players: 1
+  max_spawns: -1
   spawn_chance: 100
   spawn_conditions:
     spawn_wave: NtfWave
@@ -11,6 +12,7 @@ teams:
       z: 0
     used_item: None
     target_scp: None
+    role_alive_on_round_start: []
     spawn_delay: 0
   cassie_message: team arrived
   cassie_translation: Team arrived!
@@ -36,9 +38,6 @@ teams:
     health:
       amount: 100
       maximum: 100
-      hume_shield: 0
-      hume_shield_regeneration_amount: 2
-      hume_shield_regeneration_delay: 7.5
     ahp:
       amount: 0
       limit: 75
@@ -46,6 +45,11 @@ teams:
       efficacy: 0.699999988
       sustain: 0
       persistant: false
+    hume_shield:
+      amount: 0
+      maximum: 0
+      regeneration_amount: 2
+      regeneration_delay: 7.5
     effects: []
     stamina:
       regen_multiplier: 1
@@ -65,8 +69,7 @@ teams:
     spawn_broadcast_duration: 5
     spawn_hint: This hint will be shown when you will spawn as a Janitor!
     spawn_hint_duration: 5
-    custom_inventory_limits:
-      Medical: 2
+    custom_inventory_limits: {}
     inventory:
     - Flashlight
     - KeycardJanitor
@@ -93,9 +96,6 @@ teams:
     health:
       amount: 100
       maximum: 100
-      hume_shield: 0
-      hume_shield_regeneration_amount: 2
-      hume_shield_regeneration_delay: 7.5
     ahp:
       amount: 0
       limit: 75
@@ -103,6 +103,11 @@ teams:
       efficacy: 0.699999988
       sustain: 0
       persistant: false
+    hume_shield:
+      amount: 0
+      maximum: 0
+      regeneration_amount: 2
+      regeneration_delay: 7.5
     effects: []
     stamina:
       regen_multiplier: 1
@@ -122,8 +127,7 @@ teams:
     spawn_broadcast_duration: 5
     spawn_hint: This hint will be shown when you will spawn as a Janitor!
     spawn_hint_duration: 5
-    custom_inventory_limits:
-      Medical: 2
+    custom_inventory_limits: {}
     inventory:
     - Flashlight
     - KeycardJanitor
