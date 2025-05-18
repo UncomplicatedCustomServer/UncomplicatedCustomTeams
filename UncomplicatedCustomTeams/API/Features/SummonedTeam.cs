@@ -154,6 +154,13 @@ namespace UncomplicatedCustomTeams.API.Features
             {
                 return null;
             }
+
+            if (team.MaxSpawns >= 0 && team.SpawnCount >= team.MaxSpawns)
+            {
+                Log.Warn($"Team {team.Name} has reached its maximum number of spawns ({team.MaxSpawns}). Skipping spawn.");
+                return null;
+            }
+
             SummonedTeam SummonedTeam = new(team);
 
             foreach (Player Player in players)
@@ -181,6 +188,7 @@ namespace UncomplicatedCustomTeams.API.Features
                 float volume = Clamp(team.SoundVolume, 1f, 100f);
                 audioPlayer.AddClip($"sound_{team.Id}", volume);
             }
+            team.SpawnCount++;
             return SummonedTeam;
         }
 

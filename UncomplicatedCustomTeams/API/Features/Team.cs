@@ -6,6 +6,7 @@ using UncomplicatedCustomTeams.Utilities;
 using UncomplicatedCustomTeams.API.Enums;
 using UnityEngine;
 using YamlDotNet.Serialization;
+using PlayerRoles;
 
 namespace UncomplicatedCustomTeams.API.Features
 {
@@ -47,6 +48,17 @@ namespace UncomplicatedCustomTeams.API.Features
         public int MinPlayers { get; set; } = 1;
 
         /// <summary>
+        /// The maximum number of times this team can be spawned in a single round. Set to -1 for unlimited.
+        /// </summary>
+        public int MaxSpawns { get; set; } = -1;
+
+        /// <summary>
+        /// Tracks how many times this team has been spawned in the current round.
+        /// </summary>
+        [YamlIgnore]
+        public int SpawnCount { get; internal set; } = 0;
+
+        /// <summary>
         /// The chance of spawning of this custom <see cref="Team"/>.
         /// 0 is 0% and 100 is 100%!
         /// </summary>
@@ -66,7 +78,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// The translation of the cassie message
         /// </summary>
         public string CassieTranslation { get; set; } = "Team arrived!";
-        
+
         /// <summary>
         /// Determines whether the Cassie message should be noisy.
         /// </summary>
@@ -210,6 +222,9 @@ namespace UncomplicatedCustomTeams.API.Features
 
             [Description("Specify the SCP role (e.g., Scp106) or use the SCPs team (SCPs) whose death triggers this team spawn. Only SCPs is allowed when using a team. This setting only applies when SpawnWave is set to 'ScpDeath'.")]
             public string TargetScp { get; set; } = "None";
+
+            [Description("List of roles that must be alive at round start for this team to spawn. Ignored if empty.")]
+            public List<RoleTypeId> RoleAliveOnRoundStart { get; set; } = new();
 
             [Description("Setting a SpawnDelay greater than 0 will not work when using NtfWave or ChaosWave!")]
             public float SpawnDelay { get; set; } = 0f;

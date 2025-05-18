@@ -99,12 +99,27 @@ namespace UncomplicatedCustomTeams
         {
             LogManager.Debug("Round started, checking for RoundStarted spawns...");
 
-            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn("RoundStarted");
-
+            var team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn("RoundStarted");
             if (team == null)
             {
                 LogManager.Debug("No valid team found for RoundStarted.");
                 return;
+            }
+            team.SpawnCount = 0;
+
+            var requiredRoles = team.SpawnConditions.RoleAliveOnRoundStart;
+            if (requiredRoles != null && requiredRoles.Count > 0)
+            {
+                var aliveRoles = Player.List.Where(p => p.IsAlive).Select(p => p.Role.Type).ToList();
+                bool hasRequiredAlive = requiredRoles.Any(r => aliveRoles.Contains(r));
+
+                LogManager.Debug($"Team {team.Name} requires alive roles: [{string.Join(", ", requiredRoles)}]; currently alive: [{string.Join(", ", aliveRoles)}] => {(hasRequiredAlive ? "OK" : "SKIPPED")}");
+
+                if (!hasRequiredAlive)
+                {
+                    LogManager.Debug("Skipping spawn — required roles not alive.");
+                    return;
+                }
             }
 
             LogManager.Debug($"EvaluateSpawn found team: {team.Name}");
