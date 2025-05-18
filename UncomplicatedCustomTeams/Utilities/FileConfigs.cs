@@ -166,20 +166,23 @@ namespace UncomplicatedCustomTeams.Utilities
                             }
                         }
 
-                        Timing.CallDelayed(Plugin.Instance.Config.ExiledCustomRoleCheckDelay, () =>
+                        if (Plugin.Instance.Config.UseExiledCustomRoles)
                         {
-                            foreach (var role in team.EcrRoles)
+                            Timing.CallDelayed(Plugin.Instance.Config.ExiledCustomRoleCheckDelay, () =>
                             {
-                                if (!Exiled.CustomRoles.API.Features.CustomRole.TryGet((uint)role.Id, out var cRole))
+                                foreach (var role in team.EcrRoles.ToList())
                                 {
-                                    string warning = $"Exiled Custom Role of ID {role.Id} not found!";
-                                    string suggestion = "Ensure that the role is properly registered by its plugin in the future.";
-                                    ErrorManager.Add(file, warning, suggestion: suggestion);
-                                    LogManager.Warn($"{warning}\n{suggestion}");
-                                    team.EcrRoles.Remove(role);
+                                    if (!Exiled.CustomRoles.API.Features.CustomRole.TryGet((uint)role.Id, out var cRole))
+                                    {
+                                        string warning = $"Exiled Custom Role of ID {role.Id} not found!";
+                                        string suggestion = "Ensure that the role is properly registered by its plugin in the future.";
+                                        ErrorManager.Add(file, warning, suggestion: suggestion);
+                                        LogManager.Warn($"{warning}\n{suggestion}");
+                                        team.EcrRoles.Remove(role);
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
 
                         LogManager.Debug($"Proposed to the registerer the external team '{team.Name}' (ID: {team.Id}) from file: {file}");
                         action(team);
@@ -223,6 +226,7 @@ namespace UncomplicatedCustomTeams.Utilities
                 LogManager.Info($"Plugin does not have a role folder, generated one in {Path.Combine(Dir, localDir)}");
             }
         }
+
         public void AddCustomRoleTeams(string localDir = "")
         {
             string dir = Path.Combine(Paths.Configs, "UncomplicatedCustomTeams", localDir);
@@ -258,7 +262,7 @@ namespace UncomplicatedCustomTeams.Utilities
                             yamlTeam["team_alive_to_win"] = new List<string>();
                         }
 
-                        var teamAliveToWin = yamlTeam["team_alive_to_win"] as List<object> ?? new List<object>();
+                        var teamAliveToWin = new List<object>();
 
                         if (!yamlTeam.ContainsKey("roles") || yamlTeam["roles"] == null)
                         {
