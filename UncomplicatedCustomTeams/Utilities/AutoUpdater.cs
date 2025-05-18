@@ -67,7 +67,9 @@ namespace UncomplicatedCustomTeams.Utilities
         {
             bool changed = false;
             bool isInsideTeam = target.ContainsKey("team_alive_to_win");
+            bool isInsideSpawnConditions = target.ContainsKey("spawn_delay");
             var keysToInsertBefore = new Dictionary<string, object>();
+            var keysToInsertBeforeSpawnDelay = new Dictionary<string, object>();
 
             foreach (var kvp in source)
             {
@@ -79,22 +81,24 @@ namespace UncomplicatedCustomTeams.Utilities
                     if (isInsideTeam && kvp.Key != "team_alive_to_win")
                     {
                         keysToInsertBefore[kvp.Key] = kvp.Value;
-                        LogManager.Debug($"Queued missing key '{kvp.Key}' (value: {kvp.Value}) to be inserted in team config.");
+                    }
+                    else if (isInsideSpawnConditions && kvp.Key != "spawn_delay")
+                    {
+                        keysToInsertBeforeSpawnDelay[kvp.Key] = kvp.Value;
                     }
                     else
                     {
                         target[kvp.Key] = kvp.Value;
-                        LogManager.Debug($"Added missing key '{kvp.Key}' with value '{kvp.Value}' to the config.");
                     }
 
-                    LogManager.Info($"Added missing key '{kvp.Key}' to the team config.");
+                    LogManager.Info($"Added missing key '{kvp.Key}' to the config.");
                     changed = true;
                 }
-                else if (kvp.Value is IDictionary<object, object> srcDict &&
-                         target[kvp.Key] is IDictionary<object, object> tgtDict)
+                else if (kvp.Value is IDictionary<object, object> srcDictObj &&
+                         target[kvp.Key] is IDictionary<object, object> tgtDictObj)
                 {
-                    var convertedSrc = srcDict.ToDictionary(k => k.Key.ToString(), v => v.Value);
-                    var convertedTgt = tgtDict.ToDictionary(k => k.Key.ToString(), v => v.Value);
+                    var convertedSrc = srcDictObj.ToDictionary(k => k.Key.ToString(), v => v.Value);
+                    var convertedTgt = tgtDictObj.ToDictionary(k => k.Key.ToString(), v => v.Value);
                     if (MergeRecursive(convertedTgt, convertedSrc))
                     {
                         target[kvp.Key] = convertedTgt;
@@ -105,38 +109,29 @@ namespace UncomplicatedCustomTeams.Utilities
                 {
                     for (int i = 0; i < srcList.Count; i++)
                     {
+                        object srcItem = srcList[i];
+                        object tgtItem = i < tgtList.Count ? tgtList[i] : null;
+
                         if (i >= tgtList.Count)
                         {
-                            tgtList.Add(srcList[i]);
+                            tgtList.Add(srcItem);
                             changed = true;
                         }
-                        else if (srcList.All(x => x is IDictionary<object, object>) && tgtList.All(x => x is IDictionary<object, object>))
+                        else if (srcItem is IDictionary<object, object> srcDictItem && tgtItem is IDictionary<object, object> tgtDictItem)
                         {
-                            foreach (var srcItem in srcList.Cast<IDictionary<object, object>>())
+                            var srcNested = srcDictItem.ToDictionary(k => k.Key.ToString(), v => v.Value);
+                            var tgtNested = tgtDictItem.ToDictionary(k => k.Key.ToString(), v => v.Value);
+
+                            if (MergeRecursive(tgtNested, srcNested))
                             {
-                                object id = srcItem.ContainsKey("id") ? srcItem["id"] : null;
-
-                                var tgtItem = tgtList
-                                    .Cast<IDictionary<object, object>>()
-                                    .FirstOrDefault(d => d.ContainsKey("id") && Equals(d["id"], id));
-
-                                if (tgtItem != null)
-                                {
-                                    var srcDictNested = srcItem.ToDictionary(k => k.Key.ToString(), v => v.Value);
-                                    var tgtDictNested = tgtItem.ToDictionary(k => k.Key.ToString(), v => v.Value);
-                                    if (MergeRecursive(tgtDictNested, srcDictNested))
-                                    {
-                                        int index = tgtList.IndexOf(tgtItem);
-                                        tgtList[index] = tgtDictNested.ToDictionary(k => (object)k.Key, v => v.Value);
-                                        changed = true;
-                                    }
-                                }
-                                else
-                                {
-                                    tgtList.Add(srcItem);
-                                    changed = true;
-                                }
+                                tgtList[i] = tgtNested.ToDictionary(k => (object)k.Key, v => v.Value);
+                                changed = true;
                             }
+                        }
+                        else if (!Equals(tgtItem, srcItem))
+                        {
+                            tgtList[i] = srcItem;
+                            changed = true;
                         }
                     }
                 }
@@ -151,6 +146,28 @@ namespace UncomplicatedCustomTeams.Utilities
                     if (kvp.Key == "team_alive_to_win")
                     {
                         foreach (var missing in keysToInsertBefore)
+                            ordered[missing.Key] = missing.Value;
+                    }
+
+                    ordered[kvp.Key] = kvp.Value;
+                }
+
+                target.Clear();
+                foreach (var kvp in ordered)
+                    target[kvp.Key] = kvp.Value;
+
+                changed = true;
+            }
+
+            if (isInsideSpawnConditions && keysToInsertBeforeSpawnDelay.Count > 0)
+            {
+                var ordered = new Dictionary<string, object>();
+
+                foreach (var kvp in target)
+                {
+                    if (kvp.Key == "spawn_delay")
+                    {
+                        foreach (var missing in keysToInsertBeforeSpawnDelay)
                             ordered[missing.Key] = missing.Value;
                     }
 
