@@ -14,6 +14,10 @@ namespace UncomplicatedCustomTeams.Utilities
     {
         private const string DefaultConfigUrl = "https://raw.githubusercontent.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/refs/heads/Pre-UCT/UncomplicatedCustomTeams/Resources/DefaultConfig.yml";
 
+        private static readonly HttpClient HttpClient = new()
+        {
+            DefaultRequestHeaders = { { "User-Agent", "UncomplicatedCustomTeams-Updater" } }
+        };
         public static void EnsureConfigIsUpToDate(string localDir = "")
         {
             try
@@ -186,8 +190,25 @@ namespace UncomplicatedCustomTeams.Utilities
 
         private static string DownloadText(string url)
         {
-            using var client = new HttpClient();
-            return client.GetStringAsync(url).Result;
+            for (int i = 0; i < 3; i++)
+            {
+                var response = HttpClient.GetAsync(url).Result;
+
+                if (response.IsSuccessStatusCode)
+                    return response.Content.ReadAsStringAsync().Result;
+
+                if ((int)response.StatusCode == 429)
+                {
+                    LogManager.Warn("Rate limit hit. Retrying in 2 seconds...");
+                    System.Threading.Thread.Sleep(2000);
+                }
+                else
+                {
+                    response.EnsureSuccessStatusCode();
+                }
+            }
+
+            throw new Exception("Failed to download config after multiple attempts.");
         }
 
         private static object NormalizeYamlObject(object obj)

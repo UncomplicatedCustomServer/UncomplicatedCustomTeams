@@ -206,7 +206,7 @@ namespace UncomplicatedCustomTeams.API.Features
             LogManager.Debug($"Total players: {totalPlayers}, MinPlayers required: {team.MinPlayers}");
             if (totalPlayers < team.MinPlayers)
             {
-                LogManager.Debug($"Not enough players on the server to spawn team {team.Name}.");
+                LogManager.Debug($"Not enough players on spectator to spawn team {team.Name}.");
                 return new List<Player>();
             }
 
@@ -214,20 +214,34 @@ namespace UncomplicatedCustomTeams.API.Features
                 .Where(p => !p.IsAlive && p.Role.Type == RoleTypeId.Spectator && !p.IsOverwatchEnabled)
                 .ToList();
 
-            int maxPlayersForTeam = team.TeamRoles.Sum(role => role.MaxPlayers);
-            LogManager.Debug($"Spectators available: {spectators.Count}, MaxPlayers for team {team.Name}: {maxPlayersForTeam}");
-            if (spectators.Count >= maxPlayersForTeam)
+            var sortedRoles = team.TeamRoles
+                .OrderBy(role => role.Priority)
+                .ToList();
+
+            List<Player> selectedPlayers = new();
+            int index = 0;
+
+            foreach (var teamRole in sortedRoles)
             {
-                LogManager.Info($"Team {team.Name} is eligible for spawn. Spectators available: {spectators.Count}, required: {maxPlayersForTeam}");
+                int max = teamRole.MaxPlayers;
+                for (int i = 0; i < max && index < spectators.Count; i++, index++)
+                {
+                    selectedPlayers.Add(spectators[index]);
+                }
+            }
+
+            if (selectedPlayers.Count == 0)
+            {
+                LogManager.Debug($"No spectators available to spawn for team {team.Name}.");
             }
             else
             {
-                LogManager.Debug($"Not enough spectators to spawn team {team.Name}. Required: {maxPlayersForTeam}, available: {spectators.Count}");
-                return new List<Player>();
+                LogManager.Info($"Team {team.Name} will spawn with {selectedPlayers.Count} players.");
             }
-            LogManager.Debug($"Spawning all {spectators.Count} spectators for team {team.Name}.");
-            return spectators;
+
+            return selectedPlayers;
         }
+
 
         /// <summary>
         /// Refreshes the players list, ensuring that the maximum allowed players per role is respected.

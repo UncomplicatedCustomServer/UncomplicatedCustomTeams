@@ -95,13 +95,8 @@
       <HintPath>$(EXILED_REFERENCES)\Pooling.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="UncomplicatedCustomRoles %281%29">
-      <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\UncomplicatedCustomRoles (1).dll</HintPath>
-    </Reference>
-    <Reference Include="UncomplicatedCustomRoles, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\UncomplicatedCustomRoles.dll</HintPath>
-      <Private>false</Private>
+    <Reference Include="UncomplicatedCustomRoles">
+      <HintPath>..\..\..\..\Downloads\UncomplicatedCustomRoles.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Burst, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -494,7 +489,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ExMod.Exiled">
-      <Version>9.5.0</Version>
+      <Version>9.6.1</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.3</Version>

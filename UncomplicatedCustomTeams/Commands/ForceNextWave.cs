@@ -1,21 +1,29 @@
 ﻿using CommandSystem;
+using Exiled.API.Features;
 using System.Collections.Generic;
 using System.Linq;
 using UncomplicatedCustomTeams.API.Features;
+using UncomplicatedCustomTeams.Interfaces;
 
 namespace UncomplicatedCustomTeams.Commands
 {
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
-    internal class ForceNextWave // Broken
+    internal class ForceNextWave : IUCTCommand
     {
         public string Name { get; } = "fnw";
 
-        public string Description { get; } = "Force the next wave to be a custom Team AKA \"fnw\".";
+        public string Description { get; } = "Forces the next wave to be a custom team.";
 
         public string RequiredPermission { get; } = "uct.fnw";
 
-        public bool Executor(List<string> arguments, ICommandSender _, out string response)
+        public bool Executor(List<string> arguments, ICommandSender sender, out string response)
         {
+            if (!Round.IsStarted)
+            {
+                response = "Cannot force a wave when the round hasn't started!";
+                return false;
+            }
+
             if (arguments.Count != 1)
             {
                 response = "Usage: uct fnw <TeamId>";
@@ -27,28 +35,24 @@ namespace UncomplicatedCustomTeams.Commands
                 response = "Invalid team ID!";
                 return false;
             }
-
-            Team team = Team.List.FirstOrDefault(t => t.Id == id);
+            var team = Team.List.FirstOrDefault(t => t.Id == id);
 
             if (team is null)
             {
-                response = $"Team {id} is not registered!";
+                response = $"Team with ID {id} does not exist.";
                 return false;
             }
 
             if (team.SpawnConditions.SpawnWave != "NtfWave" && team.SpawnConditions.SpawnWave != "ChaosWave")
             {
-                response = $"This team cannot be forced because its SpawnWave is not 'NtfWave' or 'ChaosWave'.";
+                response = $"This team cannot be forced (SpawnWave must be 'NtfWave' or 'ChaosWave').";
                 return false;
             }
 
             Plugin.NextTeam = new SummonedTeam(team);
-            Handler handler = new()
-            {
-                ForcedNextWave = true
-            };
+            Plugin.Instance.Handler.ForcedNextWave = true;
 
-            response = $"Successfully forced the team {team.Name} to be the next respawn wave!";
+            response = $"Next wave will spawn team '{team.Name}' successfully.";
             return true;
         }
     }

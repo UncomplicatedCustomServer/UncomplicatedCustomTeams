@@ -1,19 +1,19 @@
 ﻿using Exiled.API.Features;
+using Exiled.API.Features.Items;
+using Exiled.CustomItems.API.Features;
+using Exiled.Events.EventArgs.Map;
 using Exiled.Events.EventArgs.Player;
 using Exiled.Events.EventArgs.Server;
 using MEC;
+using PlayerRoles;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.API.Storage;
 using UncomplicatedCustomTeams.Utilities;
-using System.Collections.Generic;
-using Exiled.Events.EventArgs.Map;
-using System.Linq;
-using PlayerRoles;
 using static UncomplicatedCustomTeams.API.Features.Team;
-using Exiled.API.Features.Items;
-using Exiled.CustomItems.API.Features;
-using System;
 
 namespace UncomplicatedCustomTeams
 {
@@ -380,7 +380,6 @@ namespace UncomplicatedCustomTeams
         {
             if (Plugin.NextTeam is not null && Bucket.SpawnBucket.Contains(ev.Player.Id) && Plugin.NextTeam.Team != null)
             {
-                LogManager.Debug($"Player {ev.Player} is changing role, let's do something to it! v2");
                 Bucket.SpawnBucket.Remove(ev.Player.Id);
 
                 List<Player> selectedPlayers = SummonedTeam.CanSpawnTeam(Plugin.NextTeam.Team);

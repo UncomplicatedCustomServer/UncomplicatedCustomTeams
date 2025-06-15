@@ -58,7 +58,7 @@ namespace UncomplicatedCustomTeams.Utilities
                     foreach (Team team in data["teams"])
                     {
                         bool hasCustomSound = !string.IsNullOrEmpty(team.SoundPath) && team.SoundPath != "/path/to/your/ogg/file";
-                        bool hasCassieMessage = !string.IsNullOrEmpty(team.CassieMessage) || !string.IsNullOrEmpty(team.CassieTranslation);
+                        bool hasCassieMessage = !(string.IsNullOrWhiteSpace(team.CassieMessage) && string.IsNullOrWhiteSpace(team.CassieTranslation));
 
                         if (hasCustomSound && hasCassieMessage)
                         {

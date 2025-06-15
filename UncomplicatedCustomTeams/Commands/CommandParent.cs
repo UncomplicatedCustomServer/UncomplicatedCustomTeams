@@ -28,6 +28,7 @@ namespace UncomplicatedCustomTeams.Commands
             RegisteredCommands.Add(new Errors());
             RegisteredCommands.Add(new Generate());
             RegisteredCommands.Add(new Active());
+            RegisteredCommands.Add(new ForceNextWave());
         }
 
         public List<IUCTCommand> RegisteredCommands { get; } = new();

@@ -88,8 +88,8 @@ namespace UncomplicatedCustomTeams
 
             FileConfigs.Welcome(Server.Port.ToString());
             FileConfigs.AddCustomRoleTeams(Server.Port.ToString());
-            CommentsSystem.AddCommentsToYaml(Server.Port.ToString());
             FileConfigs.LoadAll(Server.Port.ToString());
+            CommentsSystem.AddCommentsToYaml(Server.Port.ToString());
 
             LogManager.Info($"Successfully loaded {Team.List.Count} teams!");
             foreach (var team in Team.List)
