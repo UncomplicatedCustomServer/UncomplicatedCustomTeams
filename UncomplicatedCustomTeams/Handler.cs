@@ -406,7 +406,15 @@ namespace UncomplicatedCustomTeams
                     });
                 }
             }
-            Timing.CallDelayed(0.2f, () => SummonedTeam.CheckRoundEndCondition());
+            Timing.CallDelayed(0.2f, () =>
+            {
+                SummonedTeam.CheckRoundEndCondition();
+
+                foreach (var team in SummonedTeam.List)
+                {
+                    team.CheckPlayers();
+                }
+            });
         }
     }
 }
