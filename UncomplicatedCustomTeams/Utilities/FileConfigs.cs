@@ -1,11 +1,13 @@
-﻿using Exiled.API.Features;
+﻿using Exiled.API.Enums;
+using Exiled.API.Features;
 using Exiled.Loader;
 using MEC;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UncomplicatedCustomRoles.API.Features;
+using UncomplicatedCustomRoles.API.Enums;
+using UncomplicatedCustomRoles.API.Features.Behaviour;
 using UncomplicatedCustomTeams.API.Features;
 using UnityEngine;
 
@@ -186,6 +188,34 @@ namespace UncomplicatedCustomTeams.Utilities
 
                         LogManager.Debug($"Proposed to the registerer the external team '{team.Name}' (ID: {team.Id}) from file: {file}");
                         action(team);
+
+
+                        Timing.CallDelayed(5f, () =>
+                        {
+                            foreach (var role in team.Roles)
+                            {
+                                if (!UncomplicatedCustomRoles.API.Features.CustomRole.TryGet(role.Id, out _) &&
+                                    role is UncomplicatedCustomRoles.API.Features.CustomRole ucrRole)
+                                {
+                                    ucrRole.SpawnSettings ??= new SpawnBehaviour
+                                    {
+                                        Spawn = SpawnType.KeepCurrentPositionSpawn,
+                                        SpawnRooms = new List<RoomType> { RoomType.Unknown },
+                                        SpawnRoles = new List<PlayerRoles.RoleTypeId> { PlayerRoles.RoleTypeId.None },
+                                        CanReplaceRoles = new List<PlayerRoles.RoleTypeId> { PlayerRoles.RoleTypeId.None },
+                                        MaxPlayers = 10,
+                                        MinPlayers = 1,
+                                        SpawnChance = 0f,
+                                        SpawnZones = new List<ZoneType>(),
+                                        SpawnPoints = new List<string>(),
+                                        RequiredPermission = string.Empty
+                                    };
+
+                                    var result = UncomplicatedCustomRoles.API.Features.CustomRole.Register(ucrRole);
+                                    LogManager.Debug($"Registered existing UCT -> UCR Custom role: {ucrRole.Name} (ID: {ucrRole.Id}) => {result}");
+                                }
+                            }
+                        });
                     }
                 }
                 catch (Exception ex)
@@ -240,7 +270,7 @@ namespace UncomplicatedCustomTeams.Utilities
             {
                 try
                 {
-                    string fileContent = File.ReadAllText(filePath);
+                    string fileContent = (File.ReadAllText(filePath));
 
                     var configData = Loader.Deserializer.Deserialize<Dictionary<string, List<Dictionary<string, object>>>>(fileContent);
 
