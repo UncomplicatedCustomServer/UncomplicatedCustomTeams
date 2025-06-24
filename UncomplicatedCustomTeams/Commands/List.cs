@@ -12,9 +12,9 @@ namespace UncomplicatedCustomTeams.Commands
     internal class List : IUCTCommand
     {
         public string Name { get; } = "list";
-        
+
         public string Description { get; } = "Displays all registered custom teams.";
-        
+
         public string RequiredPermission { get; } = "uct.list";
 
         public bool Executor(List<string> arguments, ICommandSender sender, out string response)

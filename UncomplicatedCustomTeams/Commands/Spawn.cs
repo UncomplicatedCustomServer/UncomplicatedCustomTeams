@@ -54,9 +54,10 @@ namespace UncomplicatedCustomTeams.Commands
 
                 response = $"Successfully spawned the team {team.Name}!";
 
-                Timing.CallDelayed(1.5f, () => {
+                Timing.CallDelayed(1.5f, () =>
+                {
                     Bucket.SpawnBucket = new();
-                    Plugin.NextTeam?.CheckPlayers(); 
+                    Plugin.NextTeam?.CheckPlayers();
                 });
                 return true;
             }

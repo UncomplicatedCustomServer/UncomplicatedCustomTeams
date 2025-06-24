@@ -7,6 +7,7 @@ using UncomplicatedCustomTeams.Interfaces;
 
 namespace UncomplicatedCustomTeams.Commands
 {
+    [CommandHandler(typeof(GameConsoleCommandHandler))]
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
     internal class ForceNextWave : IUCTCommand
     {
