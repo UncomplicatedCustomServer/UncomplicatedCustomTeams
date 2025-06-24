@@ -7,7 +7,6 @@ using Exiled.Events.EventArgs.Server;
 using MEC;
 using PlayerRoles;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UncomplicatedCustomTeams.API.Features;
@@ -26,6 +25,7 @@ namespace UncomplicatedCustomTeams
         internal bool ForcedNextWave = false;
 
         internal bool CustomTeamSpawnedThisWave = false;
+
         public void OnRespawningTeam(RespawningTeamEventArgs ev)
         {
             CustomTeamSpawnedThisWave = false;
@@ -33,17 +33,29 @@ namespace UncomplicatedCustomTeams
             foreach (Player Player in ev.Players)
                 Bucket.SpawnBucket.Add(Player.Id);
 
-            Plugin.NextTeam?.RefreshPlayers(ev.Players);
+            var allPlayers = ev.Players.ToList();
+
+            if (allPlayers.Count == 0)
+            {
+                LogManager.Debug("No players available for respawn.");
+                return;
+            }
+
+            Plugin.NextTeam?.RefreshPlayers(allPlayers);
+
             if (ForcedNextWave && Plugin.NextTeam is not null)
             {
                 ForcedNextWave = false;
-                Plugin.NextTeam.RefreshPlayers(ev.Players);
+                Plugin.NextTeam.RefreshPlayers(allPlayers);
                 CustomTeamSpawnedThisWave = true;
+
+                LimitPlayersToCustomTeam(ev);
+
                 LogManager.Debug($"Forced wave executed for {Plugin.NextTeam.Team.Name} with ID {Plugin.NextTeam.Team.Id}");
                 return;
             }
-            LogManager.Debug($"Respawning team event, let's propose our team\nTeams: {API.Features.Team.List.Count}");
 
+            LogManager.Debug($"Respawning team event, let's propose our team\nTeams: {API.Features.Team.List.Count}");
             LogManager.Debug($"Next team for respawn is {ev.NextKnownTeam}");
 
             string faction = ev.NextKnownTeam switch
@@ -55,29 +67,64 @@ namespace UncomplicatedCustomTeams
 
             if (faction is null)
             {
-                Plugin.NextTeam = null; // no team
+                Plugin.NextTeam = null;
                 return;
             }
 
-            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn(faction);
+            var team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn(faction);
+
             if (team == null)
             {
                 LogManager.Debug("No valid team found in EvaluateSpawn, aborting team selection.");
                 Plugin.NextTeam = null;
+                return;
             }
-            else if (team.SpawnConditions?.SpawnWave == faction)
+
+            if (team.SpawnConditions?.SpawnWave == faction)
             {
-                Plugin.NextTeam = SummonedTeam.Summon(team, ev.Players);
-                CustomTeamSpawnedThisWave = Plugin.NextTeam != null;
-                LogManager.Debug($"Next team selected: {Plugin.NextTeam?.Team?.Name}");
+                Plugin.CachedSpawnList = SummonedTeam.CanSpawnTeam(team);
+
+                Plugin.NextTeam = SummonedTeam.Summon(team, Plugin.CachedSpawnList);
+
+                if (Plugin.NextTeam is not null)
+                {
+                    var allowedIds = Plugin.CachedSpawnList.Select(p => p.Id).ToList();
+                    ev.Players.RemoveAll(p => !allowedIds.Contains(p.Id));
+
+                    CustomTeamSpawnedThisWave = true;
+                    LogManager.Debug($"Next team selected: {Plugin.NextTeam?.Team?.Name}, players pruned to custom team.");
+                }
             }
             else
             {
                 Plugin.NextTeam = null;
                 LogManager.Debug("No valid custom team found for this wave.");
             }
+
             LogManager.Debug($"Next team selected: {Plugin.NextTeam?.Team?.Name}");
         }
+
+        private void LimitPlayersToCustomTeam(RespawningTeamEventArgs ev)
+        {
+            if (Plugin.NextTeam is null)
+                return;
+
+            var all = ev.Players.ToList();
+            int totalMax = Plugin.NextTeam.Team.TeamRoles.Sum(r => r.MaxPlayers);
+
+            if (totalMax <= 0 || totalMax >= all.Count)
+                return;
+
+            var sorted = Plugin.NextTeam.Players
+                .OrderBy(r => r.CustomRole.Priority)
+                .ThenBy(_ => UnityEngine.Random.value)
+                .Take(totalMax)
+                .Select(r => r.Player.Id)
+                .ToHashSet();
+
+            ev.Players.RemoveAll(p => !sorted.Contains(p.Id));
+        }
+
 
         public void GetThisChaosOutOfHere(AnnouncingChaosEntranceEventArgs ev)
         {
@@ -382,16 +429,16 @@ namespace UncomplicatedCustomTeams
             {
                 Bucket.SpawnBucket.Remove(ev.Player.Id);
 
-                List<Player> selectedPlayers = SummonedTeam.CanSpawnTeam(Plugin.NextTeam.Team);
+                ev.IsAllowed = false;
 
-                if (selectedPlayers.Contains(ev.Player))
+                if (Plugin.CachedSpawnList.Contains(ev.Player))
                 {
+                    LogManager.Debug($"Spawning custom team role for {ev.Player.Nickname} ({ev.Player.Id})");
                     Timing.CallDelayed(0.1f, () => { Plugin.NextTeam.TrySpawnPlayer(ev.Player, ev.NewRole); });
-                    ev.IsAllowed = false;
                 }
                 else
                 {
-                    LogManager.Debug($"Skipping respawn for {ev.Player.Nickname}, not selected for spawn.");
+                    LogManager.Debug($"Skipping respawn for {ev.Player.Nickname} ({ev.Player.Id}), not selected for spawn.");
                 }
 
                 if (!TeamCleanerEnabled)
@@ -406,6 +453,7 @@ namespace UncomplicatedCustomTeams
                     });
                 }
             }
+
             Timing.CallDelayed(0.2f, () =>
             {
                 SummonedTeam.CheckRoundEndCondition();

@@ -1,6 +1,7 @@
 ﻿using Exiled.API.Enums;
 using Exiled.API.Features;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using UncomplicatedCustomTeams.API.Features;
@@ -21,13 +22,15 @@ namespace UncomplicatedCustomTeams
 
         public override string Author => "FoxWorn3365 & .piwnica2137";
 
-        public override Version Version => new(1, 1, 0);
+        public override Version Version => new(1, 3, 0);
 
         public override Version RequiredExiledVersion => new(9, 4, 0);
 
-        public override PluginPriority Priority => PluginPriority.Higher;
+        public override PluginPriority Priority => PluginPriority.Default;
 
         public static SummonedTeam NextTeam { get; set; } = null;
+
+        public static List<Player> CachedSpawnList = new();
 
         internal static Plugin Instance;
 
