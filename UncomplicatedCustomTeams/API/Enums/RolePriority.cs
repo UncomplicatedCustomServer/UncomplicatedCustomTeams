@@ -2,6 +2,7 @@
 {
     public enum RolePriority
     {
+        None,
         First,
         Second,
         Third,
