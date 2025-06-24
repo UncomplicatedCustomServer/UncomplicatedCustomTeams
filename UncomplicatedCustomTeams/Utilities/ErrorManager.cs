@@ -6,7 +6,6 @@ using System.IO;
 using System.Text.RegularExpressions;
 using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Features;
-using UnityEngine;
 
 namespace UncomplicatedCustomTeams.Utilities
 {

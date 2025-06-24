@@ -1,12 +1,11 @@
-﻿using System;
-using System.Dynamic;
-using System.IO;
-using System.Net.Http;
+﻿using Exiled.API.Features;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using Exiled.API.Features;
-using System.Linq;
 
 namespace UncomplicatedCustomTeams.Utilities
 {
