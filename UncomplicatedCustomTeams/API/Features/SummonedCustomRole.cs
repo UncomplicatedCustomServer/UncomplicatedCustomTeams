@@ -40,7 +40,6 @@ namespace UncomplicatedCustomTeams.API.Features
                 Player.TryRemoveCustomRole();
         }
 
-#pragma warning disable CS0618 // A class member was marked with the Obsolete attribute -> the [Obsolete()] attribute is only there to avoid users to use this in a wrong way!
         public void AddRole(RoleTypeId? proposed = null)
         {
             RoleTypeId finalRole = proposed ?? RoleTypeId.ChaosConscript;

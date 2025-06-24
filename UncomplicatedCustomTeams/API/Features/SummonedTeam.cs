@@ -4,6 +4,7 @@ using PlayerRoles;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.Utilities;
 using Utils.NonAllocLINQ;
 
@@ -163,14 +164,24 @@ namespace UncomplicatedCustomTeams.API.Features
 
             SummonedTeam SummonedTeam = new(team);
 
-            foreach (Player Player in players)
+            int totalAllowed = team.TeamRoles.Sum(r => r.MaxPlayers);
+            int assigned = 0;
+
+            foreach (Player player in players)
             {
+                if (assigned >= totalAllowed)
+                    break;
+
                 foreach (IUCTCustomRole role in team.TeamRoles.OrderBy(r => r.Priority))
                 {
+                    if (role.Priority == RolePriority.None)
+                        continue;
+
                     if (SummonedTeam.SummonedPlayersCount(role) < role.MaxPlayers)
                     {
-                        SummonedTeam.Players.Add(new(SummonedTeam, Player, role));
-                        LogManager.Debug($"{Player.Nickname} -> {role.Name} (Priority: {role.Priority})");
+                        SummonedTeam.Players.Add(new(SummonedTeam, player, role));
+                        assigned++;
+                        LogManager.Debug($"{player.Nickname} -> {role.Name} (Priority: {role.Priority})");
                         break;
                     }
                 }
@@ -215,6 +226,7 @@ namespace UncomplicatedCustomTeams.API.Features
                 .ToList();
 
             var sortedRoles = team.TeamRoles
+                .Where(role => role.Priority != RolePriority.None)
                 .OrderBy(role => role.Priority)
                 .ToList();
 
@@ -252,6 +264,9 @@ namespace UncomplicatedCustomTeams.API.Features
             {
                 foreach (IUCTCustomRole Role in Team.TeamRoles.OrderBy(r => r.Priority))
                 {
+                    if (Role.Priority == RolePriority.None)
+                        continue;
+
                     if (SummonedPlayersCount(Role) < Role.MaxPlayers)
                     {
                         Players.Add(new(this, Player, Role));

@@ -1,11 +1,5 @@
 ﻿using Exiled.API.Features;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UncomplicatedCustomRoles.API.Features;
 using UncomplicatedCustomRoles.Extensions;
 using UncomplicatedCustomTeams.API.Enums;
 

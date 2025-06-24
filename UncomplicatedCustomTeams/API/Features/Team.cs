@@ -1,12 +1,12 @@
-﻿using System;
+﻿using PlayerRoles;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using UncomplicatedCustomTeams.Utilities;
 using UncomplicatedCustomTeams.API.Enums;
+using UncomplicatedCustomTeams.Utilities;
 using UnityEngine;
 using YamlDotNet.Serialization;
-using PlayerRoles;
 
 namespace UncomplicatedCustomTeams.API.Features
 {
@@ -50,6 +50,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// The maximum number of times this team can be spawned in a single round. Set to -1 for unlimited.
         /// </summary>
+        [Description("The maximum number of times this team can be spawned in a single round. Set to -1 for unlimited.")]
         public int MaxSpawns { get; set; } = -1;
 
         /// <summary>
@@ -156,7 +157,7 @@ namespace UncomplicatedCustomTeams.API.Features
             new()
             {
                 Id = 1,
-                Priority = RolePriority.Third,
+                Priority = RolePriority.None,
                 MaxPlayers = 1,
             }
         };
