@@ -14,6 +14,7 @@ teams:
     target_scp: None
     role_alive_on_round_start: []
     spawn_delay: 0
+  is_cassie_announcement_enabled: true
   cassie_message: team arrived
   cassie_translation: Team arrived!
   is_noisy: true
@@ -140,5 +141,5 @@ teams:
     ignore_spawn_system: false
   ecr_roles:
   - max_players: 1
-    priority: Third
+    priority: None
     id: 1
