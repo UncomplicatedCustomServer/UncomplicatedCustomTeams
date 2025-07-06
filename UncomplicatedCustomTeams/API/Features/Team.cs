@@ -71,6 +71,11 @@ namespace UncomplicatedCustomTeams.API.Features
         public SpawnData SpawnConditions { get; set; } = new();
 
         /// <summary>
+        /// Is Cassie announcement enabled?
+        /// </summary>
+        public bool IsCassieAnnouncementEnabled { get; set; } = true;
+
+        /// <summary>
         /// The cassie message that will be sent to every player
         /// </summary>
         public string CassieMessage { get; set; } = "team arrived";
@@ -150,7 +155,7 @@ namespace UncomplicatedCustomTeams.API.Features
 
 
         /// <summary>
-        /// The list of every UCR role that will be a part of this wave
+        /// The list of every ECR role that will be a part of this wave
         /// </summary>
         public List<ExiledCustomRole> EcrRoles { get; set; } = new()
         {

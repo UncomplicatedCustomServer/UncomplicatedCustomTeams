@@ -1,11 +1,14 @@
 ﻿using Exiled.API.Enums;
 using Exiled.API.Features;
+using MEC;
 using PlayerRoles;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UncomplicatedCustomTeams.API.Enums;
+using UncomplicatedCustomTeams.API.Storage;
 using UncomplicatedCustomTeams.Utilities;
+using UnityEngine;
 using Utils.NonAllocLINQ;
 
 namespace UncomplicatedCustomTeams.API.Features
@@ -188,7 +191,8 @@ namespace UncomplicatedCustomTeams.API.Features
             }
             if (!string.IsNullOrEmpty(team.CassieTranslation))
             {
-                Cassie.MessageTranslated(team.CassieMessage, team.CassieTranslation, isNoisy: team.IsNoisy, isSubtitles: true);
+                if (team.IsCassieAnnouncementEnabled)
+                    Cassie.MessageTranslated(team.CassieMessage, team.CassieTranslation, isNoisy: team.IsNoisy, isSubtitles: true);
             }
             if (!string.IsNullOrEmpty(team.SoundPath))
             {
@@ -199,6 +203,7 @@ namespace UncomplicatedCustomTeams.API.Features
                 float volume = Clamp(team.SoundVolume, 1f, 100f);
                 audioPlayer.AddClip($"sound_{team.Id}", volume);
             }
+
             team.SpawnCount++;
             return SummonedTeam;
         }
@@ -260,20 +265,26 @@ namespace UncomplicatedCustomTeams.API.Features
         /// </summary>
         public void RefreshPlayers(IEnumerable<Player> players)
         {
-            foreach (Player Player in players)
+            Plugin.CachedSpawnList.Clear();
+            Bucket.SpawnBucket.Clear();
+
+            foreach (Player player in players)
             {
-                foreach (IUCTCustomRole Role in Team.TeamRoles.OrderBy(r => r.Priority))
+                foreach (IUCTCustomRole role in Team.TeamRoles.OrderBy(r => r.Priority))
                 {
-                    if (Role.Priority == RolePriority.None)
+                    if (role.Priority == RolePriority.None)
                         continue;
 
-                    if (SummonedPlayersCount(Role) < Role.MaxPlayers)
+                    if (SummonedPlayersCount(role) < role.MaxPlayers)
                     {
-                        Players.Add(new(this, Player, Role));
+                        Players.Add(new(this, player, role));
+                        Plugin.CachedSpawnList.Add(player);
+                        Bucket.SpawnBucket.Add(player.Id);
                         break;
                     }
                 }
             }
+            LogManager.Debug($"layers selected for spawn: {Plugin.CachedSpawnList.Count}");
         }
 
         /// <summary>
