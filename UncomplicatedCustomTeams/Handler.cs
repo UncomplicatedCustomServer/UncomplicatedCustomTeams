@@ -92,7 +92,6 @@ namespace UncomplicatedCustomTeams
                     ev.Players.RemoveAll(p => !allowedIds.Contains(p.Id));
 
                     CustomTeamSpawnedThisWave = true;
-                    LogManager.Debug($"Next team selected: {Plugin.NextTeam?.Team?.Name}, players pruned to custom team.");
                 }
             }
             else
@@ -124,7 +123,6 @@ namespace UncomplicatedCustomTeams
 
             ev.Players.RemoveAll(p => !sorted.Contains(p.Id));
         }
-
 
         public void GetThisChaosOutOfHere(AnnouncingChaosEntranceEventArgs ev)
         {
