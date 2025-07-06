@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text;
 using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.Interfaces;
-using UnityEngine;
 
 
 namespace UncomplicatedCustomTeams.Commands
@@ -26,31 +25,14 @@ namespace UncomplicatedCustomTeams.Commands
             }
 
             StringBuilder sb = new();
-            sb.AppendLine("== Registered Custom Teams ==");
+            sb.AppendLine("List of all registered Custom Teams:");
             foreach (var team in Team.List)
             {
-                bool IsAudioSystemInUse = team.SoundPath != null && team.SoundPath != "/path/to/your/ogg/file" && team.SoundVolume > 0;
-                bool IsUsingCustomSpawnPosition = team.SpawnConditions.SpawnPosition != Vector3.zero;
-                bool IsUsingCassieSystem = team.CassieMessage != null && team.CassieMessage.Length > 0;
-                bool IsUsingCassieTranslation = team.CassieTranslation != null && team.CassieTranslation.Length > 0;
-
-                sb.AppendLine($"- <b>{team.Name}</b> (ID: {team.Id})");
-                sb.AppendLine($"  Min Players: {team.MinPlayers}");
-                sb.AppendLine($"  Spawn Chance: {team.SpawnChance}%");
-                sb.AppendLine($"  Is Using Cassie System: {IsUsingCassieSystem}");
-                sb.AppendLine($"  Is Using Cassie Translation: {IsUsingCassieTranslation}");
-                sb.AppendLine($"  Is Noisy: {team.IsNoisy}");
-                sb.AppendLine($"  Spawn Wave: {team.SpawnConditions.SpawnWave}");
-                sb.AppendLine($"  Used Item: {team.SpawnConditions.UsedItem}");
-                sb.AppendLine($"  Target SCP: {team.SpawnConditions.TargetScp}");
-                sb.AppendLine($"  Spawn Delay: {team.SpawnConditions.SpawnDelay}");
-                sb.AppendLine($"  Is Using Custom Spawn Position: {IsUsingCustomSpawnPosition}");
-                sb.AppendLine($"  Roles: {team.TeamRoles.Count}");
-                sb.AppendLine($"  Is Audio System In Use: {IsAudioSystemInUse}");
-                sb.AppendLine($"  Audio Volume: {team.SoundVolume}");
-                sb.AppendLine($"  Team Alive To Win: {string.Join(", ", team.TeamAliveToWin)}");
+                sb.AppendLine($"[{team.Id}] <b>{team.Name}</b>");
                 sb.AppendLine();
             }
+            sb.AppendLine($"Loaded {Team.List.Count} Custom Teams.");
+            sb.AppendLine("If you're looking for a specific Custom Team here and it's not listed, it's most likely not loaded!");
 
             response = sb.ToString();
             return true;
