@@ -80,7 +80,7 @@ namespace UncomplicatedCustomTeams.API.Features
             }
             CustomRole.Spawn(Player);
 
-            Timing.CallDelayed(0.1f, () => Player.Position = spawnPos);
+            Player.Position = spawnPos;
             IsRoleSet = true;
         }
     }
