@@ -44,9 +44,9 @@ namespace UncomplicatedCustomTeams.Commands
                 return false;
             }
 
-            if (team.SpawnConditions.SpawnWave != "NtfWave" && team.SpawnConditions.SpawnWave != "ChaosWave")
+            if (team.SpawnConditions.SpawnWave != API.Enums.WaveType.NtfWave && team.SpawnConditions.SpawnWave != API.Enums.WaveType.ChaosWave)
             {
-                response = $"This team cannot be forced (SpawnWave must be 'NtfWave' or 'ChaosWave').";
+                response = $"This team cannot be forced (SpawnWave must be NtfWave or ChaosWave).";
                 return false;
             }
 

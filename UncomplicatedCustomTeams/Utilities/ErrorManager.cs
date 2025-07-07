@@ -3,6 +3,7 @@ using PlayerRoles;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Features;
@@ -151,7 +152,7 @@ namespace UncomplicatedCustomTeams.Utilities
                         return false;
                     }
 
-                    if (string.IsNullOrWhiteSpace(team.SpawnConditions.SpawnWave) || !validSpawnTypes.Contains(team.SpawnConditions.SpawnWave))
+                    if (!Enum.IsDefined(typeof(WaveType), team.SpawnConditions.SpawnWave) || !!Enum.IsDefined(typeof(WaveType), team.SpawnConditions.SpawnWave))
                     {
                         string message = $"Invalid SpawnWave value '{team.SpawnConditions.SpawnWave}' for team {team.Name} (ID: {team.Id}).";
                         string suggestion = $"Valid values are: {string.Join(", ", validSpawnTypes)}.";

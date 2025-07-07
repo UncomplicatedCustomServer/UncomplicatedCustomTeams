@@ -62,12 +62,12 @@ namespace UncomplicatedCustomTeams.API.Features
             {
                 switch (Team.Team.SpawnConditions.SpawnWave)
                 {
-                    case "NtfWave":
+                    case Enums.WaveType.NtfWave:
                         spawnPos = RoleTypeId.NtfCaptain.GetRandomSpawnLocation().Position;
                         LogManager.Debug($"Using NTF spawn position for role: {CustomRole.Role}");
                         break;
 
-                    case "ChaosWave":
+                    case Enums.WaveType.ChaosWave:
                         spawnPos = RoleTypeId.ChaosConscript.GetRandomSpawnLocation().Position;
                         LogManager.Debug($"Using Chaos spawn position for role: {CustomRole.Role}");
                         break;

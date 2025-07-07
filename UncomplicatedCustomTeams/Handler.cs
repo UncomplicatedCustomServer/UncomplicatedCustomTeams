@@ -9,6 +9,7 @@ using PlayerRoles;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.API.Storage;
 using UncomplicatedCustomTeams.Utilities;
@@ -58,14 +59,14 @@ namespace UncomplicatedCustomTeams
             LogManager.Debug($"Respawning team event, let's propose our team\nTeams: {API.Features.Team.List.Count}");
             LogManager.Debug($"Next team for respawn is {ev.NextKnownTeam}");
 
-            string faction = ev.NextKnownTeam switch
+            WaveType faction = ev.NextKnownTeam switch
             {
-                PlayerRoles.Faction.FoundationStaff => "NtfWave",
-                PlayerRoles.Faction.FoundationEnemy => "ChaosWave",
-                _ => null
+                PlayerRoles.Faction.FoundationStaff => WaveType.NtfWave,
+                PlayerRoles.Faction.FoundationEnemy => WaveType.ChaosWave,
+                _ => WaveType.None
             };
 
-            if (faction is null)
+            if (faction is WaveType.None)
             {
                 Plugin.NextTeam = null;
                 return;
@@ -144,7 +145,7 @@ namespace UncomplicatedCustomTeams
         {
             LogManager.Debug("Round started, checking for RoundStarted spawns...");
 
-            var team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn("RoundStarted");
+            var team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn(WaveType.RoundStarted);
             if (team == null)
             {
                 LogManager.Debug("No valid team found for RoundStarted.");
@@ -199,7 +200,7 @@ namespace UncomplicatedCustomTeams
         {
             LogManager.Debug("Warhead detonated, checking for AfterWarhead spawns...");
 
-            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn("AfterWarhead");
+            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn(WaveType.AfterWarhead);
 
             if (team == null) return;
 
@@ -235,7 +236,7 @@ namespace UncomplicatedCustomTeams
 
             LogManager.Debug($"{ev.Player.Role.Type} is dying, checking for ScpDeath spawn condition...");
 
-            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn("ScpDeath");
+            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn(WaveType.ScpDeath);
             if (team == null)
             {
                 LogManager.Debug("No valid team found with ScpDeath condition.");
@@ -289,7 +290,7 @@ namespace UncomplicatedCustomTeams
         {
             LogManager.Debug("Decontamination in progress, checking for AfterDecontamination spawns...");
 
-            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn("AfterDecontamination");
+            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn(WaveType.AfterDecontamination);
 
             if (team == null) return;
 
@@ -333,7 +334,7 @@ namespace UncomplicatedCustomTeams
 
         public void OnItemUsed(UsedItemEventArgs ev)
         {
-            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.List.FirstOrDefault(t => t.SpawnConditions.SpawnWave == "UsedItem");
+            UncomplicatedCustomTeams.API.Features.Team team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn(WaveType.UsedItem);
 
             if (team == null)
             {

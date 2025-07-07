@@ -76,7 +76,7 @@ namespace UncomplicatedCustomTeams.Utilities
                             AudioClipStorage.LoadClip(team.SoundPath, clipId);
                         }
 
-                        if ((team.SpawnConditions.SpawnWave == "NtfWave" || team.SpawnConditions.SpawnWave == "ChaosWave")
+                        if ((team.SpawnConditions.SpawnWave == API.Enums.WaveType.NtfWave || team.SpawnConditions.SpawnWave == API.Enums.WaveType.ChaosWave)
                             && team.SpawnConditions.SpawnDelay > 0)
                         {
                             string warning = $"Setting SpawnWave '{team.SpawnConditions.SpawnWave}' with SpawnDelay won't work.";
@@ -95,7 +95,7 @@ namespace UncomplicatedCustomTeams.Utilities
                             continue;
                         }
 
-                        if (team.SpawnConditions.SpawnWave == "ScpDeath" &&
+                        if (team.SpawnConditions.SpawnWave == API.Enums.WaveType.ScpDeath &&
                             (string.IsNullOrWhiteSpace(team.SpawnConditions.TargetScp) ||
                              team.SpawnConditions.TargetScp.Equals("None", StringComparison.OrdinalIgnoreCase)))
                         {
@@ -107,7 +107,7 @@ namespace UncomplicatedCustomTeams.Utilities
                         }
 
                         if ((team.SpawnConditions.GetUsedItemType() != ItemType.None || team.SpawnConditions.GetCustomItemId() != null) &&
-                            team.SpawnConditions.SpawnWave != "UsedItem")
+                            team.SpawnConditions.SpawnWave != API.Enums.WaveType.ScpDeath)
                         {
                             string message = $"Item set but 'UsedItem' not used as spawn wave.";
                             string suggestion = "Change SpawnWave to 'UsedItem' or remove the item requirement.";
@@ -134,7 +134,7 @@ namespace UncomplicatedCustomTeams.Utilities
                         }
 
                         if ((team.SpawnConditions.GetUsedItemType() == ItemType.None && team.SpawnConditions.GetCustomItemId() == null) &&
-                            team.SpawnConditions.SpawnWave == "UsedItem")
+                            team.SpawnConditions.SpawnWave == API.Enums.WaveType.UsedItem)
                         {
                             string message = "UsedItem value is invalid or missing.";
                             string suggestion = "Provide a valid ItemType or Custom Item ID.";

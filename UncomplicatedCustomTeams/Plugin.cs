@@ -22,9 +22,9 @@ namespace UncomplicatedCustomTeams
 
         public override string Author => "FoxWorn3365 & .piwnica2137";
 
-        public override Version Version => new(1, 3, 0);
+        public override Version Version => new(1, 5, 0);
 
-        public override Version RequiredExiledVersion => new(9, 4, 0);
+        public override Version RequiredExiledVersion => new(9, 6, 0);
 
         public override PluginPriority Priority => PluginPriority.Default;
 

@@ -90,6 +90,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API\Enums\RolePriority.cs" />
+    <Compile Include="API\Enums\WaveType.cs" />
     <Compile Include="API\Features\ExiledCustomRole.cs" />
     <Compile Include="API\Features\SummonedCustomRole.cs" />
     <Compile Include="API\Features\SummonedTeam.cs" />

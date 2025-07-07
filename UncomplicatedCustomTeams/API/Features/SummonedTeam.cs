@@ -55,7 +55,7 @@ namespace UncomplicatedCustomTeams.API.Features
 
                 RoleTypeId SpawnType = RoleTypeId.ChaosConscript;
 
-                if (Team.SpawnConditions?.SpawnWave == "NtfWave")
+                if (Team.SpawnConditions?.SpawnWave == WaveType.NtfWave)
                     SpawnType = RoleTypeId.NtfPrivate;
 
                 Role.AddRole(SpawnType);

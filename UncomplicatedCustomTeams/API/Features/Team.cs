@@ -167,7 +167,7 @@ namespace UncomplicatedCustomTeams.API.Features
             }
         };
 
-        public static Team EvaluateSpawn(string wave)
+        public static Team EvaluateSpawn(WaveType wave)
         {
             List<Team> Teams = new();
             foreach (Team Team in List.Where(t => t.SpawnConditions.SpawnWave == wave))
@@ -188,7 +188,7 @@ namespace UncomplicatedCustomTeams.API.Features
 
         public class SpawnData
         {
-            public string SpawnWave { get; set; } = "NtfWave";
+            public WaveType SpawnWave { get; set; } = WaveType.NtfWave;
             public Vector3 SpawnPosition { get; set; } = Vector3.zero;
 
             private ItemType _usedItem = ItemType.None;
@@ -238,10 +238,10 @@ namespace UncomplicatedCustomTeams.API.Features
             /// <summary>
             /// Whether this spawn type requires a defined spawn position.
             /// </summary>
-            ///<returns><c>true</c> if the spawn position is required; otherwise, <c>false</c>.</returns>
+            /// <returns><c>true</c> if the spawn position is required; otherwise, <c>false</c>.</returns>
             public bool RequiresSpawnPosition()
             {
-                return SpawnWave is "AfterWarhead" or "AfterDecontamination" or "UsedItem" or "RoundStarted" or "ScpDeath";
+                return SpawnWave == WaveType.AfterDecontamination || SpawnWave == WaveType.AfterWarhead || SpawnWave == WaveType.RoundStarted || SpawnWave == WaveType.ScpDeath || SpawnWave == WaveType.UsedItem;
             }
         }
     }
