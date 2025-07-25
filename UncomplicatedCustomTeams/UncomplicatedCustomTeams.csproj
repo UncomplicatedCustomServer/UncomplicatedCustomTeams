@@ -109,7 +109,13 @@
     <Compile Include="Commands\LogShare.cs" />
     <Compile Include="Commands\Active.cs" />
     <Compile Include="Config.cs" />
-    <Compile Include="Handler.cs" />
+    <Compile Include="EventHandlers\SpawnWaves\AfterDecontamination.cs" />
+    <Compile Include="EventHandlers\SpawnWaves\AfterWarhead.cs" />
+    <Compile Include="EventHandlers\SpawnWaves\DefaultSpawnWaves.cs" />
+    <Compile Include="EventHandlers\MainHandler.cs" />
+    <Compile Include="EventHandlers\SpawnWaves\RoundStarted.cs" />
+    <Compile Include="EventHandlers\SpawnWaves\ScpDeath.cs" />
+    <Compile Include="EventHandlers\SpawnWaves\UsedItem.cs" />
     <Compile Include="Interfaces\IUCTCommand.cs" />
     <Compile Include="Interfaces\IUCTCustomRole.cs" />
     <Compile Include="Plugin.cs" />

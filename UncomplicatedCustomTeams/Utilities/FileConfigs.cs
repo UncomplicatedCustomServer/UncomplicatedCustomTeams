@@ -60,7 +60,7 @@ namespace UncomplicatedCustomTeams.Utilities
                     foreach (Team team in data["teams"])
                     {
                         bool hasCustomSound = !string.IsNullOrEmpty(team.SoundPath) && team.SoundPath != "/path/to/your/ogg/file";
-                        bool hasCassieMessage = !(string.IsNullOrWhiteSpace(team.CassieMessage) && string.IsNullOrWhiteSpace(team.CassieTranslation));
+                        bool hasCassieMessage = team.IsCassieAnnouncementEnabled;
 
                         if (hasCustomSound && hasCassieMessage)
                         {
@@ -107,7 +107,7 @@ namespace UncomplicatedCustomTeams.Utilities
                         }
 
                         if ((team.SpawnConditions.GetUsedItemType() != ItemType.None || team.SpawnConditions.GetCustomItemId() != null) &&
-                            team.SpawnConditions.SpawnWave != API.Enums.WaveType.ScpDeath)
+                            team.SpawnConditions.SpawnWave != API.Enums.WaveType.UsedItem)
                         {
                             string message = $"Item set but 'UsedItem' not used as spawn wave.";
                             string suggestion = "Change SpawnWave to 'UsedItem' or remove the item requirement.";
@@ -241,7 +241,7 @@ namespace UncomplicatedCustomTeams.Utilities
             {
                 Directory.CreateDirectory(Path.Combine(Dir, localDir));
 
-                File.WriteAllText(Path.Combine(Dir, localDir, "example-role.yml"), Loader.Serializer.Serialize(new Dictionary<string, List<Team>>() {
+                File.WriteAllText(Path.Combine(Dir, localDir, "example-team.yml"), Loader.Serializer.Serialize(new Dictionary<string, List<Team>>() {
                   {
                     "teams", new List<Team>()
                     {

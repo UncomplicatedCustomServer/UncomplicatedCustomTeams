@@ -1,6 +1,5 @@
 ﻿using Exiled.API.Extensions;
 using Exiled.API.Features;
-using MEC;
 using PlayerRoles;
 using UncomplicatedCustomRoles.Extensions;
 using UncomplicatedCustomTeams.Utilities;

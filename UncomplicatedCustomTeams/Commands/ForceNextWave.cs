@@ -3,6 +3,7 @@ using Exiled.API.Features;
 using System.Collections.Generic;
 using System.Linq;
 using UncomplicatedCustomTeams.API.Features;
+using UncomplicatedCustomTeams.EventHandlers.SpawnWaves;
 using UncomplicatedCustomTeams.Interfaces;
 
 namespace UncomplicatedCustomTeams.Commands
@@ -51,7 +52,7 @@ namespace UncomplicatedCustomTeams.Commands
             }
 
             Plugin.NextTeam = new SummonedTeam(team);
-            Plugin.Instance.Handler.ForcedNextWave = true;
+            DefaultSpawnWaves.ForcedNextWave = true;
 
             response = $"Next wave will spawn team '{team.Name}' successfully.";
             return true;

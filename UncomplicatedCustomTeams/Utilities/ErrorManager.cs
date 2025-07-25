@@ -3,7 +3,6 @@ using PlayerRoles;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Features;
@@ -34,6 +33,7 @@ namespace UncomplicatedCustomTeams.Utilities
                 Suggestion = suggestion
             });
         }
+
         public static void Clear() => Errors.Clear();
 
         public static string GetSuggestionFromMessage(string message)
@@ -152,10 +152,10 @@ namespace UncomplicatedCustomTeams.Utilities
                         return false;
                     }
 
-                    if (!Enum.IsDefined(typeof(WaveType), team.SpawnConditions.SpawnWave) || !!Enum.IsDefined(typeof(WaveType), team.SpawnConditions.SpawnWave))
+                    if (!Enum.IsDefined(typeof(WaveType), team.SpawnConditions.SpawnWave))
                     {
                         string message = $"Invalid SpawnWave value '{team.SpawnConditions.SpawnWave}' for team {team.Name} (ID: {team.Id}).";
-                        string suggestion = $"Valid values are: {string.Join(", ", validSpawnTypes)}.";
+                        string suggestion = $"Valid values are: {string.Join(", ", Enum.GetNames(typeof(WaveType)))}.";
                         ErrorManager.Add(filePath, message, suggestion: suggestion);
                         LogManager.Error($"{message}\n {suggestion}");
                         return false;
