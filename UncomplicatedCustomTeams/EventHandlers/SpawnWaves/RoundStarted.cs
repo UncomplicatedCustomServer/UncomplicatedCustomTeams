@@ -21,16 +21,6 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
             }
 
             team.SpawnCount = 0;
-            var requiredRoles = team.SpawnConditions.RoleAliveOnRoundStart;
-            if (requiredRoles != null && requiredRoles.Count > 0)
-            {
-                var aliveRoles = Player.List.Where(p => p.IsAlive).Select(p => p.Role.Type).ToHashSet();
-                if (!requiredRoles.Any(aliveRoles.Contains))
-                {
-                    LogManager.Debug($"Skipping spawn for team {team.Name} — required roles not alive. Required: [{string.Join(", ", requiredRoles)}]");
-                    return;
-                }
-            }
 
             LogManager.Debug($"EvaluateSpawn found team: {team.Name}");
             Timing.CallDelayed(team.SpawnConditions.SpawnDelay, () =>

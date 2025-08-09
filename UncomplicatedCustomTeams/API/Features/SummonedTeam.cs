@@ -163,6 +163,18 @@ namespace UncomplicatedCustomTeams.API.Features
                 return null;
             }
 
+            var rr = team.SpawnConditions.RequiredAliveRoles;
+            if (rr != null && rr.Count > 0)
+            {
+                var aliveRoles = Player.List.Where(p => p.IsAlive).Select(p => p.Role.Type).ToHashSet();
+
+                if (!rr.Any(aliveRoles.Contains))
+                {
+                    Log.Warn($"Skipping spawn for team {team.Name}, none of the required roles are alive. Required: [{string.Join(", ", rr)}]");
+                    return null;
+                }
+            }
+
             SummonedTeam SummonedTeam = new(team);
 
             int totalAllowed = team.TeamRoles.Sum(r => r.MaxPlayers);

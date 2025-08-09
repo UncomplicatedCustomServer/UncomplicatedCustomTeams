@@ -229,8 +229,8 @@ namespace UncomplicatedCustomTeams.API.Features
             [Description("Specify the SCP role (e.g., Scp106) or use the SCPs team (SCPs) whose death triggers this team spawn. Only SCPs is allowed when using a team. This setting only applies when SpawnWave is set to 'ScpDeath'.")]
             public string TargetScp { get; set; } = "None";
 
-            [Description("List of roles that must be alive at round start for this team to spawn. Ignored if empty. Use only when Spawn Wave is RoundStarted!")]
-            public List<RoleTypeId> RoleAliveOnRoundStart { get; set; } = new();
+            [Description("List of roles where at least one of which must be alive for this team to spawn. Ignored if empty.")]
+            public List<RoleTypeId> RequiredAliveRoles { get; set; } = new();
 
             [Description("Defines which starting roles can be converted into this team. At the start of the round, the plugin will randomly select players from these roles to respawn as this team. This option only works if 'SpawnWave' is set to 'RoundStarted'.")]
             public List<RoleTypeId> RolesAffectedOnRoundStart { get; set; } = new();
