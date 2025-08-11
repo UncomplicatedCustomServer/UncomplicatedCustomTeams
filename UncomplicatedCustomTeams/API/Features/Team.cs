@@ -190,6 +190,7 @@ namespace UncomplicatedCustomTeams.API.Features
         {
             public WaveType SpawnWave { get; set; } = WaveType.NtfWave;
             public Vector3 SpawnPosition { get; set; } = Vector3.zero;
+            public Quaternion SpawnRotation { get; set; } = Quaternion.identity;
 
             private ItemType _usedItem = ItemType.None;
             private int? _customItemId = null;

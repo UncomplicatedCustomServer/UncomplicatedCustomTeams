@@ -43,16 +43,23 @@ namespace UncomplicatedCustomTeams.API.Features
         /// </summary>
         public void SpawnAll()
         {
-            foreach (SummonedCustomRole Role in Players)
+            for (int i = Players.Count - 1; i >= 0; i--)
             {
+                SummonedCustomRole Role = Players[i];
+
+                if (Role.Player == null)
+                {
+                    Players.RemoveAt(i);
+                    continue;
+                }
+
                 if (Role.Player.IsAlive)
                 {
-                    Players.Remove(Role);
+                    Players.RemoveAt(i);
                     continue;
                 }
 
                 RoleTypeId SpawnType = RoleTypeId.ChaosConscript;
-
                 if (Team.SpawnConditions?.SpawnWave == WaveType.NtfWave)
                     SpawnType = RoleTypeId.NtfPrivate;
 
@@ -61,13 +68,11 @@ namespace UncomplicatedCustomTeams.API.Features
         }
 
         /// <summary>
-        /// Checks if any players assigned to this team are still alive.
+        /// Checks if all players in this spawn wave have been eliminated.
         /// </summary>
-        public void CheckPlayers()
+        public bool IsTeamEliminated()
         {
-            foreach (SummonedCustomRole Role in Players)
-                if (Role.Player.IsAlive)
-                    Players.Remove(Role);
+            return Players.All(p => !p.Player.IsAlive);
         }
 
         /// <summary>
@@ -159,7 +164,7 @@ namespace UncomplicatedCustomTeams.API.Features
 
             if (team.MaxSpawns >= 0 && team.SpawnCount >= team.MaxSpawns)
             {
-                Log.Warn($"Team {team.Name} has reached its maximum number of spawns ({team.MaxSpawns}). Skipping spawn.");
+                LogManager.Warn($"Team {team.Name} has reached its maximum number of spawns ({team.MaxSpawns}). Skipping spawn.");
                 return null;
             }
 
@@ -170,7 +175,7 @@ namespace UncomplicatedCustomTeams.API.Features
 
                 if (!rr.Any(aliveRoles.Contains))
                 {
-                    Log.Warn($"Skipping spawn for team {team.Name}, none of the required roles are alive. Required: [{string.Join(", ", rr)}]");
+                    LogManager.Warn($"Skipping spawn for team {team.Name}, none of the required roles are alive. Required: [{string.Join(", ", rr)}]");
                     return null;
                 }
             }

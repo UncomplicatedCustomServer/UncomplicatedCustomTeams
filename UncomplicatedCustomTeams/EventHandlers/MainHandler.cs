@@ -2,6 +2,7 @@
 using Exiled.Events.EventArgs.Map;
 using Exiled.Events.EventArgs.Player;
 using MEC;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.API.Storage;
@@ -140,9 +141,20 @@ namespace UncomplicatedCustomTeams
             {
                 SummonedTeam.CheckRoundEndCondition();
 
+                List<SummonedTeam> teamsToRemove = [];
+
                 foreach (var team in SummonedTeam.List)
                 {
-                    team.CheckPlayers();
+                    if (team.IsTeamEliminated())
+                    {
+                        LogManager.Debug($"Team {team.Team.Name} has been eliminated. Scheduling for removal.");
+                        teamsToRemove.Add(team);
+                    }
+                }
+
+                foreach (var team in teamsToRemove)
+                {
+                    team.Destroy();
                 }
             });
         }

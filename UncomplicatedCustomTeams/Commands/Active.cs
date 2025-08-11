@@ -26,6 +26,7 @@ namespace UncomplicatedCustomTeams.Commands
                 response = "No custom teams have alive players.";
                 return false;
             }
+
             StringBuilder sb = new();
             sb.AppendLine("== Active Custom Teams ==");
 

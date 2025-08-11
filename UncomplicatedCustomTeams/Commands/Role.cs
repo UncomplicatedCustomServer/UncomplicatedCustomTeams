@@ -1,6 +1,7 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
 using Exiled.Permissions.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UncomplicatedCustomTeams.API.Features;
@@ -8,6 +9,7 @@ using UncomplicatedCustomTeams.Interfaces;
 
 namespace UncomplicatedCustomTeams.Commands
 {
+    [Obsolete("This command is broken and will be removed in a future version. Use UCR spawn command.")]
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
     internal class Role : IUCTCommand
     {

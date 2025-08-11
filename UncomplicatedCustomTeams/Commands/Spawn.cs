@@ -45,7 +45,7 @@ namespace UncomplicatedCustomTeams.Commands
             }
             else
             {
-                Bucket.SpawnBucket = new();
+                Bucket.SpawnBucket = [];
                 foreach (Player Player in Player.List.Where(p => !p.IsAlive && p.Role.Type is PlayerRoles.RoleTypeId.Spectator && !p.IsOverwatchEnabled))
                     Bucket.SpawnBucket.Add(Player.Id);
 
@@ -56,8 +56,7 @@ namespace UncomplicatedCustomTeams.Commands
 
                 Timing.CallDelayed(1.5f, () =>
                 {
-                    Bucket.SpawnBucket = new();
-                    Plugin.NextTeam?.CheckPlayers();
+                    Bucket.SpawnBucket = [];
                 });
                 return true;
             }
