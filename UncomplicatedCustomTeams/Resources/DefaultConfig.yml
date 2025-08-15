@@ -23,13 +23,19 @@ teams:
   cassie_message: team arrived
   cassie_translation: Team arrived!
   is_noisy: true
-  sound_path: /path/to/your/ogg/file
+  sound_paths:
+  - path: /path/to/your/ogg/file
+    delay: 0
   sound_volume: 1
   team_alive_to_win:
   - ClassD
   roles:
   - max_players: 1
     priority: First
+    drop_inventory_on_death: true
+    is_godmode_enabled: false
+    is_bypass_enabled: false
+    is_noclip_enabled: false
     id: 1
     name: Janitor
     override_role_name: false
@@ -88,6 +94,10 @@ teams:
     ignore_spawn_system: false
   - max_players: 1
     priority: Second
+    drop_inventory_on_death: true
+    is_godmode_enabled: false
+    is_bypass_enabled: false
+    is_noclip_enabled: false
     id: 2
     name: Janitor
     override_role_name: false
@@ -147,4 +157,8 @@ teams:
   ecr_roles:
   - max_players: 1
     priority: None
+    drop_inventory_on_death: true
+    is_godmode_enabled: false
+    is_bypass_enabled: false
+    is_noclip_enabled: false
     id: 1
