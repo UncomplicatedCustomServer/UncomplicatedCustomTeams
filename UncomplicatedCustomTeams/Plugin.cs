@@ -55,6 +55,7 @@ namespace UncomplicatedCustomTeams
                 HttpManager.RegisterEvents();
 
             PlayerHandler.ChangingRole += Handler.OnChangingRole;
+            PlayerHandler.Dying += Handler.OnDying;
             PlayerHandler.Verified += Handler.OnVerified;
             PlayerHandler.Destroying += Handler.OnDestroying;
             MapHandler.AnnouncingChaosEntrance += Handler.GetThisChaosOutOfHere;
@@ -104,6 +105,7 @@ namespace UncomplicatedCustomTeams
         public override void OnDisabled()
         {
             PlayerHandler.ChangingRole -= Handler.OnChangingRole;
+            PlayerHandler.Dying -= Handler.OnDying;
             PlayerHandler.Verified -= Handler.OnVerified;
             PlayerHandler.Destroying -= Handler.OnDestroying;
             MapHandler.AnnouncingChaosEntrance -= Handler.GetThisChaosOutOfHere;

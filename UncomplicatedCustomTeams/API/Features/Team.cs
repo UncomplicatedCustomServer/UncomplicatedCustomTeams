@@ -127,8 +127,8 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// The list of every UCR role that will be a part of this wave
         /// </summary>
-        public List<UncomplicatedCustomRole> Roles { get; set; } = new()
-        {
+        public List<UncomplicatedCustomRole> Roles { get; set; } =
+        [
             new()
             {
                 Id = 1,
@@ -138,6 +138,10 @@ namespace UncomplicatedCustomTeams.API.Features
                 RoleAfterEscape = null,
                 MaxPlayers = 1,
                 Priority = RolePriority.First,
+                DropInventoryOnDeath = true,
+                IsGodmodeEnabled = false,
+                IsBypassEnabled = false,
+                IsNoclipEnabled = false,
                 CustomFlags = null,
             },
             new()
@@ -149,9 +153,13 @@ namespace UncomplicatedCustomTeams.API.Features
                 RoleAfterEscape = null,
                 CustomFlags = null,
                 Priority = RolePriority.Second,
+                DropInventoryOnDeath = true,
+                IsGodmodeEnabled = false,
+                IsBypassEnabled = false,
+                IsNoclipEnabled = false,
                 MaxPlayers = 1
             }
-        };
+        ];
 
 
         /// <summary>
@@ -164,12 +172,13 @@ namespace UncomplicatedCustomTeams.API.Features
                 Id = 1,
                 Priority = RolePriority.None,
                 MaxPlayers = 1,
+                DropInventoryOnDeath = true
             }
         };
 
         public static Team EvaluateSpawn(WaveType wave)
         {
-            List<Team> Teams = new();
+            List<Team> Teams = [];
             foreach (Team Team in List.Where(t => t.SpawnConditions.SpawnWave == wave))
             {
                 for (int a = 0; a < Team.SpawnChance; a++)

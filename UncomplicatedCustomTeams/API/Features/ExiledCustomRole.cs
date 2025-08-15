@@ -12,6 +12,10 @@ namespace UncomplicatedCustomTeams.API.Features
         private Exiled.CustomRoles.API.Features.CustomRole CustomRole => Exiled.CustomRoles.API.Features.CustomRole.Get((uint)Id);
         public int MaxPlayers { get; set; }
         public RolePriority Priority { get; set; } = RolePriority.None;
+        public bool DropInventoryOnDeath { get; set; } = true;
+        public bool IsGodmodeEnabled { get; set; }
+        public bool IsBypassEnabled { get; set; }
+        public bool IsNoclipEnabled { get; set; }
         public int Id { get; set; }
 
         [YamlIgnore]

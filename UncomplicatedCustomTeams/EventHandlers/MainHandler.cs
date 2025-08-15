@@ -158,5 +158,31 @@ namespace UncomplicatedCustomTeams
                 }
             });
         }
+
+        public void OnDying(DyingEventArgs ev)
+        {
+            SummonedCustomRole playerRole = null;
+            foreach (var team in SummonedTeam.List)
+            {
+                var roleInTeam = team.SummonedPlayersGet(ev.Player);
+                if (roleInTeam != null)
+                {
+                    playerRole = roleInTeam;
+                    break;
+                }
+            }
+
+            if (playerRole != null)
+            {
+                if (playerRole.CustomRole.DropInventoryOnDeath)
+                {
+                    Log.Debug($"Player {ev.Player.Nickname} with role {playerRole.CustomRole.Name} is dying. Items will be dropped (default behavior).");
+                    return;
+                }
+
+                Log.Debug($"Player {ev.Player.Nickname} with role {playerRole.CustomRole.Name} is dying. Clearing Items.");
+                ev.Player.ClearInventory(true);
+            }
+        }
     }
 }
