@@ -91,10 +91,11 @@ namespace UncomplicatedCustomTeams.API.Features
         public bool IsNoisy { get; set; } = true;
 
         /// <summary>
-        /// The path to the sound file provided by the user in the configuration.
+        /// A list of sounds to be played sequentially when the team spawns.
+        /// Requires AudioPlayerAPI. Download it here: https://github.com/Killers0992/AudioPlayerApi
         /// </summary>
-        [Description("Requires AudioPlayerAPI. Download it here: https://github.com/Killers0992/AudioPlayerApi")]
-        public string SoundPath { get; set; } = "/path/to/your/ogg/file";
+        [Description("A list of sounds to be played sequentially. Requires AudioPlayerAPI.")]
+        public List<SoundPathEntry> SoundPaths { get; set; } = [new()];
 
         /// <summary>
         /// Volume of the sound, should be between 1 and 100.
@@ -256,6 +257,23 @@ namespace UncomplicatedCustomTeams.API.Features
             {
                 return SpawnWave == WaveType.AfterDecontamination || SpawnWave == WaveType.AfterWarhead || SpawnWave == WaveType.RoundStarted || SpawnWave == WaveType.ScpDeath || SpawnWave == WaveType.UsedItem;
             }
+        }
+        /// <summary>
+        /// Represents a single sound entry with its path and a delay before it's played.
+        /// </summary>
+        public class SoundPathEntry
+        {
+            /// <summary>
+            /// The path to the sound file.
+            /// </summary>
+            [Description("The path to the .ogg sound file.")]
+            public string Path { get; set; } = "/path/to/your/ogg/file";
+
+            /// <summary>
+            /// The delay in seconds before this sound is played.
+            /// </summary>
+            [Description("Delay in seconds before this sound starts playing.")]
+            public float Delay { get; set; } = 0f;
         }
     }
 }

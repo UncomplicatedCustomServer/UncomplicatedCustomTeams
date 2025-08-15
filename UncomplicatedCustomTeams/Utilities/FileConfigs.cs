@@ -59,7 +59,7 @@ namespace UncomplicatedCustomTeams.Utilities
 
                     foreach (Team team in data["teams"])
                     {
-                        bool hasCustomSound = !string.IsNullOrEmpty(team.SoundPath) && team.SoundPath != "/path/to/your/ogg/file";
+                        bool hasCustomSound = team.SoundPaths != null && team.SoundPaths.Any(s => !string.IsNullOrEmpty(s.Path) && s.Path != "/path/to/your/ogg/file");
                         bool hasCassieMessage = team.IsCassieAnnouncementEnabled;
 
                         if (hasCustomSound && hasCassieMessage)
@@ -72,8 +72,15 @@ namespace UncomplicatedCustomTeams.Utilities
 
                         if (hasCustomSound)
                         {
-                            string clipId = $"sound_{team.Id}";
-                            AudioClipStorage.LoadClip(team.SoundPath, clipId);
+                            for (int i = 0; i < team.SoundPaths.Count; i++)
+                            {
+                                var soundEntry = team.SoundPaths[i];
+                                if (!string.IsNullOrEmpty(soundEntry.Path) && soundEntry.Path != "/path/to/your/ogg/file")
+                                {
+                                    string clipId = $"sound_{team.Id}_{i}";
+                                    AudioClipStorage.LoadClip(soundEntry.Path, clipId);
+                                }
+                            }
                         }
 
                         if ((team.SpawnConditions.SpawnWave == API.Enums.WaveType.NtfWave || team.SpawnConditions.SpawnWave == API.Enums.WaveType.ChaosWave)

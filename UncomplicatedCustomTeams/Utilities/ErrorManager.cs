@@ -214,16 +214,16 @@ namespace UncomplicatedCustomTeams.Utilities
                         return false;
                     }
 
-                    if (string.IsNullOrEmpty(team.SoundPath))
+                    if (team.SoundPaths == null || team.SoundPaths.Count == 0)
                     {
-                        string message = $"Team {team.Name} (ID: {team.Id}) has no sound path defined!";
-                        string suggestion = "Specify a valid sound file path for the team. If the audio system is not intended to be used, set the path to a placeholder like \"/path/to/your/ogg/file\".";
+                        string message = $"Team {team.Name} (ID: {team.Id}) has no sound paths defined in the 'SoundPaths' list!";
+                        string suggestion = "The 'SoundPaths' list cannot be empty. Specify at least one valid sound file path or use the default placeholder if audio is not intended.";
                         ErrorManager.Add(filePath, message, suggestion: suggestion);
                         LogManager.Error($"{message}\n {suggestion}");
                         return false;
                     }
 
-                    HashSet<int> roleIds = new();
+                    HashSet<int> roleIds = [];
                     foreach (var role in team.TeamRoles)
                     {
                         if (string.IsNullOrWhiteSpace(role.Name))

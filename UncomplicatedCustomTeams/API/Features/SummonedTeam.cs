@@ -1,5 +1,6 @@
 ﻿using Exiled.API.Enums;
 using Exiled.API.Features;
+using MEC;
 using PlayerRoles;
 using System;
 using System.Collections.Generic;
@@ -209,18 +210,43 @@ namespace UncomplicatedCustomTeams.API.Features
                 if (team.IsCassieAnnouncementEnabled)
                     Cassie.MessageTranslated(team.CassieMessage, team.CassieTranslation, isNoisy: team.IsNoisy, isSubtitles: true);
             }
-            if (!string.IsNullOrEmpty(team.SoundPath))
+            bool hasCustomSound = team.SoundPaths != null && team.SoundPaths.Any(s => !string.IsNullOrEmpty(s.Path) && s.Path != "/path/to/your/ogg/file");
+            if (hasCustomSound)
             {
-                AudioPlayer audioPlayer = AudioPlayer.CreateOrGet($"Global_Audio_{team.Id}", onIntialCreation: (p) =>
-                {
-                    Speaker speaker = p.AddSpeaker("Main", isSpatial: false, maxDistance: 5000f);
-                });
-                float volume = Clamp(team.SoundVolume, 1f, 100f);
-                audioPlayer.AddClip($"sound_{team.Id}", volume);
+                Timing.RunCoroutine(PlaySoundSequence(team));
             }
 
             team.SpawnCount++;
             return SummonedTeam;
+        }
+
+
+        /// <summary>
+        /// A coroutine that plays a sequence of sounds with specified delays.
+        /// </summary>
+        private static IEnumerator<float> PlaySoundSequence(Team team)
+        {
+            AudioPlayer audioPlayer = AudioPlayer.CreateOrGet($"Global_Audio_{team.Id}", onIntialCreation: (p) =>
+            {
+                p.AddSpeaker("Main", isSpatial: false, maxDistance: 5000f);
+            });
+            float volume = Clamp(team.SoundVolume, 1f, 100f);
+
+            for (int i = 0; i < team.SoundPaths.Count; i++)
+            {
+                var sound = team.SoundPaths[i];
+
+                if (string.IsNullOrEmpty(sound.Path) || sound.Path == "/path/to/your/ogg/file")
+                    continue;
+
+                if (sound.Delay > 0f)
+                {
+                    yield return Timing.WaitForSeconds(sound.Delay);
+                }
+
+                string clipId = $"sound_{team.Id}_{i}";
+                audioPlayer.AddClip(clipId, volume);
+            }
         }
 
         /// <summary>
