@@ -39,29 +39,17 @@ namespace UncomplicatedCustomTeams.API.Features
                 Player.IsGodModeEnabled = true;
                 LogManager.Debug($"{CustomRole.Name} is about to receive GodMode. Enabling...");
             }
-            else
-            {
-                Player.IsGodModeEnabled = false;
-            }
 
             if (CustomRole.IsBypassEnabled)
             {
                 Player.IsBypassModeEnabled = true;
                 LogManager.Debug($"{CustomRole.Name} is about to receive Bypass. Enabling...");
             }
-            else
-            {
-                Player.IsBypassModeEnabled = false;
-            }
 
             if (CustomRole.IsNoclipEnabled)
             {
                 Player.IsNoclipPermitted = true;
                 LogManager.Debug($"{CustomRole.Name} is about to receive Noclip. Enabling...");
-            }
-            else
-            {
-                Player.IsNoclipPermitted = false;
             }
         }
         public void AddRole(RoleTypeId? proposed = null)

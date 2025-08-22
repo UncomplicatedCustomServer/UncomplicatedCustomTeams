@@ -186,23 +186,35 @@ namespace UncomplicatedCustomTeams.API.Features
             int totalAllowed = team.TeamRoles.Sum(r => r.MaxPlayers);
             int assigned = 0;
 
+            var random = new Random();
+            var roleQueue = team.TeamRoles
+                .Where(r => r.Priority != RolePriority.None)
+                .GroupBy(r => r.Priority)
+                .OrderBy(g => g.Key);
+
             foreach (Player player in players)
             {
                 if (assigned >= totalAllowed)
                     break;
 
-                foreach (IUCTCustomRole role in team.TeamRoles.OrderBy(r => r.Priority))
-                {
-                    if (role.Priority == RolePriority.None)
-                        continue;
+                bool playerAssigned = false;
 
-                    if (SummonedTeam.SummonedPlayersCount(role) < role.MaxPlayers)
+                foreach (var priorityGroup in roleQueue)
+                {
+                    var shuffledRoles = priorityGroup.OrderBy(r => random.Next());
+                    foreach (IUCTCustomRole role in shuffledRoles)
                     {
-                        SummonedTeam.Players.Add(new(SummonedTeam, player, role));
-                        assigned++;
-                        LogManager.Debug($"{player.Nickname} -> {role.Name} (Priority: {role.Priority})");
-                        break;
+                        if (SummonedTeam.SummonedPlayersCount(role) < role.MaxPlayers)
+                        {
+                            SummonedTeam.Players.Add(new(SummonedTeam, player, role));
+                            assigned++;
+                            LogManager.Debug($"{player.Nickname} -> {role.Name} (Priority: {role.Priority})");
+                            playerAssigned = true;
+                            break;
+                        }
                     }
+                    if (playerAssigned)
+                        break;
                 }
             }
             if (!string.IsNullOrEmpty(team.CassieTranslation))
@@ -255,28 +267,26 @@ namespace UncomplicatedCustomTeams.API.Features
         public static List<Player> CanSpawnTeam(Team team)
         {
             if (team == null)
-                return new List<Player>();
+                return [];
 
-            List<Player> allPlayers = Player.List.ToList();
+            List<Player> allPlayers = [.. Player.List];
             int totalPlayers = allPlayers.Count;
 
             LogManager.Debug($"Total players: {totalPlayers}, MinPlayers required: {team.MinPlayers}");
             if (totalPlayers < team.MinPlayers)
             {
                 LogManager.Debug($"Not enough players on spectator to spawn team {team.Name}.");
-                return new List<Player>();
+                return [];
             }
 
-            List<Player> spectators = allPlayers
-                .Where(p => !p.IsAlive && p.Role.Type == RoleTypeId.Spectator && !p.IsOverwatchEnabled)
-                .ToList();
+            List<Player> spectators = [.. allPlayers.Where(p => !p.IsAlive && p.Role.Type == RoleTypeId.Spectator && !p.IsOverwatchEnabled)];
 
             var sortedRoles = team.TeamRoles
                 .Where(role => role.Priority != RolePriority.None)
                 .OrderBy(role => role.Priority)
                 .ToList();
 
-            List<Player> selectedPlayers = new();
+            List<Player> selectedPlayers = [];
             int index = 0;
 
             foreach (var teamRole in sortedRoles)
