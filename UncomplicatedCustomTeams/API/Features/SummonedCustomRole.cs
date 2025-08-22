@@ -7,31 +7,24 @@ using UnityEngine;
 
 namespace UncomplicatedCustomTeams.API.Features
 {
-    public class SummonedCustomRole
+    public class SummonedCustomRole(SummonedTeam team, Player player, IUCTCustomRole role)
     {
         /// <summary>
         /// The <see cref="Exiled.API.Features.Player"/> instance
         /// </summary>
-        public Player Player { get; }
+        public Player Player { get; } = player;
 
         /// <summary>
         /// The CustomRole instance for the given player
         /// </summary>
-        public CustomRole CustomRole { get; }
+        public IUCTCustomRole CustomRole { get; } = role;
 
-        public SummonedTeam Team { get; }
+        public SummonedTeam Team { get; } = team;
 
         /// <summary>
         /// Indicate wether the custom role has been assigned or not
         /// </summary>
         public bool IsRoleSet { get; private set; } = false;
-
-        public SummonedCustomRole(SummonedTeam team, Player player, CustomRole role)
-        {
-            Team = team;
-            Player = player;
-            CustomRole = role;
-        }
 
         public void Destroy()
         {
@@ -39,7 +32,26 @@ namespace UncomplicatedCustomTeams.API.Features
                 Player.TryRemoveCustomRole();
         }
 
-#pragma warning disable CS0618 // A class member was marked with the Obsolete attribute -> the [Obsolete()] attribute is only there to avoid users to use this in a wrong way!
+        private void ApplyRoleSettings()
+        {
+            if (CustomRole.IsGodmodeEnabled)
+            {
+                Player.IsGodModeEnabled = true;
+                LogManager.Debug($"{CustomRole.Name} is about to receive GodMode. Enabling...");
+            }
+
+            if (CustomRole.IsBypassEnabled)
+            {
+                Player.IsBypassModeEnabled = true;
+                LogManager.Debug($"{CustomRole.Name} is about to receive Bypass. Enabling...");
+            }
+
+            if (CustomRole.IsNoclipEnabled)
+            {
+                Player.IsNoclipPermitted = true;
+                LogManager.Debug($"{CustomRole.Name} is about to receive Noclip. Enabling...");
+            }
+        }
         public void AddRole(RoleTypeId? proposed = null)
         {
             RoleTypeId finalRole = proposed ?? RoleTypeId.ChaosConscript;
@@ -62,12 +74,12 @@ namespace UncomplicatedCustomTeams.API.Features
             {
                 switch (Team.Team.SpawnConditions.SpawnWave)
                 {
-                    case "NtfWave":
+                    case Enums.WaveType.NtfWave:
                         spawnPos = RoleTypeId.NtfCaptain.GetRandomSpawnLocation().Position;
                         LogManager.Debug($"Using NTF spawn position for role: {CustomRole.Role}");
                         break;
 
-                    case "ChaosWave":
+                    case Enums.WaveType.ChaosWave:
                         spawnPos = RoleTypeId.ChaosConscript.GetRandomSpawnLocation().Position;
                         LogManager.Debug($"Using Chaos spawn position for role: {CustomRole.Role}");
                         break;
@@ -78,8 +90,13 @@ namespace UncomplicatedCustomTeams.API.Features
                         break;
                 }
             }
+            CustomRole.Spawn(Player);
+
+            Vector3 spawnAngle = Team.Team.SpawnConditions.SpawnRotation;
+            Quaternion spawnRot = Quaternion.Euler(spawnAngle);
             Player.Position = spawnPos;
-            Player.SetCustomRoleAttributes(CustomRole);
+            Player.Rotation = spawnRot;
+            ApplyRoleSettings();
             IsRoleSet = true;
         }
     }

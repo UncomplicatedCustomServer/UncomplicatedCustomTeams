@@ -1,10 +1,12 @@
-﻿using System;
+﻿using PlayerRoles;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using UncomplicatedCustomTeams.Utilities;
 using UncomplicatedCustomTeams.API.Enums;
+using UncomplicatedCustomTeams.Utilities;
 using UnityEngine;
+using YamlDotNet.Serialization;
 
 namespace UncomplicatedCustomTeams.API.Features
 {
@@ -46,6 +48,18 @@ namespace UncomplicatedCustomTeams.API.Features
         public int MinPlayers { get; set; } = 1;
 
         /// <summary>
+        /// The maximum number of times this team can be spawned in a single round. Set to -1 for unlimited.
+        /// </summary>
+        [Description("The maximum number of times this team can be spawned in a single round. Set to -1 for unlimited.")]
+        public int MaxSpawns { get; set; } = -1;
+
+        /// <summary>
+        /// Tracks how many times this team has been spawned in the current round.
+        /// </summary>
+        [YamlIgnore]
+        public int SpawnCount { get; internal set; } = 0;
+
+        /// <summary>
         /// The chance of spawning of this custom <see cref="Team"/>.
         /// 0 is 0% and 100 is 100%!
         /// </summary>
@@ -57,6 +71,11 @@ namespace UncomplicatedCustomTeams.API.Features
         public SpawnData SpawnConditions { get; set; } = new();
 
         /// <summary>
+        /// Is Cassie announcement enabled?
+        /// </summary>
+        public bool IsCassieAnnouncementEnabled { get; set; } = true;
+
+        /// <summary>
         /// The cassie message that will be sent to every player
         /// </summary>
         public string CassieMessage { get; set; } = "team arrived";
@@ -65,17 +84,18 @@ namespace UncomplicatedCustomTeams.API.Features
         /// The translation of the cassie message
         /// </summary>
         public string CassieTranslation { get; set; } = "Team arrived!";
-        
+
         /// <summary>
         /// Determines whether the Cassie message should be noisy.
         /// </summary>
         public bool IsNoisy { get; set; } = true;
 
         /// <summary>
-        /// The path to the sound file provided by the user in the configuration.
+        /// A list of sounds to be played sequentially when the team spawns.
+        /// Requires AudioPlayerAPI. Download it here: https://github.com/Killers0992/AudioPlayerApi
         /// </summary>
-        [Description("Requires AudioPlayerAPI. Download it here: https://github.com/Killers0992/AudioPlayerApi")]
-        public string SoundPath { get; set; } = "/path/to/your/ogg/file";
+        [Description("A list of sounds to be played sequentially. Requires AudioPlayerAPI.")]
+        public List<SoundPathEntry> SoundPaths { get; set; } = [new()];
 
         /// <summary>
         /// Volume of the sound, should be between 1 and 100.
@@ -102,8 +122,14 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// The list of every role that will be a part of this wave
         /// </summary>
-        public List<CustomRole> Roles { get; set; } = new()
-        {
+        [YamlIgnore]
+        public List<IUCTCustomRole> TeamRoles => Roles.OfType<IUCTCustomRole>().Concat(EcrRoles).ToList();
+
+        /// <summary>
+        /// The list of every UCR role that will be a part of this wave
+        /// </summary>
+        public List<UncomplicatedCustomRole> Roles { get; set; } =
+        [
             new()
             {
                 Id = 1,
@@ -113,6 +139,10 @@ namespace UncomplicatedCustomTeams.API.Features
                 RoleAfterEscape = null,
                 MaxPlayers = 1,
                 Priority = RolePriority.First,
+                DropInventoryOnDeath = true,
+                IsGodmodeEnabled = false,
+                IsBypassEnabled = false,
+                IsNoclipEnabled = false,
                 CustomFlags = null,
             },
             new()
@@ -124,13 +154,32 @@ namespace UncomplicatedCustomTeams.API.Features
                 RoleAfterEscape = null,
                 CustomFlags = null,
                 Priority = RolePriority.Second,
+                DropInventoryOnDeath = true,
+                IsGodmodeEnabled = false,
+                IsBypassEnabled = false,
+                IsNoclipEnabled = false,
                 MaxPlayers = 1
+            }
+        ];
+
+
+        /// <summary>
+        /// The list of every ECR role that will be a part of this wave
+        /// </summary>
+        public List<ExiledCustomRole> EcrRoles { get; set; } = new()
+        {
+            new()
+            {
+                Id = 1,
+                Priority = RolePriority.None,
+                MaxPlayers = 1,
+                DropInventoryOnDeath = true
             }
         };
 
-        public static Team EvaluateSpawn(string wave)
+        public static Team EvaluateSpawn(WaveType wave)
         {
-            List<Team> Teams = new();
+            List<Team> Teams = [];
             foreach (Team Team in List.Where(t => t.SpawnConditions.SpawnWave == wave))
             {
                 for (int a = 0; a < Team.SpawnChance; a++)
@@ -149,8 +198,9 @@ namespace UncomplicatedCustomTeams.API.Features
 
         public class SpawnData
         {
-            public string SpawnWave { get; set; } = "NtfWave";
+            public WaveType SpawnWave { get; set; } = WaveType.NtfWave;
             public Vector3 SpawnPosition { get; set; } = Vector3.zero;
+            public Vector3 SpawnRotation { get; set; } = Vector3.zero; // yaml has skill issue with Quaternion
 
             private ItemType _usedItem = ItemType.None;
             private int? _customItemId = null;
@@ -187,17 +237,43 @@ namespace UncomplicatedCustomTeams.API.Features
             public ItemType GetUsedItemType() => _usedItem;
             public int? GetCustomItemId() => _customItemId;
 
-            [Description("Specify the SCP role whose death triggers this team spawn. Only works if SpawnWave is set to 'ScpDeath'.")]
+            [Description("Specify the SCP role (e.g., Scp106) or use the SCPs team (SCPs) whose death triggers this team spawn. Only SCPs is allowed when using a team. This setting only applies when SpawnWave is set to 'ScpDeath'.")]
             public string TargetScp { get; set; } = "None";
+
+            [Description("List of roles where at least one of which must be alive for this team to spawn. Ignored if empty.")]
+            public List<RoleTypeId> RequiredAliveRoles { get; set; } = new();
+
+            [Description("Defines which starting roles can be converted into this team. At the start of the round, the plugin will randomly select players from these roles to respawn as this team. This option only works if 'SpawnWave' is set to 'RoundStarted'.")]
+            public List<RoleTypeId> RolesAffectedOnRoundStart { get; set; } = new();
 
             [Description("Setting a SpawnDelay greater than 0 will not work when using NtfWave or ChaosWave!")]
             public float SpawnDelay { get; set; } = 0f;
 
-            public bool RequiresSpawnType()
+            /// <summary>
+            /// Whether this spawn type requires a defined spawn position.
+            /// </summary>
+            /// <returns><c>true</c> if the spawn position is required; otherwise, <c>false</c>.</returns>
+            public bool RequiresSpawnPosition()
             {
-                return SpawnWave is "AfterWarhead" or "AfterDecontamination" or "UsedItem" or "RoundStarted" or "ScpDeath";
+                return SpawnWave == WaveType.AfterDecontamination || SpawnWave == WaveType.AfterWarhead || SpawnWave == WaveType.RoundStarted || SpawnWave == WaveType.ScpDeath || SpawnWave == WaveType.UsedItem;
             }
+        }
+        /// <summary>
+        /// Represents a single sound entry with its path and a delay before it's played.
+        /// </summary>
+        public class SoundPathEntry
+        {
+            /// <summary>
+            /// The path to the sound file.
+            /// </summary>
+            [Description("The path to the .ogg sound file.")]
+            public string Path { get; set; } = "/path/to/your/ogg/file";
 
+            /// <summary>
+            /// The delay in seconds before this sound is played.
+            /// </summary>
+            [Description("Delay in seconds before this sound starts playing.")]
+            public float Delay { get; set; } = 0f;
         }
     }
 }

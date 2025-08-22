@@ -1,14 +1,15 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
 using Exiled.Permissions.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.Interfaces;
 
 namespace UncomplicatedCustomTeams.Commands
 {
+    [Obsolete("This command is broken and will be removed in a future version. Use UCR spawn command.")]
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
     internal class Role : IUCTCommand
     {
@@ -52,7 +53,7 @@ namespace UncomplicatedCustomTeams.Commands
                 return false;
             }
 
-            CustomRole role = team.Roles.FirstOrDefault(r => r.Id == roleId);
+            IUCTCustomRole role = team.TeamRoles.FirstOrDefault(r => r.Id == roleId);
             if (role == null)
             {
                 response = $"Role with ID {roleId} not found in team {team.Name}.";

@@ -3,12 +3,9 @@ using PlayerRoles;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Features;
-using UnityEngine;
 
 namespace UncomplicatedCustomTeams.Utilities
 {
@@ -36,6 +33,7 @@ namespace UncomplicatedCustomTeams.Utilities
                 Suggestion = suggestion
             });
         }
+
         public static void Clear() => Errors.Clear();
 
         public static string GetSuggestionFromMessage(string message)
@@ -154,26 +152,28 @@ namespace UncomplicatedCustomTeams.Utilities
                         return false;
                     }
 
-                    if (string.IsNullOrWhiteSpace(team.SpawnConditions.SpawnWave) || !validSpawnTypes.Contains(team.SpawnConditions.SpawnWave))
+                    if (!Enum.IsDefined(typeof(WaveType), team.SpawnConditions.SpawnWave))
                     {
                         string message = $"Invalid SpawnWave value '{team.SpawnConditions.SpawnWave}' for team {team.Name} (ID: {team.Id}).";
-                        string suggestion = $"Valid values are: {string.Join(", ", validSpawnTypes)}.";
+                        string suggestion = $"Valid values are: {string.Join(", ", Enum.GetNames(typeof(WaveType)))}.";
                         ErrorManager.Add(filePath, message, suggestion: suggestion);
                         LogManager.Error($"{message}\n {suggestion}");
                         return false;
                     }
 
                     string targetScp = team.SpawnConditions.TargetScp;
-                    if (!string.IsNullOrWhiteSpace(targetScp) && targetScp != "None")
+                    if (!string.IsNullOrWhiteSpace(targetScp) && !targetScp.Equals("None", StringComparison.OrdinalIgnoreCase))
                     {
-                        bool isValidScp = Enum.TryParse(targetScp, ignoreCase: true, out RoleTypeId parsedRole) && targetScp.StartsWith("Scp", StringComparison.OrdinalIgnoreCase);
+                        bool isValidScp =
+                            (Enum.TryParse(targetScp, true, out RoleTypeId parsedRole) && targetScp.StartsWith("Scp", StringComparison.OrdinalIgnoreCase))
+                            || targetScp.Equals("SCPs", StringComparison.OrdinalIgnoreCase);
 
                         if (!isValidScp)
                         {
                             string message = $"Invalid TargetSCP value '{targetScp}' for team {team.Name} (ID: {team.Id}).";
-                            string suggestion = "TargetSCP must be a valid SCP RoleTypeId (e.g., Scp173, Scp049, Scp939).";
+                            string suggestion = "TargetSCP must be a valid SCP RoleTypeId (e.g., Scp173, Scp049, Scp939) or 'SCPs'.";
                             ErrorManager.Add(filePath, message, suggestion: suggestion);
-                            LogManager.Error($"{message}\n {suggestion}");
+                            LogManager.Error($"{message}\n{suggestion}");
                             return false;
                         }
                     }
@@ -187,17 +187,6 @@ namespace UncomplicatedCustomTeams.Utilities
                         return false;
                     }
 
-                    static bool IsSpawnPositionPositive(Vector3 v) => v.x >= 0 && v.y >= 0 && v.z >= 0;
-
-                    if (!IsSpawnPositionPositive(team.SpawnConditions.SpawnPosition))
-                    {
-                        string message = $"Invalid SpawnPosition for team {team.Name} (ID: {team.Id}): one or more coordinates are negative ({team.SpawnConditions.SpawnPosition}).";
-                        string suggestion = "Ensure all coordinates of 'SpawnPosition' (x, y, z) are greater than or equal to 0.";
-                        ErrorManager.Add(filePath, message, suggestion: suggestion);
-                        LogManager.Error($"{message}\n{suggestion}");
-                        return false;
-                    }
-
                     if (team.MinPlayers <= 0)
                     {
                         string message = $"Invalid MinPlayers value ({team.MinPlayers}) for team {team.Name} (ID: {team.Id}).";
@@ -207,7 +196,7 @@ namespace UncomplicatedCustomTeams.Utilities
                         return false;
                     }
 
-                    if (team.Roles == null || team.Roles.Count == 0)
+                    if (team.TeamRoles == null || team.TeamRoles.Count == 0)
                     {
                         string message = $"Team {team.Name} (ID: {team.Id}) has no roles defined!";
                         string suggestion = "Define at least one role inside each team using the 'roles:' block.";
@@ -225,17 +214,17 @@ namespace UncomplicatedCustomTeams.Utilities
                         return false;
                     }
 
-                    if (string.IsNullOrEmpty(team.SoundPath))
+                    if (team.SoundPaths == null || team.SoundPaths.Count == 0)
                     {
-                        string message = $"Team {team.Name} (ID: {team.Id}) has no sound path defined!";
-                        string suggestion = "Specify a valid sound file path for the team. If the audio system is not intended to be used, set the path to a placeholder like \"/path/to/your/ogg/file\".";
+                        string message = $"Team {team.Name} (ID: {team.Id}) has no sound paths defined in the 'SoundPaths' list!";
+                        string suggestion = "The 'SoundPaths' list cannot be empty. Specify at least one valid sound file path or use the default placeholder if audio is not intended.";
                         ErrorManager.Add(filePath, message, suggestion: suggestion);
                         LogManager.Error($"{message}\n {suggestion}");
                         return false;
                     }
 
-                    HashSet<int> roleIds = new();
-                    foreach (var role in team.Roles)
+                    HashSet<int> roleIds = [];
+                    foreach (var role in team.TeamRoles)
                     {
                         if (string.IsNullOrWhiteSpace(role.Name))
                         {
@@ -246,7 +235,7 @@ namespace UncomplicatedCustomTeams.Utilities
                             return false;
                         }
 
-                        if (!roleIds.Add(role.Id))
+                        if (role is UncomplicatedCustomRole && !roleIds.Add(role.Id))
                         {
                             string message = $"Duplicate role ID {role.Id} in team {team.Name}!";
                             string suggestion = "Each role ID must be unique within its team.";

@@ -1,9 +1,9 @@
 ﻿using CommandSystem;
+using Exiled.Permissions.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UncomplicatedCustomTeams.Interfaces;
-using Exiled.Permissions.Extensions;
 
 namespace UncomplicatedCustomTeams.Commands
 {
@@ -24,10 +24,10 @@ namespace UncomplicatedCustomTeams.Commands
             RegisteredCommands.Add(new Owner());
             RegisteredCommands.Add(new List());
             RegisteredCommands.Add(new Reload());
-            RegisteredCommands.Add(new Role());
             RegisteredCommands.Add(new Errors());
             RegisteredCommands.Add(new Generate());
             RegisteredCommands.Add(new Active());
+            RegisteredCommands.Add(new ForceNextWave());
         }
 
         public List<IUCTCommand> RegisteredCommands { get; } = new();

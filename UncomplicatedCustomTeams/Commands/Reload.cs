@@ -1,7 +1,6 @@
 ﻿using CommandSystem;
 using Exiled.API.Features;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using UncomplicatedCustomTeams.API.Features;
@@ -35,6 +34,7 @@ namespace UncomplicatedCustomTeams.Commands
             try
             {
                 LogManager.Info("Starting team reload...");
+                ErrorManager.Clear();
                 Team.List.Clear();
                 LogManager.Info("Cleared existing teams list.");
 

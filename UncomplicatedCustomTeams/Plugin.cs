@@ -1,17 +1,14 @@
 ﻿using Exiled.API.Enums;
 using Exiled.API.Features;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.Manager;
 using UncomplicatedCustomTeams.Utilities;
-using PlayerHandler = Exiled.Events.Handlers.Player;
-using ServerHandler = Exiled.Events.Handlers.Server;
 using MapHandler = Exiled.Events.Handlers.Map;
-using WarheadHandler = Exiled.Events.Handlers.Warhead;
-using System.Threading.Tasks;
-using Exiled.Loader;
-using System.Linq;
+using PlayerHandler = Exiled.Events.Handlers.Player;
 
 namespace UncomplicatedCustomTeams
 {
@@ -23,13 +20,15 @@ namespace UncomplicatedCustomTeams
 
         public override string Author => "FoxWorn3365 & .piwnica2137";
 
-        public override Version Version => new(1, 0, 0);
+        public override Version Version => new(1, 5, 0);
 
-        public override Version RequiredExiledVersion => new(9, 4, 0);
+        public override Version RequiredExiledVersion => new(9, 7, 1);
 
-        public override PluginPriority Priority => PluginPriority.Medium;
+        public override PluginPriority Priority => PluginPriority.Default;
 
         public static SummonedTeam NextTeam { get; set; } = null;
+
+        public static List<Player> CachedSpawnList = new();
 
         internal static Plugin Instance;
 
@@ -39,7 +38,7 @@ namespace UncomplicatedCustomTeams
 
         internal CommentsSystem CommentsSystem;
 
-        internal Handler Handler;
+        public MainHandler Handler;
 
         public override void OnEnabled()
         {
@@ -56,23 +55,24 @@ namespace UncomplicatedCustomTeams
                 HttpManager.RegisterEvents();
 
             PlayerHandler.ChangingRole += Handler.OnChangingRole;
+            PlayerHandler.Dying += Handler.OnDying;
             PlayerHandler.Verified += Handler.OnVerified;
-            PlayerHandler.Dying += Handler.OnPlayerDying;
-            WarheadHandler.Detonated += Handler.OnDetonated;
             PlayerHandler.Destroying += Handler.OnDestroying;
             MapHandler.AnnouncingChaosEntrance += Handler.GetThisChaosOutOfHere;
             MapHandler.AnnouncingNtfEntrance += Handler.GetThisNtfOutOfHere;
-            MapHandler.Decontaminating += Handler.OnDecontaminating;
-            PlayerHandler.UsedItem += Handler.OnItemUsed;
-            ServerHandler.RespawningTeam += Handler.OnRespawningTeam;
-            ServerHandler.RoundStarted += Handler.OnRoundStarted;
 
-            LogManager.Info("===========================================");
-            LogManager.Info(" Thanks for using UncomplicatedCustomTeams");
-            LogManager.Info("        by FoxWorn3365 & Dr.Agenda & .Piwnica");
-            LogManager.Info("===========================================");
-            LogManager.Info(">> Join our discord: https://discord.gg/5StRGu8EJV <<");
+            Handler.SubscribeToSpawnWaves();
+            Config.Debug = true;
+            Log.DebugEnabled.Add(Assembly);
 
+            LogManager.Debug("===========================================");
+            LogManager.Debug(" Thanks for using UncomplicatedCustomTeams");
+            LogManager.Debug("        by FoxWorn3365 & Dr.Agenda & .Piwnica");
+            LogManager.Debug("===========================================");
+            LogManager.Debug(">> Join our discord: https://discord.gg/5StRGu8EJV <<");
+
+            Config.Debug = false;
+            Log.DebugEnabled.Remove(Assembly);
             Task.Run(delegate
             {
                 if (HttpManager.LatestVersion.CompareTo(Version) > 0)
@@ -89,12 +89,9 @@ namespace UncomplicatedCustomTeams
             });
 
             FileConfigs.Welcome(Server.Port.ToString());
-            FileConfigs.LoadAll();
-            FileConfigs.AddCustomRoleTeams();
             FileConfigs.AddCustomRoleTeams(Server.Port.ToString());
-            CommentsSystem.AddCommentsToYaml();
-            CommentsSystem.AddCommentsToYaml(Server.Port.ToString());
             FileConfigs.LoadAll(Server.Port.ToString());
+            CommentsSystem.AddCommentsToYaml(Server.Port.ToString());
 
             LogManager.Info($"Successfully loaded {Team.List.Count} teams!");
             foreach (var team in Team.List)
@@ -108,17 +105,13 @@ namespace UncomplicatedCustomTeams
         public override void OnDisabled()
         {
             PlayerHandler.ChangingRole -= Handler.OnChangingRole;
+            PlayerHandler.Dying -= Handler.OnDying;
             PlayerHandler.Verified -= Handler.OnVerified;
-            PlayerHandler.Dying -= Handler.OnPlayerDying;
             PlayerHandler.Destroying -= Handler.OnDestroying;
-            WarheadHandler.Detonated -= Handler.OnDetonated;
             MapHandler.AnnouncingChaosEntrance -= Handler.GetThisChaosOutOfHere;
-            MapHandler.Decontaminating -= Handler.OnDecontaminating;
             MapHandler.AnnouncingNtfEntrance -= Handler.GetThisNtfOutOfHere;
-            PlayerHandler.UsedItem -= Handler.OnItemUsed;
-            ServerHandler.RespawningTeam -= Handler.OnRespawningTeam;
-            ServerHandler.RoundStarted -= Handler.OnRoundStarted;
 
+            Handler.UnsubscribeToSpawnWaves();
             Handler = null;
 
             HttpManager.UnregisterEvents();

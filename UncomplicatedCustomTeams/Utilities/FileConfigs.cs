@@ -1,11 +1,13 @@
-﻿using Exiled.API.Extensions;
+﻿using Exiled.API.Enums;
 using Exiled.API.Features;
 using Exiled.Loader;
+using MEC;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
+using UncomplicatedCustomRoles.API.Enums;
+using UncomplicatedCustomRoles.API.Features.Behaviour;
 using UncomplicatedCustomTeams.API.Features;
 using UnityEngine;
 
@@ -29,6 +31,7 @@ namespace UncomplicatedCustomTeams.Utilities
         public void LoadAll(string localDir = "")
         {
             LoadErrors.Clear();
+            AutoUpdater.EnsureConfigIsUpToDate(localDir);
             AddCustomRoleTeams(localDir);
             LoadAction(Team.List.Add, localDir);
         }
@@ -56,8 +59,8 @@ namespace UncomplicatedCustomTeams.Utilities
 
                     foreach (Team team in data["teams"])
                     {
-                        bool hasCustomSound = !string.IsNullOrEmpty(team.SoundPath) && team.SoundPath != "/path/to/your/ogg/file";
-                        bool hasCassieMessage = !string.IsNullOrEmpty(team.CassieMessage) || !string.IsNullOrEmpty(team.CassieTranslation);
+                        bool hasCustomSound = team.SoundPaths != null && team.SoundPaths.Any(s => !string.IsNullOrEmpty(s.Path) && s.Path != "/path/to/your/ogg/file");
+                        bool hasCassieMessage = team.IsCassieAnnouncementEnabled;
 
                         if (hasCustomSound && hasCassieMessage)
                         {
@@ -69,11 +72,18 @@ namespace UncomplicatedCustomTeams.Utilities
 
                         if (hasCustomSound)
                         {
-                            string clipId = $"sound_{team.Id}";
-                            AudioClipStorage.LoadClip(team.SoundPath, clipId);
+                            for (int i = 0; i < team.SoundPaths.Count; i++)
+                            {
+                                var soundEntry = team.SoundPaths[i];
+                                if (!string.IsNullOrEmpty(soundEntry.Path) && soundEntry.Path != "/path/to/your/ogg/file")
+                                {
+                                    string clipId = $"sound_{team.Id}_{i}";
+                                    AudioClipStorage.LoadClip(soundEntry.Path, clipId);
+                                }
+                            }
                         }
 
-                        if ((team.SpawnConditions.SpawnWave == "NtfWave" || team.SpawnConditions.SpawnWave == "ChaosWave")
+                        if ((team.SpawnConditions.SpawnWave == API.Enums.WaveType.NtfWave || team.SpawnConditions.SpawnWave == API.Enums.WaveType.ChaosWave)
                             && team.SpawnConditions.SpawnDelay > 0)
                         {
                             string warning = $"Setting SpawnWave '{team.SpawnConditions.SpawnWave}' with SpawnDelay won't work.";
@@ -83,7 +93,7 @@ namespace UncomplicatedCustomTeams.Utilities
                             team.SpawnConditions.SpawnDelay = 0f;
                         }
 
-                        if (team.SpawnConditions.RequiresSpawnType() && team.SpawnConditions.SpawnPosition == Vector3.zero)
+                        if (team.SpawnConditions.RequiresSpawnPosition() && team.SpawnConditions.SpawnPosition == Vector3.zero)
                         {
                             string message = $"SpawnWave '{team.SpawnConditions.SpawnWave}' requires a SpawnPosition, but none was set.";
                             string suggestion = "Set a valid SpawnPosition (x,y,z) for custom spawn waves.";
@@ -92,7 +102,7 @@ namespace UncomplicatedCustomTeams.Utilities
                             continue;
                         }
 
-                        if (team.SpawnConditions.SpawnWave == "ScpDeath" &&
+                        if (team.SpawnConditions.SpawnWave == API.Enums.WaveType.ScpDeath &&
                             (string.IsNullOrWhiteSpace(team.SpawnConditions.TargetScp) ||
                              team.SpawnConditions.TargetScp.Equals("None", StringComparison.OrdinalIgnoreCase)))
                         {
@@ -104,7 +114,7 @@ namespace UncomplicatedCustomTeams.Utilities
                         }
 
                         if ((team.SpawnConditions.GetUsedItemType() != ItemType.None || team.SpawnConditions.GetCustomItemId() != null) &&
-                            team.SpawnConditions.SpawnWave != "UsedItem")
+                            team.SpawnConditions.SpawnWave != API.Enums.WaveType.UsedItem)
                         {
                             string message = $"Item set but 'UsedItem' not used as spawn wave.";
                             string suggestion = "Change SpawnWave to 'UsedItem' or remove the item requirement.";
@@ -131,7 +141,7 @@ namespace UncomplicatedCustomTeams.Utilities
                         }
 
                         if ((team.SpawnConditions.GetUsedItemType() == ItemType.None && team.SpawnConditions.GetCustomItemId() == null) &&
-                            team.SpawnConditions.SpawnWave == "UsedItem")
+                            team.SpawnConditions.SpawnWave == API.Enums.WaveType.UsedItem)
                         {
                             string message = "UsedItem value is invalid or missing.";
                             string suggestion = "Provide a valid ItemType or Custom Item ID.";
@@ -164,8 +174,55 @@ namespace UncomplicatedCustomTeams.Utilities
                                 usedRoleIds.Add(role.Id);
                             }
                         }
+
+                        if (Plugin.Instance.Config.UseExiledCustomRoles)
+                        {
+                            Timing.CallDelayed(Plugin.Instance.Config.ExiledCustomRoleCheckDelay, () =>
+                            {
+                                foreach (var role in team.EcrRoles.ToList())
+                                {
+                                    if (!Exiled.CustomRoles.API.Features.CustomRole.TryGet((uint)role.Id, out var cRole))
+                                    {
+                                        string warning = $"Exiled Custom Role of ID {role.Id} not found!";
+                                        string suggestion = "Ensure that the role is properly registered by its plugin in the future.";
+                                        ErrorManager.Add(file, warning, suggestion: suggestion);
+                                        LogManager.Warn($"{warning}\n{suggestion}");
+                                        team.EcrRoles.Remove(role);
+                                    }
+                                }
+                            });
+                        }
+
                         LogManager.Debug($"Proposed to the registerer the external team '{team.Name}' (ID: {team.Id}) from file: {file}");
                         action(team);
+
+
+                        Timing.CallDelayed(5f, () =>
+                        {
+                            foreach (var role in team.Roles)
+                            {
+                                if (!UncomplicatedCustomRoles.API.Features.CustomRole.TryGet(role.Id, out _) &&
+                                    role is UncomplicatedCustomRoles.API.Features.CustomRole ucrRole)
+                                {
+                                    ucrRole.SpawnSettings ??= new SpawnBehaviour
+                                    {
+                                        Spawn = SpawnType.KeepCurrentPositionSpawn,
+                                        SpawnRooms = new List<RoomType> { RoomType.Unknown },
+                                        SpawnRoles = new List<PlayerRoles.RoleTypeId> { PlayerRoles.RoleTypeId.None },
+                                        CanReplaceRoles = new List<PlayerRoles.RoleTypeId> { PlayerRoles.RoleTypeId.None },
+                                        MaxPlayers = 10,
+                                        MinPlayers = 1,
+                                        SpawnChance = 0f,
+                                        SpawnZones = new List<ZoneType>(),
+                                        SpawnPoints = new List<string>(),
+                                        RequiredPermission = string.Empty
+                                    };
+
+                                    var result = UncomplicatedCustomRoles.API.Features.CustomRole.Register(ucrRole);
+                                    LogManager.Debug($"Registered existing UCT -> UCR Custom role: {ucrRole.Name} (ID: {ucrRole.Id}) => {result}");
+                                }
+                            }
+                        });
                     }
                 }
                 catch (Exception ex)
@@ -185,14 +242,13 @@ namespace UncomplicatedCustomTeams.Utilities
             }
         }
 
-
         public void Welcome(string localDir = "")
         {
             if (!Is(localDir))
             {
                 Directory.CreateDirectory(Path.Combine(Dir, localDir));
 
-                File.WriteAllText(Path.Combine(Dir, localDir, "example-role.yml"), Loader.Serializer.Serialize(new Dictionary<string, List<Team>>() {
+                File.WriteAllText(Path.Combine(Dir, localDir, "example-team.yml"), Loader.Serializer.Serialize(new Dictionary<string, List<Team>>() {
                   {
                     "teams", new List<Team>()
                     {
@@ -207,6 +263,7 @@ namespace UncomplicatedCustomTeams.Utilities
                 LogManager.Info($"Plugin does not have a role folder, generated one in {Path.Combine(Dir, localDir)}");
             }
         }
+
         public void AddCustomRoleTeams(string localDir = "")
         {
             string dir = Path.Combine(Paths.Configs, "UncomplicatedCustomTeams", localDir);
@@ -220,7 +277,7 @@ namespace UncomplicatedCustomTeams.Utilities
             {
                 try
                 {
-                    string fileContent = File.ReadAllText(filePath);
+                    string fileContent = (File.ReadAllText(filePath));
 
                     var configData = Loader.Deserializer.Deserialize<Dictionary<string, List<Dictionary<string, object>>>>(fileContent);
 
@@ -242,7 +299,7 @@ namespace UncomplicatedCustomTeams.Utilities
                             yamlTeam["team_alive_to_win"] = new List<string>();
                         }
 
-                        var teamAliveToWin = yamlTeam["team_alive_to_win"] as List<object> ?? new List<object>();
+                        var teamAliveToWin = new List<object>();
 
                         if (!yamlTeam.ContainsKey("roles") || yamlTeam["roles"] == null)
                         {
@@ -252,6 +309,24 @@ namespace UncomplicatedCustomTeams.Utilities
                         if (yamlTeam["roles"] is not List<object> rolesList)
                         {
                             continue;
+                        }
+
+                        if (!yamlTeam.TryGetValue("ecr_roles", out var ecrRolesObj) || ecrRolesObj == null)
+                        {
+                            LogManager.Debug($"{teamName} has no ecr_roles entry, generating default...");
+                            yamlTeam["ecr_roles"] = new List<Dictionary<string, object>> { new() { { "id", 999 }, { "max_players", 1 }, { "priority", "Fifth" } } };
+                        }
+                        else if (ecrRolesObj is List<object> ecrRolesList)
+                        {
+                            if (ecrRolesList.Count == 0)
+                            {
+                                LogManager.Debug($"{teamName} has empty ecr_roles list, generating default...");
+                                ecrRolesList.Add(new Dictionary<string, object> { { "id", 999 }, { "max_players", 1 }, { "priority", "Fifth" } });
+                            }
+                        }
+                        else
+                        {
+                            LogManager.Debug($"{teamName} has invalid ecr_roles format, skipping...");
                         }
 
                         var roles = new List<Dictionary<string, object>>();

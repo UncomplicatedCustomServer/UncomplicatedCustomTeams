@@ -1,12 +1,11 @@
 ﻿using Discord;
+using Exiled.API.Features;
 using Exiled.Loader;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Net;
-using Exiled.API.Features;
+using System.Net.Http;
 using UncomplicatedCustomTeams.API.Features;
-using System.Linq;
 
 namespace UncomplicatedCustomTeams.Utilities
 {

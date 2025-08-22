@@ -1,9 +1,12 @@
 ﻿using Exiled.API.Enums;
 using Exiled.API.Features;
+using MEC;
 using PlayerRoles;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UncomplicatedCustomTeams.API.Enums;
+using UncomplicatedCustomTeams.API.Storage;
 using UncomplicatedCustomTeams.Utilities;
 using Utils.NonAllocLINQ;
 
@@ -41,17 +44,24 @@ namespace UncomplicatedCustomTeams.API.Features
         /// </summary>
         public void SpawnAll()
         {
-            foreach (SummonedCustomRole Role in Players)
+            for (int i = Players.Count - 1; i >= 0; i--)
             {
+                SummonedCustomRole Role = Players[i];
+
+                if (Role.Player == null)
+                {
+                    Players.RemoveAt(i);
+                    continue;
+                }
+
                 if (Role.Player.IsAlive)
                 {
-                    Players.Remove(Role);
+                    Players.RemoveAt(i);
                     continue;
                 }
 
                 RoleTypeId SpawnType = RoleTypeId.ChaosConscript;
-
-                if (Team.SpawnConditions?.SpawnWave == "NtfWave")
+                if (Team.SpawnConditions?.SpawnWave == WaveType.NtfWave)
                     SpawnType = RoleTypeId.NtfPrivate;
 
                 Role.AddRole(SpawnType);
@@ -59,13 +69,11 @@ namespace UncomplicatedCustomTeams.API.Features
         }
 
         /// <summary>
-        /// Checks if any players assigned to this team are still alive.
+        /// Checks if all players in this spawn wave have been eliminated.
         /// </summary>
-        public void CheckPlayers()
+        public bool IsTeamEliminated()
         {
-            foreach (SummonedCustomRole Role in Players)
-                if (Role.Player.IsAlive)
-                    Players.Remove(Role);
+            return Players.All(p => !p.Player.IsAlive);
         }
 
         /// <summary>
@@ -154,82 +162,186 @@ namespace UncomplicatedCustomTeams.API.Features
             {
                 return null;
             }
+
+            if (team.MaxSpawns >= 0 && team.SpawnCount >= team.MaxSpawns)
+            {
+                LogManager.Warn($"Team {team.Name} has reached its maximum number of spawns ({team.MaxSpawns}). Skipping spawn.");
+                return null;
+            }
+
+            var rr = team.SpawnConditions.RequiredAliveRoles;
+            if (rr != null && rr.Count > 0)
+            {
+                var aliveRoles = Player.List.Where(p => p.IsAlive).Select(p => p.Role.Type).ToHashSet();
+
+                if (!rr.Any(aliveRoles.Contains))
+                {
+                    LogManager.Warn($"Skipping spawn for team {team.Name}, none of the required roles are alive. Required: [{string.Join(", ", rr)}]");
+                    return null;
+                }
+            }
+
             SummonedTeam SummonedTeam = new(team);
 
-            foreach (Player Player in players)
+            int totalAllowed = team.TeamRoles.Sum(r => r.MaxPlayers);
+            int assigned = 0;
+
+            var random = new Random();
+            var roleQueue = team.TeamRoles
+                .Where(r => r.Priority != RolePriority.None)
+                .GroupBy(r => r.Priority)
+                .OrderBy(g => g.Key);
+
+            foreach (Player player in players)
             {
-                foreach (CustomRole role in team.Roles.OrderBy(r => r.Priority))
+                if (assigned >= totalAllowed)
+                    break;
+
+                bool playerAssigned = false;
+
+                foreach (var priorityGroup in roleQueue)
                 {
-                    if (SummonedTeam.SummonedPlayersCount(role) < role.MaxPlayers)
+                    var shuffledRoles = priorityGroup.OrderBy(r => random.Next());
+                    foreach (IUCTCustomRole role in shuffledRoles)
                     {
-                        SummonedTeam.Players.Add(new(SummonedTeam, Player, role));
-                        LogManager.Debug($"{Player.Nickname} -> {role.Name} (Priority: {role.Priority})");
-                        break;
+                        if (SummonedTeam.SummonedPlayersCount(role) < role.MaxPlayers)
+                        {
+                            SummonedTeam.Players.Add(new(SummonedTeam, player, role));
+                            assigned++;
+                            LogManager.Debug($"{player.Nickname} -> {role.Name} (Priority: {role.Priority})");
+                            playerAssigned = true;
+                            break;
+                        }
                     }
+                    if (playerAssigned)
+                        break;
                 }
             }
             if (!string.IsNullOrEmpty(team.CassieTranslation))
             {
-                Cassie.MessageTranslated(team.CassieMessage, team.CassieTranslation, isNoisy: team.IsNoisy, isSubtitles: true);
+                if (team.IsCassieAnnouncementEnabled)
+                    Cassie.MessageTranslated(team.CassieMessage, team.CassieTranslation, isNoisy: team.IsNoisy, isSubtitles: true);
             }
-            if (!string.IsNullOrEmpty(team.SoundPath))
+            bool hasCustomSound = team.SoundPaths != null && team.SoundPaths.Any(s => !string.IsNullOrEmpty(s.Path) && s.Path != "/path/to/your/ogg/file");
+            if (hasCustomSound)
             {
-                AudioPlayer audioPlayer = AudioPlayer.CreateOrGet($"Global_Audio_{team.Id}", onIntialCreation: (p) =>
-                {
-                    Speaker speaker = p.AddSpeaker("Main", isSpatial: false, maxDistance: 5000f);
-                });
-                float volume = Clamp(team.SoundVolume, 1f, 100f);
-                audioPlayer.AddClip($"sound_{team.Id}", volume);
+                Timing.RunCoroutine(PlaySoundSequence(team));
             }
+
+            team.SpawnCount++;
             return SummonedTeam;
         }
 
+
         /// <summary>
-        /// Checks if a team can spawn based on the number of spectators.
+        /// A coroutine that plays a sequence of sounds with specified delays.
+        /// </summary>
+        private static IEnumerator<float> PlaySoundSequence(Team team)
+        {
+            AudioPlayer audioPlayer = AudioPlayer.CreateOrGet($"Global_Audio_{team.Id}", onIntialCreation: (p) =>
+            {
+                p.AddSpeaker("Main", isSpatial: false, maxDistance: 5000f);
+            });
+            float volume = Clamp(team.SoundVolume, 1f, 100f);
+
+            for (int i = 0; i < team.SoundPaths.Count; i++)
+            {
+                var sound = team.SoundPaths[i];
+
+                if (string.IsNullOrEmpty(sound.Path) || sound.Path == "/path/to/your/ogg/file")
+                    continue;
+
+                if (sound.Delay > 0f)
+                {
+                    yield return Timing.WaitForSeconds(sound.Delay);
+                }
+
+                string clipId = $"sound_{team.Id}_{i}";
+                audioPlayer.AddClip(clipId, volume);
+            }
+        }
+
+        /// <summary>
+        /// Checks if a team can spawn based on the number of spectators and team role limits.
         /// </summary>
         public static List<Player> CanSpawnTeam(Team team)
         {
             if (team == null)
-                return new List<Player>();
+                return [];
 
-            List<Player> allPlayers = Player.List.ToList();
+            List<Player> allPlayers = [.. Player.List];
             int totalPlayers = allPlayers.Count;
+
             LogManager.Debug($"Total players: {totalPlayers}, MinPlayers required: {team.MinPlayers}");
             if (totalPlayers < team.MinPlayers)
             {
-                LogManager.Debug($"Not enough players on the server to spawn team {team.Name}.");
-                return new List<Player>();
+                LogManager.Debug($"Not enough players on spectator to spawn team {team.Name}.");
+                return [];
             }
-            List<Player> spectators = allPlayers
-                .Where(p => !p.IsAlive && p.Role.Type == RoleTypeId.Spectator && !p.IsOverwatchEnabled)
+
+            List<Player> spectators = [.. allPlayers.Where(p => !p.IsAlive && p.Role.Type == RoleTypeId.Spectator && !p.IsOverwatchEnabled)];
+
+            var sortedRoles = team.TeamRoles
+                .Where(role => role.Priority != RolePriority.None)
+                .OrderBy(role => role.Priority)
                 .ToList();
-            LogManager.Debug($"Spectators available: {spectators.Count}");
-            LogManager.Debug($"Spawning all {spectators.Count} spectators for team {team.Name}.");
-            return spectators;
+
+            List<Player> selectedPlayers = [];
+            int index = 0;
+
+            foreach (var teamRole in sortedRoles)
+            {
+                int max = teamRole.MaxPlayers;
+                for (int i = 0; i < max && index < spectators.Count; i++, index++)
+                {
+                    selectedPlayers.Add(spectators[index]);
+                }
+            }
+
+            if (selectedPlayers.Count == 0)
+            {
+                LogManager.Debug($"No spectators available to spawn for team {team.Name}.");
+            }
+            else
+            {
+                LogManager.Info($"Team {team.Name} will spawn with {selectedPlayers.Count} players.");
+            }
+
+            return selectedPlayers;
         }
+
 
         /// <summary>
         /// Refreshes the players list, ensuring that the maximum allowed players per role is respected.
         /// </summary>
         public void RefreshPlayers(IEnumerable<Player> players)
         {
-            foreach (Player Player in players)
+            Plugin.CachedSpawnList.Clear();
+            Bucket.SpawnBucket.Clear();
+
+            foreach (Player player in players)
             {
-                foreach (CustomRole Role in Team.Roles.OrderBy(r => r.Priority))
+                foreach (IUCTCustomRole role in Team.TeamRoles.OrderBy(r => r.Priority))
                 {
-                    if (SummonedPlayersCount(Role) < Role.MaxPlayers)
+                    if (role.Priority == RolePriority.None)
+                        continue;
+
+                    if (SummonedPlayersCount(role) < role.MaxPlayers)
                     {
-                        Players.Add(new(this, Player, Role));
+                        Players.Add(new(this, player, role));
+                        Plugin.CachedSpawnList.Add(player);
+                        Bucket.SpawnBucket.Add(player.Id);
                         break;
                     }
                 }
             }
+            LogManager.Debug($"layers selected for spawn: {Plugin.CachedSpawnList.Count}");
         }
 
         /// <summary>
         /// Counts the number of players assigned to a specific custom role.
         /// </summary>
-        public int SummonedPlayersCount(CustomRole role)
+        public int SummonedPlayersCount(IUCTCustomRole role)
         {
             return Players.Where(cr => cr.CustomRole == role).Count();
         }
@@ -237,7 +349,7 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// Gets the list of summoned players for a specific custom role.
         /// </summary>
-        public IEnumerable<SummonedCustomRole> SummonedPlayersGet(CustomRole role) => Players.Where(cr => cr.CustomRole == role);
+        public IEnumerable<SummonedCustomRole> SummonedPlayersGet(IUCTCustomRole role) => Players.Where(cr => cr.CustomRole == role);
 
         /// <summary>
         /// Gets the summoned player role for a specific player.

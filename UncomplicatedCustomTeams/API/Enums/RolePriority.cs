@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace UncomplicatedCustomTeams.API.Enums
+﻿namespace UncomplicatedCustomTeams.API.Enums
 {
     public enum RolePriority
     {
+        None,
         First,
         Second,
         Third,
