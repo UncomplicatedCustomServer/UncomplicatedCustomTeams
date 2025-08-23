@@ -12,10 +12,11 @@ namespace UncomplicatedCustomTeams.API.Features
 {
     public class Team
     {
+        private static readonly System.Random _random = new();
         /// <summary>
         /// Gets a complete list of every custom <see cref="Team"/> registered
         /// </summary>
-        public static List<Team> List { get; } = new();
+        public static List<Team> List { get; } = [];
 
         /// <summary>
         /// Register a new custom <see cref="Team"/>
@@ -178,21 +179,31 @@ namespace UncomplicatedCustomTeams.API.Features
 
         public static Team EvaluateSpawn(WaveType wave)
         {
-            List<Team> Teams = [];
-            foreach (Team Team in List.Where(t => t.SpawnConditions.SpawnWave == wave))
-            {
-                for (int a = 0; a < Team.SpawnChance; a++)
-                    Teams.Add(Team);
-            }
-            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Count(t => t.SpawnConditions.SpawnWave == wave)}]!\n If the number is less than 100 THERE'S A PROBLEM!");
+            var eligibleTeams = List.Where(t => t.SpawnConditions.SpawnWave == wave).ToList();
 
-            if (Teams.Count == 0)
+            if (!eligibleTeams.Any())
             {
-                LogManager.Debug("No valid team found, returning...");
                 return null;
             }
-            int Chance = new System.Random().Next(0, 99);
-            return Teams.Count > Chance ? Teams[Chance] : null;
+
+            LogManager.Debug($"Found {eligibleTeams.Count} eligible Custom Team(s) for WaveType '{wave}'. Evaluating chances independently.");
+
+            foreach (var team in eligibleTeams)
+            {
+                int roll = _random.Next(0, 100);
+                if (roll < team.SpawnChance)
+                {
+                    LogManager.Debug($"Team '{team.Name}' succeeded its spawn roll! (Rolled: {roll}, Needed < {team.SpawnChance}). Selecting this team.");
+                    return team;
+                }
+                else
+                {
+                    LogManager.Debug($"Team '{team.Name}' failed its spawn roll. (Rolled: {roll}, Needed < {team.SpawnChance}).");
+                }
+            }
+
+            LogManager.Debug("No custom team succeeded their spawn roll. returning null...");
+            return null;
         }
 
         public class SpawnData
