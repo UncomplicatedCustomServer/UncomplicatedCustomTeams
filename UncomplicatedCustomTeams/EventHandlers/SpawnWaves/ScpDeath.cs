@@ -37,6 +37,12 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
             {
                 if (ev.Player.Role.Team != PlayerRoles.Team.SCPs)
                     return;
+
+                if (!spawnData.IsScp0492CountedAsScp && ev.Player.Role.Type == RoleTypeId.Scp0492)
+                {
+                    LogManager.Debug("Scp049-2 death is ignored because IsScp0492CountedAsScp is set to false.");
+                    return;
+                }
             }
             else
             {
@@ -48,7 +54,7 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
 
             Timing.CallDelayed(spawnData.SpawnDelay, () =>
             {
-                Bucket.SpawnBucket = new();
+                Bucket.SpawnBucket = [];
                 foreach (Player player in Player.List.Where(p => !p.IsAlive && p.Role.Type == RoleTypeId.Spectator && !p.IsOverwatchEnabled))
                     Bucket.SpawnBucket.Add(player.Id);
 

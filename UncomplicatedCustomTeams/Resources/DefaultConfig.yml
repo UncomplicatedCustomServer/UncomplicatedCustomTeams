@@ -16,6 +16,7 @@ teams:
       z: 0
     used_item: None
     target_scp: None
+    is_scp0492_counted_as_scp: false
     required_alive_roles: []
     roles_affected_on_round_start: []
     spawn_delay: 0
