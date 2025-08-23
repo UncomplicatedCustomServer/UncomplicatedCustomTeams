@@ -106,17 +106,16 @@ namespace UncomplicatedCustomTeams.API.Features
         /// A list of PlayerRoles.Team whose presence on the map guarantees victory with custom team.
         /// </summary>
         [Description("Here, you can define which teams will win against your custom team.")]
-        public List<PlayerRoles.Team> TeamAliveToWin { get; set; } = new();
+        public List<PlayerRoles.Team> TeamAliveToWin { get; set; } = [];
 
         /// <summary>
         /// Retrieves a list of actual PlayerRoles.Team enums based on the teams in TeamAliveToWin.
         /// </summary>
         public static List<PlayerRoles.Team> GetWinningTeams()
         {
-            return Team.List
+            return [.. Team.List
                 .SelectMany(team => team.TeamAliveToWin)
-                .Distinct()
-                .ToList();
+                .Distinct()];
         }
 
         /// <summary>
@@ -239,12 +238,13 @@ namespace UncomplicatedCustomTeams.API.Features
 
             [Description("Specify the SCP role (e.g., Scp106) or use the SCPs team (SCPs) whose death triggers this team spawn. Only SCPs is allowed when using a team. This setting only applies when SpawnWave is set to 'ScpDeath'.")]
             public string TargetScp { get; set; } = "None";
+            public bool IsScp0492CountedAsScp { get; set; } = false;
 
             [Description("List of roles where at least one of which must be alive for this team to spawn. Ignored if empty.")]
-            public List<RoleTypeId> RequiredAliveRoles { get; set; } = new();
+            public List<RoleTypeId> RequiredAliveRoles { get; set; } = [];
 
             [Description("Defines which starting roles can be converted into this team. At the start of the round, the plugin will randomly select players from these roles to respawn as this team. This option only works if 'SpawnWave' is set to 'RoundStarted'.")]
-            public List<RoleTypeId> RolesAffectedOnRoundStart { get; set; } = new();
+            public List<RoleTypeId> RolesAffectedOnRoundStart { get; set; } = [];
 
             [Description("Setting a SpawnDelay greater than 0 will not work when using NtfWave or ChaosWave!")]
             public float SpawnDelay { get; set; } = 0f;
