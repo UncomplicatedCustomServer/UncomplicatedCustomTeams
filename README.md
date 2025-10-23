@@ -15,7 +15,7 @@ UncomplicatedCustomTeams allows you to create custom squads that replace the def
 - Easy configuration through YAML files  
 
 ## Installation  
-1. Download the latest release from the [GitHub Releases](https://github.com/PiwnicaUwU/UncomplicatedCustomTeams/releases/latest).  
+1. Download the latest release from the [GitHub Releases](github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest).  
 2. Ensure that you have [UncomplicatedCustomRoles](https://github.com/UncomplicatedCustomServer/UncomplicatedCustomRoles) and [AudioPlayerAPI](https://github.com/Killers0992/AudioPlayerApi) installed.  
 3. Place the `.dll` file into your `Exiled/Plugins` directory.  
 4. Restart your server to generate the configuration files.  
