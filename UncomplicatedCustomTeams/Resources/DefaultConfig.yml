@@ -28,8 +28,6 @@ teams:
   - path: /path/to/your/ogg/file
     delay: 0
   sound_volume: 1
-  team_alive_to_win:
-  - ClassD
   roles:
   - max_players: 1
     priority: First
