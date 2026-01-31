@@ -201,7 +201,7 @@ namespace UncomplicatedCustomTeams.API.Features
             if (!string.IsNullOrEmpty(team.CassieTranslation))
             {
                 if (team.IsCassieAnnouncementEnabled)
-                    Cassie.MessageTranslated(team.CassieMessage, team.CassieTranslation, isNoisy: team.IsNoisy, isSubtitles: true);
+                    Exiled.API.Features.Cassie.MessageTranslated(team.CassieMessage, team.CassieTranslation, isNoisy: team.IsNoisy, isSubtitles: true);
             }
             bool hasCustomSound = team.SoundPaths != null && team.SoundPaths.Any(s => !string.IsNullOrEmpty(s.Path) && s.Path != "/path/to/your/ogg/file");
             if (hasCustomSound)

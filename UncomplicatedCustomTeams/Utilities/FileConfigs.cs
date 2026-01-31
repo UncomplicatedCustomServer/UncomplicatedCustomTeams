@@ -17,6 +17,9 @@ namespace UncomplicatedCustomTeams.Utilities
     internal class FileConfigs
     {
         internal string Dir = Path.Combine(Paths.Configs, "UncomplicatedCustomTeams");
+
+        private static MethodInfo _loadClipMethod;
+        private static bool _audioReflectionAttempted = false;
         public List<string> LoadErrors { get; private set; } = [];
 
         public bool Is(string localDir = "")
@@ -37,9 +40,38 @@ namespace UncomplicatedCustomTeams.Utilities
             LoadAction(Team.List.Add, localDir);
         }
 
+
+        private void InitializeAudioReflection()
+        {
+            if (_audioReflectionAttempted) return;
+            _audioReflectionAttempted = true;
+
+            try
+            {
+                Assembly audioAssembly = AppDomain.CurrentDomain.GetAssemblies()
+                    .FirstOrDefault(a => a.GetName().Name.Contains("AudioPlayerApi"));
+
+                if (audioAssembly != null)
+                {
+                    Type storageType = audioAssembly.GetTypes().FirstOrDefault(t => t.Name == "AudioClipStorage");
+                    if (storageType != null)
+                    {
+                        _loadClipMethod = storageType.GetMethod("LoadClip", BindingFlags.Public | BindingFlags.Static);
+                        if (_loadClipMethod != null)
+                            LogManager.Debug("AudioPlayerApi integration linked successfully.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogManager.Warn($"Failed to link AudioPlayerApi: {ex.Message}");
+            }
+        }
+
         public void LoadAction(Action<Team> action, string localDir = "")
         {
             Team.List.Clear();
+            InitializeAudioReflection();
             foreach (string file in List(localDir))
             {
                 try
@@ -60,52 +92,28 @@ namespace UncomplicatedCustomTeams.Utilities
 
                     foreach (Team team in data["teams"])
                     {
-                        bool hasCustomSound = team.SoundPaths != null && team.SoundPaths.Any(s => !string.IsNullOrEmpty(s.Path) && s.Path != "/path/to/your/ogg/file");
-                        bool hasCassieMessage = team.IsCassieAnnouncementEnabled;
+                        bool hasCustomSound = team.SoundPaths != null && team.SoundPaths.Any(s => !string.IsNullOrEmpty(s.Path) && !s.Path.Contains("/path/to/your"));
 
-                        if (hasCustomSound && hasCassieMessage)
+                        if (hasCustomSound && team.IsCassieAnnouncementEnabled)
                         {
-                            string warning = $"Team \"{team.Name}\" (ID: {team.Id}) has both a custom Cassie message and a sound file. Both will play simultaneously.";
-                            string suggestion = "Use only one of 'CassieMessage' or 'SoundPath' for clarity. Team will be loaded. You have been warned.";
-                            ErrorManager.Add(file, warning, suggestion: suggestion);
-                            LogManager.Warn($"{warning}\n {suggestion}");
+                            LogManager.Warn($"Team \"{team.Name}\" has both Cassie and SoundPath. Both will play.");
                         }
 
-                        if (hasCustomSound)
+                        if (hasCustomSound && _loadClipMethod != null)
                         {
-                            Assembly audioAssembly = AppDomain.CurrentDomain.GetAssemblies()
-                                .FirstOrDefault(a => a.GetName().Name.Contains("AudioPlayerApi"));
-
-                            if (audioAssembly != null)
+                            for (int i = 0; i < team.SoundPaths.Count; i++)
                             {
-                                Type storageType = audioAssembly.GetTypes().FirstOrDefault(t => t.Name == "AudioClipStorage");
-
-                                if (storageType != null)
+                                var soundEntry = team.SoundPaths[i];
+                                if (!string.IsNullOrEmpty(soundEntry.Path) && !soundEntry.Path.Contains("/path/to/your"))
                                 {
-                                    MethodInfo loadClipMethod = storageType.GetMethod("LoadClip", BindingFlags.Public | BindingFlags.Static);
-
-                                    if (loadClipMethod != null)
+                                    string clipId = $"sound_{team.Id}_{i}";
+                                    try
                                     {
-                                        for (int i = 0; i < team.SoundPaths.Count; i++)
-                                        {
-                                            var soundEntry = team.SoundPaths[i];
-                                            if (!string.IsNullOrEmpty(soundEntry.Path) && soundEntry.Path != "/path/to/your/ogg/file")
-                                            {
-                                                string clipId = $"sound_{team.Id}_{i}";
-                                                try
-                                                {
-                                                    var result = loadClipMethod.Invoke(null, [soundEntry.Path, clipId]);
-                                                }
-                                                catch (Exception e)
-                                                {
-                                                    LogManager.Warn($"EXCEPTION during LoadClip: {e.InnerException?.Message ?? e.Message}");
-                                                }
-                                            }
-                                            else
-                                            {
-                                                LogManager.Debug($"Skipping invalid path entry at index {i}.");
-                                            }
-                                        }
+                                        _loadClipMethod.Invoke(null, [soundEntry.Path, clipId]);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        LogManager.Warn($"Audio loading error for team {team.Name}: {e.InnerException?.Message ?? e.Message}");
                                     }
                                 }
                             }

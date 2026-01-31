@@ -12,6 +12,8 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
     internal class DefaultSpawnWaves
     {
         public static bool ForcedNextWave = false;
+        public static bool IgnoreSpawnChance = true;
+        public static bool ForceAnyCustomTeam = false;
         public static bool CustomTeamSpawnedThisWave = false;
 
         public void OnRespawningTeam(RespawningTeamEventArgs ev)
@@ -29,27 +31,68 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
                 return;
             }
 
-            Plugin.NextTeam?.RefreshPlayers(allPlayers);
-
-            if (ForcedNextWave && Plugin.NextTeam is not null)
-            {
-                ForcedNextWave = false;
-                Plugin.NextTeam.RefreshPlayers(allPlayers);
-                CustomTeamSpawnedThisWave = true;
-                LimitPlayersToCustomTeam(ev);
-                LogManager.Debug($"Forced wave executed for {Plugin.NextTeam.Team.Name} with ID {Plugin.NextTeam.Team.Id}");
-                return;
-            }
-
-            LogManager.Debug($"Respawning team event, let's propose our team\nTeams: {API.Features.Team.List.Count}");
-            LogManager.Debug($"Next team for respawn is {ev.NextKnownTeam}");
-
             WaveType faction = ev.NextKnownTeam switch
             {
                 PlayerRoles.Faction.FoundationStaff => WaveType.NtfWave,
                 PlayerRoles.Faction.FoundationEnemy => WaveType.ChaosWave,
                 _ => WaveType.None
             };
+
+            if (ForceAnyCustomTeam && faction != WaveType.None)
+            {
+                ForceAnyCustomTeam = false;
+                var availableTeams = Team.List.Where(t => t.SpawnConditions.SpawnWave == faction).ToList();
+
+                if (availableTeams.Count > 0)
+                {
+                    var randomTeam = availableTeams[UnityEngine.Random.Range(0, availableTeams.Count)];
+                    LogManager.Info($"Randomly selected custom team '{randomTeam.Name}' for forced spawn.");
+
+                    Plugin.NextTeam = new SummonedTeam(randomTeam);
+                    ForcedNextWave = true;
+                    IgnoreSpawnChance = true;
+                }
+                else
+                {
+                    LogManager.Warn($"No Custom Teams found for wave {faction}. Reverting to vanilla.");
+                }
+            }
+
+            Plugin.NextTeam?.RefreshPlayers(allPlayers);
+
+            if (ForcedNextWave && Plugin.NextTeam is not null)
+            {
+                bool shouldSpawn = true;
+
+                if (Plugin.NextTeam.Team.SpawnConditions.SpawnWave != faction)
+                {
+                    LogManager.Warn($"Forced team '{Plugin.NextTeam.Team.Name}' wave mismatch ({Plugin.NextTeam.Team.SpawnConditions.SpawnWave} vs {faction}). Aborting force.");
+                    shouldSpawn = false;
+                }
+                else if (!IgnoreSpawnChance)
+                {
+                    int roll = UnityEngine.Random.Range(0, 100);
+                    if (roll >= Plugin.NextTeam.Team.SpawnChance)
+                    {
+                        LogManager.Info($"Forced wave for '{Plugin.NextTeam.Team.Name}' failed RNG roll. Reverting to standard check.");
+                        shouldSpawn = false;
+                    }
+                }
+
+                if (shouldSpawn)
+                {
+                    ForcedNextWave = false;
+                    CustomTeamSpawnedThisWave = true;
+                    LimitPlayersToCustomTeam(ev);
+                    LogManager.Debug($"Forced wave executed for {Plugin.NextTeam.Team.Name}");
+                    return;
+                }
+                else
+                {
+                    ForcedNextWave = false;
+                    Plugin.NextTeam = null;
+                }
+            }
 
             if (faction is WaveType.None)
             {
@@ -61,32 +104,27 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
 
             if (!teamsToSpawn.Any())
             {
-                LogManager.Debug("No valid team found in EvaluateSpawns, aborting team selection.");
                 Plugin.NextTeam = null;
                 return;
             }
 
             var team = teamsToSpawn.First();
 
-            if (team.SpawnConditions?.SpawnWave == faction)
+            if (team != null)
             {
                 Plugin.CachedSpawnList = SummonedTeam.CanSpawnTeam(team);
                 Plugin.NextTeam = SummonedTeam.Summon(team, Plugin.CachedSpawnList);
 
                 if (Plugin.NextTeam is not null)
                 {
-                    var allowedIds = Plugin.CachedSpawnList.Select(p => p.Id).ToList();
-                    ev.Players.RemoveAll(p => !allowedIds.Contains(p.Id));
                     CustomTeamSpawnedThisWave = true;
+                    LimitPlayersToCustomTeam(ev);
                 }
             }
             else
             {
                 Plugin.NextTeam = null;
-                LogManager.Debug("No valid custom team found for this wave.");
             }
-
-            LogManager.Debug($"Next team selected: {Plugin.NextTeam?.Team?.Name}");
         }
 
         private void LimitPlayersToCustomTeam(RespawningTeamEventArgs ev)
