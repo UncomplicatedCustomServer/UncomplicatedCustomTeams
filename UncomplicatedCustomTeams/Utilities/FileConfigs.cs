@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using UncomplicatedCustomRoles.API.Enums;
 using UncomplicatedCustomRoles.API.Features.Behaviour;
 using UncomplicatedCustomTeams.API.Features;
@@ -16,7 +17,7 @@ namespace UncomplicatedCustomTeams.Utilities
     internal class FileConfigs
     {
         internal string Dir = Path.Combine(Paths.Configs, "UncomplicatedCustomTeams");
-        public List<string> LoadErrors { get; private set; } = new();
+        public List<string> LoadErrors { get; private set; } = [];
 
         public bool Is(string localDir = "")
         {
@@ -72,13 +73,40 @@ namespace UncomplicatedCustomTeams.Utilities
 
                         if (hasCustomSound)
                         {
-                            for (int i = 0; i < team.SoundPaths.Count; i++)
+                            Assembly audioAssembly = AppDomain.CurrentDomain.GetAssemblies()
+                                .FirstOrDefault(a => a.GetName().Name.Contains("AudioPlayerApi"));
+
+                            if (audioAssembly != null)
                             {
-                                var soundEntry = team.SoundPaths[i];
-                                if (!string.IsNullOrEmpty(soundEntry.Path) && soundEntry.Path != "/path/to/your/ogg/file")
+                                Type storageType = audioAssembly.GetTypes().FirstOrDefault(t => t.Name == "AudioClipStorage");
+
+                                if (storageType != null)
                                 {
-                                    string clipId = $"sound_{team.Id}_{i}";
-                                    AudioClipStorage.LoadClip(soundEntry.Path, clipId);
+                                    MethodInfo loadClipMethod = storageType.GetMethod("LoadClip", BindingFlags.Public | BindingFlags.Static);
+
+                                    if (loadClipMethod != null)
+                                    {
+                                        for (int i = 0; i < team.SoundPaths.Count; i++)
+                                        {
+                                            var soundEntry = team.SoundPaths[i];
+                                            if (!string.IsNullOrEmpty(soundEntry.Path) && soundEntry.Path != "/path/to/your/ogg/file")
+                                            {
+                                                string clipId = $"sound_{team.Id}_{i}";
+                                                try
+                                                {
+                                                    var result = loadClipMethod.Invoke(null, [soundEntry.Path, clipId]);
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    LogManager.Warn($"EXCEPTION during LoadClip: {e.InnerException?.Message ?? e.Message}");
+                                                }
+                                            }
+                                            else
+                                            {
+                                                LogManager.Debug($"Skipping invalid path entry at index {i}.");
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -150,7 +178,7 @@ namespace UncomplicatedCustomTeams.Utilities
                             continue;
                         }
 
-                        HashSet<int> usedRoleIds = Team.List.SelectMany(t => t.Roles).Select(r => r.Id).ToHashSet();
+                        HashSet<int> usedRoleIds = [.. Team.List.SelectMany(t => t.Roles).Select(r => r.Id)];
 
                         foreach (var role in team.Roles)
                         {
@@ -294,12 +322,6 @@ namespace UncomplicatedCustomTeams.Utilities
 
                         string teamName = yamlTeam["name"].ToString();
 
-                        if (!yamlTeam.ContainsKey("team_alive_to_win") || yamlTeam["team_alive_to_win"] == null)
-                        {
-                            yamlTeam["team_alive_to_win"] = new List<string>();
-                        }
-
-                        var teamAliveToWin = new List<object>();
 
                         if (!yamlTeam.ContainsKey("roles") || yamlTeam["roles"] == null)
                         {
@@ -345,28 +367,6 @@ namespace UncomplicatedCustomTeams.Utilities
                             {
                                 LogManager.Debug($"Error: Element in 'roles' is not a valid dictionary! Type: {item?.GetType()} | Value: {item}");
                             }
-                        }
-
-                        foreach (var roleData in roles)
-                        {
-                            if (!roleData.ContainsKey("team") || roleData["team"] == null)
-                                continue;
-
-                            string roleTeamName = roleData["team"].ToString();
-
-                            if (!teamAliveToWin.Contains(roleTeamName))
-                            {
-                                teamAliveToWin.Add(roleTeamName);
-                            }
-                        }
-
-                        yamlTeam["team_alive_to_win"] = teamAliveToWin;
-
-                        string newYamlContent = Loader.Serializer.Serialize(configData);
-                        if (File.ReadAllText(filePath) != newYamlContent)
-                        {
-                            File.WriteAllText(filePath, newYamlContent);
-                            LogManager.Debug($"Updated file {filePath}!");
                         }
                     }
                 }

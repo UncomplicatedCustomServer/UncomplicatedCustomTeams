@@ -11,7 +11,7 @@ namespace UncomplicatedCustomTeams.Utilities
 {
     public static class AutoUpdater
     {
-        private const string DefaultConfigUrl = "https://raw.githubusercontent.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/refs/heads/Pre-UCT/UncomplicatedCustomTeams/Resources/DefaultConfig.yml";
+        private const string DefaultConfigUrl = "https://raw.githubusercontent.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/refs/heads/main/UncomplicatedCustomTeams/Resources/DefaultConfig.yml";
 
         private static readonly HttpClient HttpClient = new()
         {
@@ -69,7 +69,7 @@ namespace UncomplicatedCustomTeams.Utilities
         private static bool MergeRecursive(IDictionary<string, object> target, IDictionary<string, object> source)
         {
             bool changed = false;
-            bool isInsideTeam = target.ContainsKey("team_alive_to_win");
+            bool isInsideTeam = target.ContainsKey("win_condition") || target.ContainsKey("id");
             bool isInsideSpawnConditions = target.ContainsKey("spawn_delay");
             var keysToInsertBefore = new Dictionary<string, object>();
             var keysToInsertBeforeSpawnDelay = new Dictionary<string, object>();
@@ -81,7 +81,7 @@ namespace UncomplicatedCustomTeams.Utilities
 
                 if (!target.ContainsKey(kvp.Key) || target[kvp.Key] == null)
                 {
-                    if (isInsideTeam && kvp.Key != "team_alive_to_win")
+                    if (isInsideTeam && kvp.Key != "win_condition")
                     {
                         keysToInsertBefore[kvp.Key] = kvp.Value;
                     }
@@ -146,7 +146,7 @@ namespace UncomplicatedCustomTeams.Utilities
 
                 foreach (var kvp in target)
                 {
-                    if (kvp.Key == "team_alive_to_win")
+                    if (kvp.Key == "win_condition")
                     {
                         foreach (var missing in keysToInsertBefore)
                             ordered[missing.Key] = missing.Value;

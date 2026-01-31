@@ -33,9 +33,9 @@ namespace UncomplicatedCustomTeams.API.Features
         public bool IsGodmodeEnabled { get; set; }
 
         /// <summary>
-        /// Whether bypassing obstacles is enabled for this role.
+        /// Whether bypass is enabled for this role.
         /// </summary>
-        [Description("Whether bypassing obstacles is enabled for this role.")]
+        [Description("Whether bypass is enabled for this role.")]
         public bool IsBypassEnabled { get; set; }
 
         /// <summary>

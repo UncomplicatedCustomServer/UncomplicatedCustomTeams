@@ -1,5 +1,6 @@
 ﻿using Exiled.API.Features;
 using Exiled.Events.EventArgs.Server;
+using System.Collections.Generic;
 using System.Linq;
 using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Features;
@@ -8,16 +9,15 @@ using UncomplicatedCustomTeams.Utilities;
 
 namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
 {
-    public class DefaultSpawnWaves
+    internal class DefaultSpawnWaves
     {
         public static bool ForcedNextWave = false;
-
         public static bool CustomTeamSpawnedThisWave = false;
 
         public void OnRespawningTeam(RespawningTeamEventArgs ev)
         {
             CustomTeamSpawnedThisWave = false;
-            Bucket.SpawnBucket = new();
+            Bucket.SpawnBucket = [];
             foreach (Player player in ev.Players)
                 Bucket.SpawnBucket.Add(player.Id);
 
@@ -36,9 +36,7 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
                 ForcedNextWave = false;
                 Plugin.NextTeam.RefreshPlayers(allPlayers);
                 CustomTeamSpawnedThisWave = true;
-
                 LimitPlayersToCustomTeam(ev);
-
                 LogManager.Debug($"Forced wave executed for {Plugin.NextTeam.Team.Name} with ID {Plugin.NextTeam.Team.Id}");
                 return;
             }
@@ -59,26 +57,26 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
                 return;
             }
 
-            var team = UncomplicatedCustomTeams.API.Features.Team.EvaluateSpawn(faction);
+            List<Team> teamsToSpawn = Team.EvaluateSpawn(faction);
 
-            if (team == null)
+            if (!teamsToSpawn.Any())
             {
-                LogManager.Debug("No valid team found in EvaluateSpawn, aborting team selection.");
+                LogManager.Debug("No valid team found in EvaluateSpawns, aborting team selection.");
                 Plugin.NextTeam = null;
                 return;
             }
 
+            var team = teamsToSpawn.First();
+
             if (team.SpawnConditions?.SpawnWave == faction)
             {
                 Plugin.CachedSpawnList = SummonedTeam.CanSpawnTeam(team);
-
                 Plugin.NextTeam = SummonedTeam.Summon(team, Plugin.CachedSpawnList);
 
                 if (Plugin.NextTeam is not null)
                 {
                     var allowedIds = Plugin.CachedSpawnList.Select(p => p.Id).ToList();
                     ev.Players.RemoveAll(p => !allowedIds.Contains(p.Id));
-
                     CustomTeamSpawnedThisWave = true;
                 }
             }

@@ -9,6 +9,7 @@ using UncomplicatedCustomTeams.Manager;
 using UncomplicatedCustomTeams.Utilities;
 using MapHandler = Exiled.Events.Handlers.Map;
 using PlayerHandler = Exiled.Events.Handlers.Player;
+using ServerHandler = Exiled.Events.Handlers.Server;
 
 namespace UncomplicatedCustomTeams
 {
@@ -20,7 +21,7 @@ namespace UncomplicatedCustomTeams
 
         public override string Author => "FoxWorn3365 & .piwnica2137";
 
-        public override Version Version => new(1, 5, 0);
+        public override Version Version => new(1, 6, 0);
 
         public override Version RequiredExiledVersion => new(9, 7, 1);
 
@@ -28,7 +29,7 @@ namespace UncomplicatedCustomTeams
 
         public static SummonedTeam NextTeam { get; set; } = null;
 
-        public static List<Player> CachedSpawnList = new();
+        public static List<Player> CachedSpawnList = [];
 
         internal static Plugin Instance;
 
@@ -55,9 +56,11 @@ namespace UncomplicatedCustomTeams
                 HttpManager.RegisterEvents();
 
             PlayerHandler.ChangingRole += Handler.OnChangingRole;
+            ServerHandler.RestartingRound += Handler.OnRestartingRound;
             PlayerHandler.Dying += Handler.OnDying;
             PlayerHandler.Verified += Handler.OnVerified;
             PlayerHandler.Destroying += Handler.OnDestroying;
+            ServerHandler.EndingRound += Handler.OnEndingRound;
             MapHandler.AnnouncingChaosEntrance += Handler.GetThisChaosOutOfHere;
             MapHandler.AnnouncingNtfEntrance += Handler.GetThisNtfOutOfHere;
 
@@ -105,9 +108,11 @@ namespace UncomplicatedCustomTeams
         public override void OnDisabled()
         {
             PlayerHandler.ChangingRole -= Handler.OnChangingRole;
+            ServerHandler.RestartingRound -= Handler.OnRestartingRound;
             PlayerHandler.Dying -= Handler.OnDying;
             PlayerHandler.Verified -= Handler.OnVerified;
             PlayerHandler.Destroying -= Handler.OnDestroying;
+            ServerHandler.EndingRound -= Handler.OnEndingRound;
             MapHandler.AnnouncingChaosEntrance -= Handler.GetThisChaosOutOfHere;
             MapHandler.AnnouncingNtfEntrance -= Handler.GetThisNtfOutOfHere;
 

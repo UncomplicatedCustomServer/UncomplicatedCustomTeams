@@ -1,8 +1,11 @@
-﻿using Exiled.API.Features;
+﻿using Exiled.API.Enums;
+using Exiled.API.Features;
 using Exiled.Events.EventArgs.Map;
 using Exiled.Events.EventArgs.Player;
+using Exiled.Events.EventArgs.Server;
 using MEC;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.API.Storage;
@@ -20,6 +23,7 @@ namespace UncomplicatedCustomTeams
         internal Task TeamCleaner;
 
         internal bool TeamCleanerEnabled = false;
+        public List<CoroutineHandle> ActiveSpawnDelays { get; } = [];
 
         public AfterDecontamination afterDecontamination;
         public AfterWarhead afterWarhead;
@@ -27,6 +31,8 @@ namespace UncomplicatedCustomTeams
         public RoundStarted RoundStarted;
         public ScpDeath ScpDeath;
         public UsedItem UsedItem;
+        public TeamDependent TeamDependent;
+        public AfterGeneratorActivated AfterGeneratorActivated;
 
         public MainHandler()
         {
@@ -36,6 +42,8 @@ namespace UncomplicatedCustomTeams
             RoundStarted = new RoundStarted();
             ScpDeath = new ScpDeath();
             UsedItem = new UsedItem();
+            TeamDependent = new TeamDependent();
+            AfterGeneratorActivated = new AfterGeneratorActivated();
         }
 
         public void SubscribeToSpawnWaves()
@@ -46,6 +54,8 @@ namespace UncomplicatedCustomTeams
             ServerHandler.RoundStarted += RoundStarted.OnRoundStarted;
             PlayerHandler.Dying += ScpDeath.OnScpDying;
             PlayerHandler.UsedItem += UsedItem.OnItemUsed;
+            SummonedTeam.OnTeamSummoned += TeamDependent.OnTeamSpawned;
+            MapHandler.GeneratorActivating += AfterGeneratorActivated.OnGeneratorActivating;
         }
 
         public void UnsubscribeToSpawnWaves()
@@ -56,6 +66,8 @@ namespace UncomplicatedCustomTeams
             ServerHandler.RoundStarted -= RoundStarted.OnRoundStarted;
             PlayerHandler.Dying -= ScpDeath.OnScpDying;
             PlayerHandler.UsedItem -= UsedItem.OnItemUsed;
+            SummonedTeam.OnTeamSummoned -= TeamDependent.OnTeamSpawned;
+            MapHandler.GeneratorActivating -= AfterGeneratorActivated.OnGeneratorActivating;
         }
 
         public void GetThisChaosOutOfHere(AnnouncingChaosEntranceEventArgs ev) // Don't take this seriously
@@ -106,6 +118,78 @@ namespace UncomplicatedCustomTeams
             SummonedTeam.CanSpawnTeam(null);
         }
 
+        public void OnRestartingRound()
+        {
+            Log.Debug("Round is restarting. Killing all active spawn delay coroutines...");
+            foreach (var handle in ActiveSpawnDelays)
+            {
+                Timing.KillCoroutines(handle);
+            }
+            ActiveSpawnDelays.Clear();
+
+            Log.Debug("Resetting spawn counts for all custom teams.");
+            foreach (var team in Team.List)
+            {
+                team.SpawnCount = 0;
+            }
+            SummonedTeam.List.Clear();
+        }
+
+        public void OnEndingRound(EndingRoundEventArgs ev)
+        {
+            var activeCustomTeams = SummonedTeam.List.Where(st => st.HasAlivePlayers()).ToList();
+
+            if (activeCustomTeams.Count == 0)
+                return;
+
+            bool shouldRoundEnd = false;
+            LeadingTeam winner = LeadingTeam.Draw;
+
+            foreach (var summonedTeam in activeCustomTeams)
+            {
+                var rules = summonedTeam.Team.WinCondition;
+
+                if (rules.PreventRoundEndIfAlive)
+                {
+                    ev.IsAllowed = false;
+                }
+
+                var otherAlivePlayers = Player.List
+                    .Where(p => p.IsAlive && !summonedTeam.Players.Any(cr => cr.Player == p))
+                    .ToList();
+
+                bool enemiesremain = false;
+
+                foreach (var player in otherAlivePlayers)
+                {
+                    if (SummonedTeam.IsPlayerInCustomTeam(player))
+                    {
+                        enemiesremain = true;
+                        break;
+                    }
+
+                    if (!rules.AlliedTeams.Contains(player.Role.Team))
+                    {
+                        enemiesremain = true;
+                        break;
+                    }
+                }
+
+                if (!enemiesremain)
+                {
+                    shouldRoundEnd = true;
+                    winner = rules.WinningTeam;
+                    break;
+                }
+            }
+
+            if (shouldRoundEnd)
+            {
+                ev.IsAllowed = true;
+                ev.LeadingTeam = winner;
+            }
+        }
+
         public void OnChangingRole(ChangingRoleEventArgs ev)
         {
             if (Plugin.NextTeam is not null && Bucket.SpawnBucket.Contains(ev.Player.Id) && Plugin.NextTeam.Team != null)
@@ -139,8 +223,6 @@ namespace UncomplicatedCustomTeams
 
             Timing.CallDelayed(0.2f, () =>
             {
-                SummonedTeam.CheckRoundEndCondition();
-
                 List<SummonedTeam> teamsToRemove = [];
 
                 foreach (var team in SummonedTeam.List)
@@ -162,18 +244,21 @@ namespace UncomplicatedCustomTeams
         public void OnDying(DyingEventArgs ev)
         {
             SummonedCustomRole playerRole = null;
+            SummonedTeam teamOfPlayer = null;
             foreach (var team in SummonedTeam.List)
             {
                 var roleInTeam = team.SummonedPlayersGet(ev.Player);
                 if (roleInTeam != null)
                 {
                     playerRole = roleInTeam;
+                    teamOfPlayer = team;
                     break;
                 }
             }
 
             if (playerRole != null)
             {
+                TeamDependent.CheckForTeamElimination(teamOfPlayer);
                 if (playerRole.CustomRole.DropInventoryOnDeath)
                 {
                     Log.Debug($"Player {ev.Player.Nickname} with role {playerRole.CustomRole.Name} is dying. Items will be dropped (default behavior).");
