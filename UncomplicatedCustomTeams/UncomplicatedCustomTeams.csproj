@@ -105,7 +105,6 @@
     <Compile Include="Commands\Reload.cs" />
     <Compile Include="Commands\List.cs" />
     <Compile Include="Commands\Owner.cs" />
-    <Compile Include="Commands\Role.cs" />
     <Compile Include="Commands\Spawn.cs" />
     <Compile Include="Commands\LogShare.cs" />
     <Compile Include="Commands\Active.cs" />

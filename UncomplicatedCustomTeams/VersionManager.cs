@@ -42,7 +42,7 @@ namespace UncomplicatedCustomTeams.Manager
 
                 if (VersionInfo.PreRelease)
                 {
-                    LogManager.Info($"\nNOTICE!\nYou are currently using the version v{Plugin.Instance.Version}, who's a PRE-RELEASE or an EXPERIMENTAL RELESE of UncomplicatedCustomRoles!\nLatest stable release: {Plugin.HttpManager.LatestVersion}\nNOTE: This is NOT a stable version, so there can be bugs and malfunctions, for this reason we do not recommend use in production.");
+                    LogManager.Info($"\nNOTICE!\nYou are currently using the version v{Plugin.Instance.Version}, who's a PRE-RELEASE or an EXPERIMENTAL RELESE of UncomplicatedCustomTeams!\nLatest stable release: {Plugin.HttpManager.LatestVersion}\nNOTE: This is NOT a stable version, so there can be bugs and malfunctions, for this reason we do not recommend use in production.");
                     if (VersionInfo.ForceDebug && !Log.DebugEnabled.Contains(Plugin.Instance.Assembly))
                     {
                         LogManager.Info("Debug logs have been activated!");
@@ -52,7 +52,7 @@ namespace UncomplicatedCustomTeams.Manager
                 }
                 else
                 {
-                    LogManager.Info($"You are using UncomplicatedCustomRoles v{VersionInfo.Name}{(VersionInfo.CustomName is not null ? $" '{VersionInfo.CustomName}'" : string.Empty)}!");
+                    LogManager.Info($"You are using UncomplicatedCustomTeams v{VersionInfo.Name}{(VersionInfo.CustomName is not null ? $" '{VersionInfo.CustomName}'" : string.Empty)}!");
                 }
 
                 // Check integrity
