@@ -1,4 +1,5 @@
-﻿using PlayerRoles;
+﻿using Exiled.API.Enums;
+using PlayerRoles;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,10 +13,11 @@ namespace UncomplicatedCustomTeams.API.Features
 {
     public class Team
     {
+        private static readonly System.Random _random = new();
         /// <summary>
         /// Gets a complete list of every custom <see cref="Team"/> registered
         /// </summary>
-        public static List<Team> List { get; } = new();
+        public static List<Team> List { get; } = [];
 
         /// <summary>
         /// Register a new custom <see cref="Team"/>
@@ -66,6 +68,13 @@ namespace UncomplicatedCustomTeams.API.Features
         public uint SpawnChance { get; set; } = 100;
 
         /// <summary>
+        /// If set to true, this team's successful spawn roll will not prevent other teams
+        /// with the same SpawnWave from being evaluated.
+        /// </summary>
+        [Description("Set to true to allow this team to spawn alongside other teams during the same Spawn Wave. If false (default), it will be the only one.")]
+        public bool AllowConcurrentSpawns { get; set; } = false;
+
+        /// <summary>
         /// Defines the spawn conditions for a custom team.
         /// </summary>
         public SpawnData SpawnConditions { get; set; } = new();
@@ -90,39 +99,25 @@ namespace UncomplicatedCustomTeams.API.Features
         /// </summary>
         public bool IsNoisy { get; set; } = true;
 
+        public RoundEndRule WinCondition { get; set; } = new RoundEndRule();
+
         /// <summary>
         /// A list of sounds to be played sequentially when the team spawns.
-        /// Requires AudioPlayerAPI. Download it here: https://github.com/Killers0992/AudioPlayerApi
+        /// Requires AudioPlayerAPI.
         /// </summary>
-        [Description("A list of sounds to be played sequentially. Requires AudioPlayerAPI.")]
+        [Description("A list of sounds to be played sequentially. Requires AudioPlayerAPI. Download it here: https://github.com/Killers0992/AudioPlayerApi")]
         public List<SoundPathEntry> SoundPaths { get; set; } = [new()];
 
         /// <summary>
-        /// Volume of the sound, should be between 1 and 100.
+        /// Volume of the sound, should be between 1 and 5.
         /// </summary>
         public float SoundVolume { get; set; } = 1f;
-
-        /// <summary>
-        /// A list of PlayerRoles.Team whose presence on the map guarantees victory with custom team.
-        /// </summary>
-        [Description("Here, you can define which teams will win against your custom team.")]
-        public List<PlayerRoles.Team> TeamAliveToWin { get; set; } = [];
-
-        /// <summary>
-        /// Retrieves a list of actual PlayerRoles.Team enums based on the teams in TeamAliveToWin.
-        /// </summary>
-        public static List<PlayerRoles.Team> GetWinningTeams()
-        {
-            return [.. Team.List
-                .SelectMany(team => team.TeamAliveToWin)
-                .Distinct()];
-        }
 
         /// <summary>
         /// The list of every role that will be a part of this wave
         /// </summary>
         [YamlIgnore]
-        public List<IUCTCustomRole> TeamRoles => Roles.OfType<IUCTCustomRole>().Concat(EcrRoles).ToList();
+        public List<IUCTCustomRole> TeamRoles => [.. Roles.OfType<IUCTCustomRole>(), .. EcrRoles];
 
         /// <summary>
         /// The list of every UCR role that will be a part of this wave
@@ -165,8 +160,8 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// The list of every ECR role that will be a part of this wave
         /// </summary>
-        public List<ExiledCustomRole> EcrRoles { get; set; } = new()
-        {
+        public List<ExiledCustomRole> EcrRoles { get; set; } =
+        [
             new()
             {
                 Id = 1,
@@ -174,25 +169,46 @@ namespace UncomplicatedCustomTeams.API.Features
                 MaxPlayers = 1,
                 DropInventoryOnDeath = true
             }
-        };
+        ];
 
-        public static Team EvaluateSpawn(WaveType wave)
+        public static List<Team> EvaluateSpawn(WaveType wave)
         {
-            List<Team> Teams = [];
-            foreach (Team Team in List.Where(t => t.SpawnConditions.SpawnWave == wave))
-            {
-                for (int a = 0; a < Team.SpawnChance; a++)
-                    Teams.Add(Team);
-            }
-            LogManager.Debug($"Evaluated team count, found {Teams.Count}/100 elements [{List.Count(t => t.SpawnConditions.SpawnWave == wave)}]!\n If the number is less than 100 THERE'S A PROBLEM!");
+            List<Team> winningTeams = [];
 
-            if (Teams.Count == 0)
+            var eligibleTeams = List.Where(t => t.SpawnConditions.SpawnWave == wave).ToList();
+
+            if (!eligibleTeams.Any())
             {
-                LogManager.Debug("No valid team found, returning...");
-                return null;
+                return winningTeams;
             }
-            int Chance = new System.Random().Next(0, 99);
-            return Teams.Count > Chance ? Teams[Chance] : null;
+
+            LogManager.Debug($"Found {eligibleTeams.Count} eligible Custom Team(s) for WaveType '{wave}'. Evaluating chances.");
+
+            foreach (var team in eligibleTeams)
+            {
+                int roll = _random.Next(0, 100);
+                if (roll < team.SpawnChance)
+                {
+                    LogManager.Debug($"Team '{team.Name}' succeeded its spawn roll! (Rolled: {roll}, Needed < {team.SpawnChance}). Adding to spawn list.");
+
+                    winningTeams.Add(team);
+
+                    if (!team.AllowConcurrentSpawns)
+                    {
+                        LogManager.Debug($"Team '{team.Name}' has AllowConcurrentSpawns set to false. Stopping further evaluations for this wave.");
+                        break;
+                    }
+                }
+                else
+                {
+                    LogManager.Debug($"Team '{team.Name}' failed its spawn roll. (Rolled: {roll}, Needed >= {team.SpawnChance}).");
+                }
+            }
+
+            if (!winningTeams.Any())
+                LogManager.Debug("No custom team succeeded their spawn roll for this wave.");
+
+            return winningTeams;
         }
 
         public class SpawnData
@@ -201,10 +217,19 @@ namespace UncomplicatedCustomTeams.API.Features
             public Vector3 SpawnPosition { get; set; } = Vector3.zero;
             public Vector3 SpawnRotation { get; set; } = Vector3.zero; // yaml has skill issue with Quaternion
 
+            [Description("Spawn this team AFTER the custom team with the specified ID has spawned. SpawnWave must be set to 'TeamDependent'.")]
+            public uint AfterTeamSpawn { get; set; } = 0;
+
+            [Description("Spawn this team AFTER the custom team with the specified ID has been completely eliminated. SpawnWave must be set to 'TeamDependent'.")]
+            public uint AfterTeamDeath { get; set; } = 0;
+
+            [Description("How many generators must be engaged for this team to spawn. Only works if SpawnWave is set to 'AfterGeneratorActivated'. Value should be between 1 and 3.")]
+            public int RequiredEngagedGenerators { get; set; } = 1;
+
             private ItemType _usedItem = ItemType.None;
             private int? _customItemId = null;
 
-            [Description("Specify the item or custom item ID that triggers this team spawn. Only works if SpawnWave is set to 'UsedItem'.")]
+            [Description("Specify the Game Base Utem or EXILED Custom Item ID that triggers this team spawn. Only works if SpawnWave is set to 'UsedItem'.")]
             public string UsedItem
             {
                 get
@@ -255,7 +280,7 @@ namespace UncomplicatedCustomTeams.API.Features
             /// <returns><c>true</c> if the spawn position is required; otherwise, <c>false</c>.</returns>
             public bool RequiresSpawnPosition()
             {
-                return SpawnWave == WaveType.AfterDecontamination || SpawnWave == WaveType.AfterWarhead || SpawnWave == WaveType.RoundStarted || SpawnWave == WaveType.ScpDeath || SpawnWave == WaveType.UsedItem;
+                return SpawnWave == WaveType.AfterDecontamination || SpawnWave == WaveType.AfterWarhead || SpawnWave == WaveType.RoundStarted || SpawnWave == WaveType.ScpDeath || SpawnWave == WaveType.UsedItem || SpawnWave == WaveType.TeamDependent || SpawnWave == WaveType.AfterGeneratorActivated;
             }
         }
         /// <summary>
@@ -274,6 +299,17 @@ namespace UncomplicatedCustomTeams.API.Features
             /// </summary>
             [Description("Delay in seconds before this sound starts playing.")]
             public float Delay { get; set; } = 0f;
+        }
+
+        public class RoundEndRule
+        {
+            [Description("If true, the round will not end while this team is alive, effectively blocking standard round-end conditions. NOTE: This does NOT prevent the round from ending if this team wins by eliminating all enemies. If they win, the round ends immediately.")]
+            public bool PreventRoundEndIfAlive { get; set; } = true;
+            [Description("A list of vanilla teams that are considered allies. The Custom Team does NOT need to eliminate players from these teams to trigger the win condition.")]
+            public List<PlayerRoles.Team> AlliedTeams { get; set; } = [];
+
+            [Description("The specific faction to declare as the winner when the win condition is met.")]
+            public LeadingTeam WinningTeam { get; set; } = LeadingTeam.Draw;
         }
     }
 }

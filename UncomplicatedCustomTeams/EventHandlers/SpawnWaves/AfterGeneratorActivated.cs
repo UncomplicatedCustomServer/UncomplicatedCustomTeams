@@ -1,4 +1,5 @@
 ﻿using Exiled.API.Features;
+using Exiled.Events.EventArgs.Map;
 using MEC;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,17 +10,31 @@ using UncomplicatedCustomTeams.Utilities;
 
 namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
 {
-    internal class AfterWarhead
+    internal class AfterGeneratorActivated
     {
-        public void OnDetonated()
+        private static List<Generator> EngagedGenerators { get; set; } = [];
+        public void OnGeneratorActivating(GeneratorActivatingEventArgs _)
         {
-            LogManager.Debug("Warhead detonated, checking for AfterWarhead spawns...");
+            EngagedGenerators = [.. Generator.List.Where(g => g.IsEngaged)];
+            int engagedCount = EngagedGenerators.Count;
 
-            List<Team> teamsToSpawn = Team.EvaluateSpawn(WaveType.AfterWarhead);
+            LogManager.Debug($"Generator engaged. Current engaged count: {engagedCount}. Checking for spawns...");
+            List<Team> potentialTeams = Team.EvaluateSpawn(WaveType.AfterGeneratorActivated);
 
-            if (!teamsToSpawn.Any()) return;
+            if (!potentialTeams.Any())
+            {
+                return;
+            }
 
-            LogManager.Debug($"EvaluateSpawns found {teamsToSpawn.Count} team(s) to spawn.");
+            List<Team> teamsToSpawn = [.. potentialTeams.Where(team => engagedCount >= team.SpawnConditions.RequiredEngagedGenerators)];
+
+            if (!teamsToSpawn.Any())
+            {
+                LogManager.Debug("Found potential teams, but none met the RequiredEngagedGenerators condition.");
+                return;
+            }
+
+            LogManager.Debug($"Found {teamsToSpawn.Count} team(s) that meet all conditions.");
 
             foreach (Team team in teamsToSpawn)
             {
@@ -35,16 +50,16 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
 
                     if (Plugin.NextTeam == null) return;
 
-                    LogManager.Debug($"Spawned AfterWarhead team: {Plugin.NextTeam.Team.Name} for {Bucket.SpawnBucket.Count} players.");
+                    LogManager.Debug($"Spawning team: {Plugin.NextTeam.Team.Name} for {Bucket.SpawnBucket.Count} players.");
 
                     foreach (var summonedRole in Plugin.NextTeam.Players)
                     {
-                        LogManager.Debug($"Assigning role to {summonedRole.Player.Nickname} ({summonedRole.Player.Id})...");
                         summonedRole.AddRole();
                     }
 
                     LogManager.Debug($"All players for team '{team.Name}' have been assigned roles.");
                 });
+
                 Plugin.Instance.Handler.ActiveSpawnDelays.Add(handle);
             }
         }

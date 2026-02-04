@@ -10,6 +10,8 @@ namespace UncomplicatedCustomTeams
 
         [Description("Do enable the developer (debug) mode?")]
         public bool Debug { get; set; } = false;
+        [Description("Enable or disable credit tags functionality.")]
+        public bool EnableCreditTags { get; set; } = true;
         public bool UseExiledCustomRoles { get; set; } = false;
 
         [Description("How long to wait for Exiled CustomRoles to be registered before checking for registry?")]

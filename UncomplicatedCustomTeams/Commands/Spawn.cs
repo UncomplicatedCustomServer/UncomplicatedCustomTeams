@@ -25,9 +25,9 @@ namespace UncomplicatedCustomTeams.Commands
                 return false;
             }
 
-            if (arguments.Count != 1)
+            if (arguments.Count < 1 || arguments.Count > 2)
             {
-                response = "Usage: uct spawn <TeamId>";
+                response = "Usage: uct spawn <TeamId> <PlayerCount>";
                 return false;
             }
 
@@ -46,13 +46,33 @@ namespace UncomplicatedCustomTeams.Commands
             else
             {
                 Bucket.SpawnBucket = [];
-                foreach (Player Player in Player.List.Where(p => !p.IsAlive && p.Role.Type is PlayerRoles.RoleTypeId.Spectator && !p.IsOverwatchEnabled))
-                    Bucket.SpawnBucket.Add(Player.Id);
 
-                SummonedTeam Summoned = SummonedTeam.Summon(team, Player.List.Where(p => !p.IsAlive && p.Role.Type is PlayerRoles.RoleTypeId.Spectator && !p.IsOverwatchEnabled));
+                var spectators = Player.List.Where(p => !p.IsAlive && p.Role.Type is PlayerRoles.RoleTypeId.Spectator && !p.IsOverwatchEnabled).ToList();
+
+                int playersToSpawnCount = spectators.Count;
+
+                if (arguments.Count == 2)
+                {
+                    if (!int.TryParse(arguments[1], out int requestedCount) || requestedCount <= 0)
+                    {
+                        response = "Invalid player count! It must be a positive number.";
+                        return false;
+                    }
+                    playersToSpawnCount = requestedCount;
+                }
+
+                var playersToSpawn = spectators.Take(playersToSpawnCount);
+
+                SummonedTeam Summoned = SummonedTeam.Summon(team, playersToSpawn);
+                if (Summoned == null)
+                {
+                    response = $"Failed to spawn team {team.Name}.";
+                    return false;
+                }
+
                 Summoned.SpawnAll();
 
-                response = $"Successfully spawned the team {team.Name}!";
+                response = $"Successfully spawned the team {team.Name} with {Summoned.Players.Count} players!";
 
                 Timing.CallDelayed(1.5f, () =>
                 {

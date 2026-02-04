@@ -15,8 +15,6 @@ teams:
       x: 0
       y: 0
       z: 0
-    after_team_spawn: 0
-    after_team_death: 0
     used_item: None
     target_scp: None
     is_scp0492_counted_as_scp: false
@@ -27,11 +25,14 @@ teams:
   cassie_message: team arrived
   cassie_translation: Team arrived!
   is_noisy: true
+  win_condition:
+    prevent_round_end_if_alive: true
+    allied_teams: []
+    winning_team: Draw
   sound_paths:
   - path: /path/to/your/ogg/file
     delay: 0
   sound_volume: 1
-  is_team_alive_to_win_enabled: true
   team_alive_to_win:
   - ClassD
   roles:

@@ -1,61 +1,48 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace UncomplicatedCustomRoles.Manager.NET
 {
 #nullable enable
 
-    internal class VersionInfo
+    [method: JsonConstructor]
+#nullable enable
+
+    internal class VersionInfo(string name, string source, string? sourceLink, string? customName, bool preRelease, bool forceDebug, string message, bool recall, string? recallTarget, string? recallReason, bool? recallImportant, string hash)
     {
-        [JsonProperty("name")]
-        public string Name { get; }
+        [JsonPropertyName("name")]
+        public string Name { get; } = name;
 
-        [JsonProperty("source")]
-        public string Source { get; }
+        [JsonPropertyName("source")]
+        public string Source { get; } = source;
 
-        [JsonProperty("source_link")]
-        public string? SourceLink { get; }
+        [JsonPropertyName("source_link")]
+        public string? SourceLink { get; } = sourceLink;
 
-        [JsonProperty("custom_name")]
-        public string? CustomName { get; }
+        [JsonPropertyName("custom_name")]
+        public string? CustomName { get; } = customName;
 
-        [JsonProperty("pre_release")]
-        public bool PreRelease { get; }
+        [JsonPropertyName("pre_release")]
+        public bool PreRelease { get; } = preRelease;
 
-        [JsonProperty("force_debug")]
-        public bool ForceDebug { get; }
+        [JsonPropertyName("force_debug")]
+        public bool ForceDebug { get; } = forceDebug;
 
-        [JsonProperty("message")]
-        public string Message { get; }
+        [JsonPropertyName("message")]
+        public string Message { get; } = message;
 
-        [JsonProperty("recall")]
-        public bool Recall { get; }
+        [JsonPropertyName("recall")]
+        public bool Recall { get; } = recall;
 
-        [JsonProperty("recall_target")]
-        public string? RecallTarget { get; }
+        [JsonPropertyName("recall_target")]
+        public string? RecallTarget { get; } = recallTarget;
 
-        [JsonProperty("recall_reason")]
-        public string? RecallReason { get; }
+        [JsonPropertyName("recall_reason")]
+        public string? RecallReason { get; } = recallReason;
 
-        [JsonProperty("recall_important")]
-        public bool? RecallImportant { get; }
+        [JsonPropertyName("recall_important")]
+        public bool? RecallImportant { get; } = recallImportant;
 
-        [JsonProperty("hash")]
-        public string Hash { get; }
-
-        public VersionInfo(string name, string source, string? sourceLink, string? customName, bool preRelease, bool forceDebug, string message, bool recall, string? recallTarget, string? recallReason, bool? recallImportant, string hash)
-        {
-            Name = name;
-            Source = source;
-            SourceLink = sourceLink;
-            CustomName = customName;
-            PreRelease = preRelease;
-            ForceDebug = forceDebug;
-            Message = message;
-            Recall = recall;
-            RecallTarget = recallTarget;
-            RecallReason = recallReason;
-            RecallImportant = recallImportant;
-            Hash = hash;
-        }
+        [JsonPropertyName("hash")]
+        public string Hash { get; } = hash;
     }
 }

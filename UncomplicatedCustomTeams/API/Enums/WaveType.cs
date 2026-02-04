@@ -9,6 +9,8 @@
         AfterDecontamination,
         UsedItem,
         RoundStarted,
-        ScpDeath
+        ScpDeath,
+        TeamDependent,
+        AfterGeneratorActivated
     }
 }

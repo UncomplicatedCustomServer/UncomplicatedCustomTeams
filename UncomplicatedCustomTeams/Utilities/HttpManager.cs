@@ -2,15 +2,15 @@
 using Exiled.Events.EventArgs.Player;
 using Exiled.Loader;
 using MEC;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using UncomplicatedCustomRoles.API.Struct;
+using UncomplicatedCustomRoles.Extensions;
 using UncomplicatedCustomTeams.Utilities;
 using PlayerHandler = Exiled.Events.Handlers.Player;
 
@@ -53,7 +53,7 @@ namespace UncomplicatedCustomTeams.Manager
         /// <summary>
         /// Gets the role of the given player (as steamid@64) inside UCR
         /// </summary>
-        public Dictionary<string, string> OrgPlayerRole { get; } = new();
+        public List<string> IsJobRole { get; } = new();
 
         /// <summary>
         /// Gets the latest <see cref="Version"/> of the plugin, loaded by the UCS cloud
@@ -78,9 +78,6 @@ namespace UncomplicatedCustomTeams.Manager
         /// <param name="prefix"></param>
         public HttpManager(string prefix)
         {
-            if (!CheckForDependency())
-                Timing.CallContinuously(20f, () => LogManager.Error("You don't have the dependency Newtonsoft.Json installed!\nPlease install it AS SOON AS POSSIBLE!\nIf you need support join our Discord server: https://discord.gg/5StRGu8EJV"));
-
             Prefix = prefix;
             RegisterEvents();
             HttpClient = new();
@@ -99,69 +96,14 @@ namespace UncomplicatedCustomTeams.Manager
 
         public void OnVerified(VerifiedEventArgs ev) => ApplyCreditTag(ev.Player);
 
-        private bool CheckForDependency() => Loader.Dependencies.Any(assembly => assembly.GetName().Name == "Newtonsoft.Json");
-
-        public HttpResponseMessage HttpGetRequest(string url)
+        public string AddServerOwner(string discordId)
         {
-            try
-            {
-                Task<HttpResponseMessage> Response = Task.Run(() => HttpClient.GetAsync(url));
-
-                Response.Wait();
-
-                return Response.Result;
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-        }
-
-        public HttpResponseMessage HttpPutRequest(string url, string content)
-        {
-            try
-            {
-                Task<HttpResponseMessage> Response = Task.Run(() => HttpClient.PutAsync(url, new StringContent(content, Encoding.UTF8, "text/plain")));
-
-                Response.Wait();
-
-                return Response.Result;
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-        }
-
-        public string RetriveString(HttpResponseMessage response)
-        {
-            if (response is null)
-                return string.Empty;
-
-            return RetriveString(response.Content);
-        }
-
-        public string RetriveString(HttpContent response)
-        {
-            if (response is null)
-                return string.Empty;
-
-            Task<string> String = Task.Run(response.ReadAsStringAsync);
-
-            String.Wait();
-
-            return String.Result;
-        }
-
-        public HttpStatusCode AddServerOwner(string discordId)
-        {
-            return HttpGetRequest($"{Endpoint}/owners/add?discordid={discordId}")?.StatusCode ?? HttpStatusCode.InternalServerError;
+            return HttpQuery.Get($"{Endpoint}/owners/add?discordid={discordId}");
         }
 
         public void LoadLatestVersion()
         {
-            LogManager.Warn("Proceeding to check first verion [B] [MACCPR]");
-            string Version = RetriveString(HttpGetRequest($"{Endpoint}/{Prefix}/version?vts=1"));
+            string Version = HttpQuery.Get($"{Endpoint}/{Prefix}/version?vts=5");
 
             if (Version is not null && Version != string.Empty && Version.Contains("."))
                 _latestVersion = new(Version);
@@ -174,37 +116,48 @@ namespace UncomplicatedCustomTeams.Manager
             Credits = new();
             try
             {
-                Dictionary<string, Dictionary<string, string>> Data = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(RetriveString(HttpGetRequest("https://api.ucserver.it/credits.json")));
-
+                Dictionary<string, Dictionary<string, JsonElement>> Data = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, JsonElement>>>(HttpQuery.Get($"https://api.ucserver.it/credits.json"));
                 if (Data is null)
                 {
                     LogManager.Warn("Failed to connect to the UCS Central Server to get the credit tags informations!");
                     return;
                 }
 
-                foreach (KeyValuePair<string, Dictionary<string, string>> kvp in Data.Where(kvp => kvp.Value is not null && kvp.Value.ContainsKey("role") && kvp.Value.ContainsKey("color") && kvp.Value.ContainsKey("override")))
+                foreach (KeyValuePair<string, Dictionary<string, JsonElement>> kvp in Data.Where(kvp => kvp.Value is not null && kvp.Value.ContainsKey("role") && kvp.Value.ContainsKey("color") && kvp.Value.ContainsKey("override") && kvp.Value.ContainsKey("job")))
                 {
-                    Credits.Add(kvp.Key, new(kvp.Value["role"], kvp.Value["color"], bool.Parse(kvp.Value["override"])));
-                    if (kvp.Value.TryGetValue("job", out string isJob) && isJob is "true")
-                        OrgPlayerRole.Add(kvp.Key, isJob);
+                    string role = kvp.Value["role"].GetString();
+                    string color = kvp.Value["color"].GetString();
+                    bool overrideStr = kvp.Value["override"].ValueKind switch
+                    {
+                        JsonValueKind.String => bool.Parse(kvp.Value["override"].GetString() ?? string.Empty),
+                        JsonValueKind.True => true,
+                        _ => false
+                    };
+                    bool isJob = kvp.Value["job"].ValueKind == JsonValueKind.True;
+                    Credits.Add(kvp.Key, new(role, color, overrideStr));
+                    if (isJob)
+                        IsJobRole.Add(kvp.Key);
                 }
             }
             catch (Exception e)
             {
-                LogManager.Error($"Failed to act HttpManager::LoadCreditTags() - {e.GetType().FullName}: {e.Message}\n{e.StackTrace}");
+                LogManager.Error("An error occurred while loading the credit tags from the UCS Central Server!");
+                LogManager.Debug($"Failed to act HttpManager::LoadCreditTags() - {e.GetType().FullName}: {e.Message}\n{e.StackTrace}");
             }
         }
 
         public Triplet<string, string, bool> GetCreditTag(Player player)
         {
-            if (Credits.ContainsKey(player.UserId))
-                return Credits[player.UserId];
+            if (Credits.TryGetValue(player.UserId, out var tag))
+                return tag;
 
             return new(null, null, false);
         }
 
         public void ApplyCreditTag(Player player)
         {
+            if (!Plugin.Instance.Config.EnableCreditTags)
+                return;
 
             if (_alreadyManaged)
                 return;
@@ -245,22 +198,16 @@ namespace UncomplicatedCustomTeams.Manager
             return true;
         }
 
-        internal HttpStatusCode ShareLogs(string data, out HttpContent httpContent)
+        internal HttpStatusCode ShareLogs(string data, out string content)
         {
-            HttpResponseMessage Status = HttpPutRequest($"{Endpoint}/{Prefix}/error?port={Server.Port}&exiled_version={Loader.Version}&plugin_version={Plugin.Instance.Version.ToString(4)}&hash={VersionManager.HashFile(Plugin.Instance.Assembly.GetPath())}", data);
-            httpContent = Status.Content;
-            return Status.StatusCode;
+            content = HttpQuery.Post($"{Endpoint}/{Prefix}/error?port={Server.Port}&exiled_version={Loader.Version}&plugin_version={Plugin.Instance.Version.ToString(4)}&hash={VersionManager.HashFile(Plugin.Instance.Assembly.GetPath())}", data, "text/plain");
+            return content.GetStatusCode(out _);
         }
 
 #nullable enable
-        internal async Task<Tuple<HttpStatusCode, string?>> VersionInfo()
+        internal string VersionInfo()
         {
-            HttpResponseMessage message = await HttpClient.GetAsync($"{Endpoint.Replace("/v2", "")}/vinfo/info?v={Plugin.Instance.Version.ToString(4)}");
-
-            if (message.StatusCode != HttpStatusCode.OK)
-                return new(message.StatusCode, null);
-
-            return new(message.StatusCode, await message.Content.ReadAsStringAsync());
+            return HttpQuery.Get($"{Endpoint.Replace("/v2", "")}/vinfo/info?v={Plugin.Instance.Version.ToString(4)}&type=EXILED");
         }
     }
 }

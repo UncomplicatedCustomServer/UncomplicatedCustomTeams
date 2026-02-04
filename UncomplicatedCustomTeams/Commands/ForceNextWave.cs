@@ -14,7 +14,7 @@ namespace UncomplicatedCustomTeams.Commands
     {
         public string Name { get; } = "fnw";
 
-        public string Description { get; } = "Forces the next wave to be a custom team.";
+        public string Description { get; } = "Forces the next wave to be a custom team. Usage: 'uct fnw' (random) or 'uct fnw <ID> <ForceSpawn>' (specific).";
 
         public string RequiredPermission { get; } = "uct.fnw";
 
@@ -26,9 +26,19 @@ namespace UncomplicatedCustomTeams.Commands
                 return false;
             }
 
-            if (arguments.Count != 1)
+            if (arguments.Count == 0)
             {
-                response = "Usage: uct fnw <TeamId>";
+                DefaultSpawnWaves.ForceAnyCustomTeam = true;
+                DefaultSpawnWaves.ForcedNextWave = false;
+                Plugin.NextTeam = null;
+
+                response = "Next wave will perform a guaranteed spawn of a RANDOM Custom Team (matching the Spawn Wave type).";
+                return true;
+            }
+
+            if (arguments.Count < 2)
+            {
+                response = "Usage: uct fnw <TeamId> <ForceSpawn (true/false)>\nExample: uct fnw 1 true";
                 return false;
             }
 
@@ -37,6 +47,13 @@ namespace UncomplicatedCustomTeams.Commands
                 response = "Invalid team ID!";
                 return false;
             }
+
+            if (!bool.TryParse(arguments[1], out bool ignoreChance))
+            {
+                response = "Invalid boolean for ForceSpawn! Use 'true' (force 100%) or 'false' (respect spawn chance).";
+                return false;
+            }
+
             var team = Team.List.FirstOrDefault(t => t.Id == id);
 
             if (team is null)
@@ -53,8 +70,11 @@ namespace UncomplicatedCustomTeams.Commands
 
             Plugin.NextTeam = new SummonedTeam(team);
             DefaultSpawnWaves.ForcedNextWave = true;
+            DefaultSpawnWaves.IgnoreSpawnChance = ignoreChance;
+            DefaultSpawnWaves.ForceAnyCustomTeam = false;
 
-            response = $"Next wave will spawn team '{team.Name}' successfully.";
+            string chanceMsg = ignoreChance ? "ignoring spawn chance (100% spawn)" : $"respecting spawn chance ({team.SpawnChance}%)";
+            response = $"Next wave explicitly set to team '{team.Name}'. {chanceMsg}.";
             return true;
         }
     }

@@ -5,9 +5,11 @@ using PlayerRoles;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Storage;
 using UncomplicatedCustomTeams.Utilities;
+using UnityEngine;
 using Utils.NonAllocLINQ;
 
 namespace UncomplicatedCustomTeams.API.Features
@@ -17,11 +19,12 @@ namespace UncomplicatedCustomTeams.API.Features
         /// <summary>
         /// Gets a list of every spawned <see cref="Team"/> as <see cref="SummonedTeam"/>
         /// </summary>
-        public static List<SummonedTeam> List { get; } = new();
+        public static List<SummonedTeam> List { get; } = [];
+        public static event Action<SummonedTeam> OnTeamSummoned;
 
         public string Id { get; }
 
-        public List<SummonedCustomRole> Players { get; } = new();
+        public List<SummonedCustomRole> Players { get; } = [];
 
         public Team Team { get; }
 
@@ -77,36 +80,14 @@ namespace UncomplicatedCustomTeams.API.Features
         }
 
         /// <summary>
-        /// Checks if the given team is a custom team.
+        /// Checks if a player is part of any spawned custom team.
         /// </summary>
-        public static bool IsCustomTeam(PlayerRoles.Team team)
+        public static bool IsPlayerInCustomTeam(Player player)
         {
-            return Team.List.Any(t => t.Name == team.ToString());
-        }
+            if (player == null)
+                return false;
 
-        /// <summary>
-        /// Checks if the round should end based on the alive teams and winning conditions.
-        /// </summary>
-        public static void CheckRoundEndCondition()
-        {
-            var aliveTeams = Player.List.Where(p => p.IsAlive)
-                .Select(p => p.Role.Team)
-                .Where(t => !IsCustomTeam(t))
-                .Distinct()
-                .ToList();
-
-            var winningTeams = Team.GetWinningTeams();
-            bool hasWinningTeamAlive = aliveTeams.Any(team => winningTeams.Contains(team));
-            bool onlyWinningTeamsRemain = aliveTeams.All(team => winningTeams.Contains(team));
-            bool hasAliveCustomTeam = SummonedTeam.List.Any(team => team.HasAlivePlayers());
-
-            if (hasWinningTeamAlive && onlyWinningTeamsRemain && hasAliveCustomTeam)
-            {
-                if (!Round.IsLocked)
-                {
-                    Round.EndRound();
-                }
-            }
+            return List.Any(summonedTeam => summonedTeam.Players.Any(summonedRole => summonedRole.Player.Id == player.Id));
         }
 
         /// <summary>
@@ -186,7 +167,7 @@ namespace UncomplicatedCustomTeams.API.Features
             int totalAllowed = team.TeamRoles.Sum(r => r.MaxPlayers);
             int assigned = 0;
 
-            var random = new Random();
+            var random = new System.Random();
             var roleQueue = team.TeamRoles
                 .Where(r => r.Priority != RolePriority.None)
                 .GroupBy(r => r.Priority)
@@ -220,7 +201,7 @@ namespace UncomplicatedCustomTeams.API.Features
             if (!string.IsNullOrEmpty(team.CassieTranslation))
             {
                 if (team.IsCassieAnnouncementEnabled)
-                    Cassie.MessageTranslated(team.CassieMessage, team.CassieTranslation, isNoisy: team.IsNoisy, isSubtitles: true);
+                    Exiled.API.Features.Cassie.MessageTranslated(team.CassieMessage, team.CassieTranslation, isNoisy: team.IsNoisy, isSubtitles: true);
             }
             bool hasCustomSound = team.SoundPaths != null && team.SoundPaths.Any(s => !string.IsNullOrEmpty(s.Path) && s.Path != "/path/to/your/ogg/file");
             if (hasCustomSound)
@@ -229,6 +210,9 @@ namespace UncomplicatedCustomTeams.API.Features
             }
 
             team.SpawnCount++;
+
+            OnTeamSummoned?.Invoke(SummonedTeam);
+
             return SummonedTeam;
         }
 
@@ -238,26 +222,109 @@ namespace UncomplicatedCustomTeams.API.Features
         /// </summary>
         private static IEnumerator<float> PlaySoundSequence(Team team)
         {
-            AudioPlayer audioPlayer = AudioPlayer.CreateOrGet($"Global_Audio_{team.Id}", onIntialCreation: (p) =>
+            Assembly audioAssembly = AppDomain.CurrentDomain.GetAssemblies()
+                .FirstOrDefault(a => a.GetName().Name.Contains("AudioPlayer"));
+
+            if (audioAssembly == null)
             {
-                p.AddSpeaker("Main", isSpatial: false, maxDistance: 5000f);
-            });
-            float volume = Clamp(team.SoundVolume, 1f, 100f);
+                LogManager.Warn("AudioPlayerApi assembly not found.");
+                yield break;
+            }
+
+            Type audioPlayerType = audioAssembly.GetTypes().FirstOrDefault(t => t.Name == "AudioPlayer" && t.IsClass);
+            if (audioPlayerType == null)
+            {
+                yield break;
+            }
+
+            var createOrGetMethod = audioPlayerType.GetMethod("CreateOrGet", BindingFlags.Public | BindingFlags.Static);
+            var addSpeakerMethod = audioPlayerType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .FirstOrDefault(m => m.Name == "AddSpeaker" && m.GetParameters().Length == 5);
+            var addClipMethod = audioPlayerType.GetMethod("AddClip", BindingFlags.Public | BindingFlags.Instance);
+
+            if (createOrGetMethod == null || addSpeakerMethod == null || addClipMethod == null)
+            {
+                yield break;
+            }
+
+            string startClipId = null;
+            int startIndex = -1;
+            float startDelay = 0f;
 
             for (int i = 0; i < team.SoundPaths.Count; i++)
             {
-                var sound = team.SoundPaths[i];
-
-                if (string.IsNullOrEmpty(sound.Path) || sound.Path == "/path/to/your/ogg/file")
-                    continue;
-
-                if (sound.Delay > 0f)
+                var s = team.SoundPaths[i];
+                if (!string.IsNullOrEmpty(s.Path) && s.Path != "/path/to/your/ogg/file")
                 {
-                    yield return Timing.WaitForSeconds(sound.Delay);
+                    startClipId = $"sound_{team.Id}_{i}";
+                    startIndex = i;
+                    startDelay = s.Delay;
+                    break;
                 }
+            }
 
-                string clipId = $"sound_{team.Id}_{i}";
-                audioPlayer.AddClip(clipId, volume);
+            if (startDelay > 0f)
+            {
+                yield return Timing.WaitForSeconds(startDelay);
+            }
+
+            object audioPlayerInstance = null;
+            try
+            {
+                LogManager.Debug($"Creating AudioPlayer with AutoPlay Clip: {startClipId ?? "NULL"}");
+
+                object[] parameters =
+                [
+                    $"Global_Audio_{team.Id}",
+                    startClipId,
+                    null,
+                    true,
+                    true,
+                    null,
+                    (byte)0,
+                    null,
+                    null
+                ];
+
+                audioPlayerInstance = createOrGetMethod.Invoke(null, parameters);
+            }
+            catch (Exception ex)
+            {
+                LogManager.Error($"Failed to create Audio Player: {ex}");
+                yield break;
+            }
+
+            float volume = team.SoundVolume;
+            if (volume > 1.5f) volume /= 100f;
+            volume = Mathf.Clamp(volume, 0.1f, 1.5f);
+
+            if (audioPlayerInstance != null)
+            {
+                try
+                {
+                    addSpeakerMethod.Invoke(audioPlayerInstance, ["Main", 1.0f, false, 0f, 5000f]);
+                }
+                catch (Exception) { }
+
+                for (int i = 0; i < team.SoundPaths.Count; i++)
+                {
+                    if (i == startIndex) continue;
+
+                    var sound = team.SoundPaths[i];
+                    if (string.IsNullOrEmpty(sound.Path) || sound.Path.Contains("/path/to/")) continue;
+
+                    if (sound.Delay > 0f) yield return Timing.WaitForSeconds(sound.Delay);
+
+                    try
+                    {
+                        string clipId = $"sound_{team.Id}_{i}";
+                        addClipMethod.Invoke(audioPlayerInstance, [clipId, volume, false, true]);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Error($"Error queuing next clip: {ex.Message}");
+                    }
+                }
             }
         }
 
