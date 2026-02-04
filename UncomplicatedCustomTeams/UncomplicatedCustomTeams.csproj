@@ -57,10 +57,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
-    <Reference Include="AudioPlayerApi, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\AudioPlayerApi.dll</HintPath>
-    </Reference>
     <Reference Include="Mirror, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\Mirror.dll</HintPath>
