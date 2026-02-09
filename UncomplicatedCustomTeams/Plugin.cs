@@ -1,132 +1,101 @@
-﻿using Exiled.API.Enums;
-using Exiled.API.Features;
+﻿using HarmonyLib;
+using LabApi.Features;
+using LabApi.Features.Wrappers;
+using LabApi.Loader.Features.Plugins;
+using LabApi.Loader.Features.Plugins.Enums;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
-using UncomplicatedCustomTeams.API.Features;
+using UncomplicatedCustomTeams.API.Features.Runtime;
+using UncomplicatedCustomTeams.API.Storage;
 using UncomplicatedCustomTeams.Manager;
 using UncomplicatedCustomTeams.Utilities;
-using MapHandler = Exiled.Events.Handlers.Map;
-using PlayerHandler = Exiled.Events.Handlers.Player;
-using ServerHandler = Exiled.Events.Handlers.Server;
+using PlayerHandler = LabApi.Events.Handlers.PlayerEvents;
+using ServerHandler = LabApi.Events.Handlers.ServerEvents;
+using Team = UncomplicatedCustomTeams.API.Features.Definitions.Team;
 
 namespace UncomplicatedCustomTeams
 {
     internal class Plugin : Plugin<Config>
     {
         public override string Name => "UncomplicatedCustomTeams";
-
-        public override string Prefix => "UncomplicatedCustomTeams";
-
+        public override string Description => "Customize your SCP:SL server with Custom Teams!";
         public override string Author => "FoxWorn3365 & .piwnica2137";
-
-        public override Version Version => new(1, 6, 0);
-
-        public override Version RequiredExiledVersion => new(9, 7, 1);
-
-        public override PluginPriority Priority => PluginPriority.Default;
-
+        public override Version Version => new(2, 0, 0, 0);
+        public override Version RequiredApiVersion => new(LabApiProperties.CompiledVersion);
+        public override LoadPriority Priority => LoadPriority.Medium;
         public static SummonedTeam NextTeam { get; set; } = null;
 
         public static List<Player> CachedSpawnList = [];
 
-        internal static Plugin Instance;
+        internal static Plugin Singleton;
 
         internal static HttpManager HttpManager;
 
         internal FileConfigs FileConfigs;
 
-        internal CommentsSystem CommentsSystem;
-
         public MainHandler Handler;
+        private Harmony _harmony;
 
-        public override void OnEnabled()
+        public override void Enable()
         {
-            Instance = this;
+            Singleton = this;
 
             Handler = new();
             HttpManager = new("uct");
             FileConfigs = new();
 
             Team.List.Clear();
+            LogManager.History.Clear();
+            Bucket.SpawnBucket.Clear();
             SummonedTeam.List.Clear();
-
-            if (!File.Exists(Path.Combine(ConfigPath, "UncomplicatedCustomTeams", ".nohttp")))
-                HttpManager.RegisterEvents();
-
-            PlayerHandler.ChangingRole += Handler.OnChangingRole;
-            ServerHandler.RestartingRound += Handler.OnRestartingRound;
+            ServerHandler.RoundRestarted += Handler.OnRestartingRound;
             PlayerHandler.Dying += Handler.OnDying;
-            PlayerHandler.Verified += Handler.OnVerified;
-            PlayerHandler.Destroying += Handler.OnDestroying;
-            ServerHandler.EndingRound += Handler.OnEndingRound;
-            MapHandler.AnnouncingChaosEntrance += Handler.GetThisChaosOutOfHere;
-            MapHandler.AnnouncingNtfEntrance += Handler.GetThisNtfOutOfHere;
+            ServerHandler.RoundEnding += Handler.OnEndingRound;
 
             Handler.SubscribeToSpawnWaves();
-            Config.Debug = true;
-            Log.DebugEnabled.Add(Assembly);
 
-            LogManager.Debug("===========================================");
-            LogManager.Debug(" Thanks for using UncomplicatedCustomTeams");
-            LogManager.Debug("        by FoxWorn3365 & Dr.Agenda & .Piwnica");
-            LogManager.Debug("===========================================");
-            LogManager.Debug(">> Join our discord: https://discord.gg/5StRGu8EJV <<");
-
-            Config.Debug = false;
-            Log.DebugEnabled.Remove(Assembly);
-            Task.Run(delegate
+            Task.Run(async () =>
             {
+                await AutoUpdater.RunAsync();
+
                 if (HttpManager.LatestVersion.CompareTo(Version) > 0)
-                    LogManager.Warn($"You are NOT using the latest version of UncomplicatedCustomTeams!\nCurrent: v{Version} | Latest available: v{HttpManager.LatestVersion}\nDownload it from GitHub: https://github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest");
-                else if (HttpManager.LatestVersion.CompareTo(Version) < 0)
                 {
-                    LogManager.Warn($"You are using an EXPERIMENTAL or PRE-RELEASE version of UncomplicatedCustomTeams!\nLatest stable release: {HttpManager.LatestVersion}\nWe do not assure that this version won't make your SCP:SL server crash! - Debug log has been enabled!");
-                    if (!Log.DebugEnabled.Contains(Assembly))
-                    {
-                        Config.Debug = true;
-                        Log.DebugEnabled.Add(Assembly);
-                    }
+                    LogManager.Warn($"You are NOT using the latest version of UncomplicatedCustomTeams!\nCurrent: v{Version} | Latest available: v{HttpManager.LatestVersion}\nDownload it from GitHub: https://github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest");
                 }
+
+                VersionManager.Init();
             });
 
-            FileConfigs.Welcome(Server.Port.ToString());
-            FileConfigs.AddCustomRoleTeams(Server.Port.ToString());
-            FileConfigs.LoadAll(Server.Port.ToString());
-            CommentsSystem.AddCommentsToYaml(Server.Port.ToString());
+            FileConfigs.Welcome();
+            FileConfigs.LoadAll();
+
+            _harmony = new($"com.ucs.uct_labapi-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
+            _harmony.PatchAll();
 
             LogManager.Info($"Successfully loaded {Team.List.Count} teams!");
             foreach (var team in Team.List)
             {
                 LogManager.Debug($"Loaded team: Name: {team.Name} | ID: {team.Id}");
             }
-
-            base.OnEnabled();
         }
 
-        public override void OnDisabled()
+        public override void Disable()
         {
-            PlayerHandler.ChangingRole -= Handler.OnChangingRole;
-            ServerHandler.RestartingRound -= Handler.OnRestartingRound;
+            ServerHandler.RoundRestarted -= Handler.OnRestartingRound;
             PlayerHandler.Dying -= Handler.OnDying;
-            PlayerHandler.Verified -= Handler.OnVerified;
-            PlayerHandler.Destroying -= Handler.OnDestroying;
-            ServerHandler.EndingRound -= Handler.OnEndingRound;
-            MapHandler.AnnouncingChaosEntrance -= Handler.GetThisChaosOutOfHere;
-            MapHandler.AnnouncingNtfEntrance -= Handler.GetThisNtfOutOfHere;
+            ServerHandler.RoundEnding -= Handler.OnEndingRound;
 
             Handler.UnsubscribeToSpawnWaves();
             Handler = null;
+
+            _harmony.UnpatchAll();
 
             HttpManager.UnregisterEvents();
             HttpManager = null;
 
             FileConfigs = null;
-
-            Instance = null;
-
-            base.OnDisabled();
+            Singleton = null;
         }
     }
 }

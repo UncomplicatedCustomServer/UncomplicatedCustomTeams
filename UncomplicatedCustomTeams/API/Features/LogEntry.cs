@@ -4,28 +4,29 @@ using System.Text.Json.Serialization;
 
 namespace UncomplicatedCustomTeams.API.Features
 {
-    internal class LogEntry
+    [method: JsonConstructor]
+    internal class LogEntry(long time, string level, string content, string error = null)
     {
         /// <summary>
         /// Gets the time in unix milliseconds of the message
         /// </summary>
-        public long Time { get; }
+        public long Time { get; } = time;
 
         /// <summary>
         /// Gets the <see cref="Discord.LogLevel"/> or a custom LogLevel of the message
         /// </summary>
-        public string Level { get; }
+        public string Level { get; } = level;
 
         /// <summary>
         /// Gets the message of the log
         /// </summary>
-        public string Content { get; }
+        public string Content { get; } = content;
 
 #nullable enable
         /// <summary>
         /// Gets the custom error code of the message - can be null!
         /// </summary>
-        public string? Error { get; }
+        public string? Error { get; } = error;
 #nullable disable
 
         /// <summary>
@@ -35,15 +36,6 @@ namespace UncomplicatedCustomTeams.API.Features
 
         [JsonIgnore]
         public DateTimeOffset DateTimeOffset => DateTimeOffset.FromUnixTimeMilliseconds(Time);
-
-        [JsonConstructor]
-        public LogEntry(long time, string level, string content, string error = null)
-        {
-            Time = time;
-            Level = level;
-            Content = content;
-            Error = error;
-        }
 
         public LogEntry(long time, LogLevel level, string content, string error = null) : this(time, level.ToString(), content, error) { }
 

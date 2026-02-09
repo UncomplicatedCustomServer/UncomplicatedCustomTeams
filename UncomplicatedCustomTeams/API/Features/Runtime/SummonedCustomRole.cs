@@ -1,0 +1,108 @@
+﻿using LabApi.Features.Wrappers;
+using PlayerRoles;
+using UncomplicatedCustomRoles.Extensions;
+using UncomplicatedCustomTeams.API.Features.Definitions;
+using UncomplicatedCustomTeams.API.Features.Services;
+using UncomplicatedCustomTeams.Utilities;
+using UnityEngine;
+
+namespace UncomplicatedCustomTeams.API.Features.Runtime
+{
+    public class SummonedCustomRole(SummonedTeam team, Player player, IUCTCustomRole role)
+    {
+        /// <summary>
+        /// The <see cref="LabApi.Features.Wrappers.Player"/> instance
+        /// </summary>
+        public Player Player { get; } = player;
+
+        /// <summary>
+        /// The CustomRole instance for the given player
+        /// </summary>
+        public IUCTCustomRole CustomRole { get; } = role;
+
+        public SummonedTeam Team { get; } = team;
+
+        /// <summary>
+        /// Indicate wether the custom role has been assigned or not
+        /// </summary>
+        public bool IsRoleSet { get; private set; } = false;
+
+        public void Destroy()
+        {
+            if (Player.IsAlive)
+                Player.TryRemoveCustomRole();
+        }
+
+        private void ApplyRoleSettings()
+        {
+            if (CustomRole.IsGodmodeEnabled)
+            {
+                Player.IsGodModeEnabled = true;
+                LogManager.Debug($"{CustomRole.Name} is about to receive GodMode. Enabling...");
+            }
+
+            if (CustomRole.IsBypassEnabled)
+            {
+                Player.IsBypassEnabled = true;
+                LogManager.Debug($"{CustomRole.Name} is about to receive Bypass. Enabling...");
+            }
+
+            if (CustomRole.IsNoclipEnabled)
+            {
+                Player.IsNoclipEnabled = true;
+                LogManager.Debug($"{CustomRole.Name} is about to receive Noclip. Enabling...");
+            }
+        }
+        public void AddRole(RoleTypeId? proposed = null)
+        {
+            if (CustomRole is UncomplicatedCustomRole uctRole)
+            {
+                RoleManager.EnsureIsRegistered(uctRole);
+            }
+
+            RoleTypeId finalRole = proposed ?? RoleTypeId.ChaosConscript;
+
+            Player.SetRole(CustomRole.Role, RoleChangeReason.Respawn, RoleSpawnFlags.None);
+
+            if (Player.Role != CustomRole.Role)
+            {
+                LogManager.Debug($"Role assignment failed! Falling back to {finalRole}.");
+                Player.SetRole(finalRole, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.AssignInventory);
+            }
+            Vector3 spawnPos;
+            if (Team.Definition.SpawnConditions.SpawnPosition != Vector3.zero)
+            {
+                spawnPos = Team.Definition.SpawnConditions.SpawnPosition;
+                LogManager.Debug($"Using custom Vector3 spawn position: {spawnPos}");
+            }
+            else
+            {
+                switch (Team.Definition.SpawnConditions.SpawnWave)
+                {
+                    case Enums.WaveType.NtfWave:
+                        spawnPos = RoleTypeId.NtfCaptain.GetRandomSpawnLocation();
+                        LogManager.Debug($"Using NTF spawn position for role: {CustomRole.Role}");
+                        break;
+
+                    case Enums.WaveType.ChaosWave:
+                        spawnPos = RoleTypeId.ChaosConscript.GetRandomSpawnLocation();
+                        LogManager.Debug($"Using Chaos spawn position for role: {CustomRole.Role}");
+                        break;
+
+                    default:
+                        spawnPos = finalRole.GetRandomSpawnLocation();
+                        LogManager.Debug($"Using fallback spawn for role: {CustomRole.Role}");
+                        break;
+                }
+            }
+            CustomRole.Spawn(Player);
+
+            Vector3 spawnAngle = Team.Definition.SpawnConditions.SpawnRotation;
+            Quaternion spawnRot = Quaternion.Euler(spawnAngle);
+            Player.Position = spawnPos;
+            Player.Rotation = spawnRot;
+            ApplyRoleSettings();
+            IsRoleSet = true;
+        }
+    }
+}

@@ -1,181 +1,98 @@
-﻿using Exiled.API.Enums;
-using Exiled.API.Features;
-using Exiled.Events.EventArgs.Map;
-using Exiled.Events.EventArgs.Player;
-using Exiled.Events.EventArgs.Server;
+﻿using LabApi.Events.Arguments.PlayerEvents;
+using LabApi.Events.Arguments.ServerEvents;
+using LabApi.Features.Wrappers;
 using MEC;
+using PlayerRoles;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using UncomplicatedCustomTeams.API.Features;
-using UncomplicatedCustomTeams.API.Storage;
+using UncomplicatedCustomTeams.API.Events;
+using UncomplicatedCustomTeams.API.Events.EventArgs;
+using UncomplicatedCustomTeams.API.Features.Runtime;
 using UncomplicatedCustomTeams.EventHandlers.SpawnWaves;
 using UncomplicatedCustomTeams.Utilities;
-using MapHandler = Exiled.Events.Handlers.Map;
-using PlayerHandler = Exiled.Events.Handlers.Player;
-using ServerHandler = Exiled.Events.Handlers.Server;
-using WarheadHandler = Exiled.Events.Handlers.Warhead;
+using PlayerHandler = LabApi.Events.Handlers.PlayerEvents;
+using ServerHandler = LabApi.Events.Handlers.ServerEvents;
+using Team = UncomplicatedCustomTeams.API.Features.Definitions.Team;
+using WarheadHandler = LabApi.Events.Handlers.WarheadEvents;
 
 namespace UncomplicatedCustomTeams
 {
     internal class MainHandler
     {
-        internal Task TeamCleaner;
-
-        internal bool TeamCleanerEnabled = false;
         public List<CoroutineHandle> ActiveSpawnDelays { get; } = [];
 
-        public AfterDecontamination afterDecontamination;
-        public AfterWarhead afterWarhead;
-        public DefaultSpawnWaves DefaultSpawnWaves;
-        public RoundStarted RoundStarted;
-        public ScpDeath ScpDeath;
-        public UsedItem UsedItem;
-        public TeamDependent TeamDependent;
-        public AfterGeneratorActivated AfterGeneratorActivated;
-
-        public MainHandler()
-        {
-            afterDecontamination = new AfterDecontamination();
-            afterWarhead = new AfterWarhead();
-            DefaultSpawnWaves = new DefaultSpawnWaves();
-            RoundStarted = new RoundStarted();
-            ScpDeath = new ScpDeath();
-            UsedItem = new UsedItem();
-            TeamDependent = new TeamDependent();
-            AfterGeneratorActivated = new AfterGeneratorActivated();
-        }
+        public AfterDecontamination afterDecontamination = new();
+        public AfterWarhead afterWarhead = new();
+        public DefaultSpawnWaves DefaultSpawnWaves = new();
+        public RoundStarted RoundStarted = new();
+        public ScpDeath ScpDeath = new();
+        public UsedItem UsedItem = new();
+        public TeamDependent TeamDependent = new();
+        public AfterGeneratorActivated AfterGeneratorActivated = new();
 
         public void SubscribeToSpawnWaves()
         {
-            MapHandler.Decontaminating += afterDecontamination.OnDecontaminating;
+            ServerHandler.LczDecontaminationStarting += afterDecontamination.OnDecontaminating;
             WarheadHandler.Detonated += afterWarhead.OnDetonated;
-            ServerHandler.RespawningTeam += DefaultSpawnWaves.OnRespawningTeam;
+            ServerHandler.WaveRespawning += DefaultSpawnWaves.OnRespawningTeam;
             ServerHandler.RoundStarted += RoundStarted.OnRoundStarted;
             PlayerHandler.Dying += ScpDeath.OnScpDying;
             PlayerHandler.UsedItem += UsedItem.OnItemUsed;
-            SummonedTeam.OnTeamSummoned += TeamDependent.OnTeamSpawned;
-            MapHandler.GeneratorActivating += AfterGeneratorActivated.OnGeneratorActivating;
+            ServerHandler.GeneratorActivating += AfterGeneratorActivated.OnGeneratorActivating;
+
+            UCTEvents.TeamSpawned += TeamDependent.OnTeamSpawned;
+            UCTEvents.TeamEliminated += TeamDependent.OnTeamEliminated;
         }
 
         public void UnsubscribeToSpawnWaves()
         {
-            MapHandler.Decontaminating -= afterDecontamination.OnDecontaminating;
+            ServerHandler.LczDecontaminationStarting -= afterDecontamination.OnDecontaminating;
             WarheadHandler.Detonated -= afterWarhead.OnDetonated;
-            ServerHandler.RespawningTeam -= DefaultSpawnWaves.OnRespawningTeam;
+            ServerHandler.WaveRespawning -= DefaultSpawnWaves.OnRespawningTeam;
             ServerHandler.RoundStarted -= RoundStarted.OnRoundStarted;
             PlayerHandler.Dying -= ScpDeath.OnScpDying;
             PlayerHandler.UsedItem -= UsedItem.OnItemUsed;
-            SummonedTeam.OnTeamSummoned -= TeamDependent.OnTeamSpawned;
-            MapHandler.GeneratorActivating -= AfterGeneratorActivated.OnGeneratorActivating;
-        }
+            ServerHandler.GeneratorActivating -= AfterGeneratorActivated.OnGeneratorActivating;
 
-        public void GetThisChaosOutOfHere(AnnouncingChaosEntranceEventArgs ev) // Don't take this seriously
-        {
-            if (DefaultSpawnWaves.CustomTeamSpawnedThisWave)
-            {
-                ev.IsAllowed = false;
-            }
-        }
-
-        public void GetThisNtfOutOfHere(AnnouncingNtfEntranceEventArgs ev) // Don't take this seriously
-        {
-            if (DefaultSpawnWaves.CustomTeamSpawnedThisWave)
-            {
-                ev.IsAllowed = false;
-            }
-        }
-
-        public void OnVerified(VerifiedEventArgs ev)
-        {
-            if (ev.Player == null)
-                return;
-
-            if (!Round.IsStarted)
-                return;
-
-            if (!Bucket.SpawnBucket.Contains(ev.Player.Id))
-            {
-                LogManager.Debug($"Player {ev.Player.Nickname} is verified, adding to spawn bucket.");
-                Bucket.SpawnBucket.Add(ev.Player.Id);
-            }
-            SummonedTeam.CanSpawnTeam(null);
-        }
-
-        public void OnDestroying(DestroyingEventArgs ev)
-        {
-            if (ev.Player == null)
-                return;
-
-            if (!Round.IsStarted)
-                return;
-
-            if (Bucket.SpawnBucket.Contains(ev.Player.Id))
-            {
-                LogManager.Debug($"Player {ev.Player.Nickname} is being destroyed, removing from spawn bucket.");
-                Bucket.SpawnBucket.Remove(ev.Player.Id);
-            }
-            SummonedTeam.CanSpawnTeam(null);
+            UCTEvents.TeamSpawned -= TeamDependent.OnTeamSpawned;
+            UCTEvents.TeamEliminated -= TeamDependent.OnTeamEliminated;
         }
 
         public void OnRestartingRound()
         {
-            Log.Debug("Round is restarting. Killing all active spawn delay coroutines...");
-            foreach (var handle in ActiveSpawnDelays)
-            {
-                Timing.KillCoroutines(handle);
-            }
+            LogManager.Debug("Round restarting. Cleaning up...");
+            foreach (var handle in ActiveSpawnDelays) Timing.KillCoroutines(handle);
             ActiveSpawnDelays.Clear();
 
-            Log.Debug("Resetting spawn counts for all custom teams.");
-            foreach (var team in Team.List)
-            {
-                team.SpawnCount = 0;
-            }
+            foreach (var team in Team.List) team.CurrentSpawnCount = 0;
             SummonedTeam.List.Clear();
         }
 
-        public void OnEndingRound(EndingRoundEventArgs ev)
+        public void OnEndingRound(RoundEndingEventArgs ev)
         {
-            var activeCustomTeams = SummonedTeam.List.Where(st => st.HasAlivePlayers()).ToList();
+            var activeCustomTeams = SummonedTeam.List.Where(st => st.Members.Any(m => m.Player.IsAlive)).ToList();
 
-            if (activeCustomTeams.Count == 0)
-                return;
+            if (activeCustomTeams.Count == 0) return;
 
             bool shouldRoundEnd = false;
-            LeadingTeam winner = LeadingTeam.Draw;
+            RoundSummary.LeadingTeam winner = RoundSummary.LeadingTeam.Draw;
 
             foreach (var summonedTeam in activeCustomTeams)
             {
-                var rules = summonedTeam.Team.WinCondition;
+                var rules = summonedTeam.Definition.WinCondition;
 
                 if (rules.PreventRoundEndIfAlive)
                 {
                     ev.IsAllowed = false;
                 }
 
-                var otherAlivePlayers = Player.List
-                    .Where(p => p.IsAlive && !summonedTeam.Players.Any(cr => cr.Player == p))
-                    .ToList();
+                var enemies = Player.List.Where(p =>
+                    p.IsAlive &&
+                    !summonedTeam.Members.Any(m => m.Player == p) &&
+                    !rules.AlliedTeams.Contains(p.Role.GetTeam())
+                );
 
-                bool enemiesremain = false;
-
-                foreach (var player in otherAlivePlayers)
-                {
-                    if (SummonedTeam.IsPlayerInCustomTeam(player))
-                    {
-                        enemiesremain = true;
-                        break;
-                    }
-
-                    if (!rules.AlliedTeams.Contains(player.Role.Team))
-                    {
-                        enemiesremain = true;
-                        break;
-                    }
-                }
-
-                if (!enemiesremain)
+                if (!enemies.Any())
                 {
                     shouldRoundEnd = true;
                     winner = rules.WinningTeam;
@@ -190,84 +107,31 @@ namespace UncomplicatedCustomTeams
             }
         }
 
-        public void OnChangingRole(ChangingRoleEventArgs ev)
+        public void OnDying(PlayerDyingEventArgs ev)
         {
-            if (Plugin.NextTeam is not null && Bucket.SpawnBucket.Contains(ev.Player.Id) && Plugin.NextTeam.Team != null)
+            if (ev.Player == null) return;
+
+            var team = SummonedTeam.List.FirstOrDefault(t => t.Members.Any(m => m.Player == ev.Player));
+            if (team == null) return;
+
+            var member = team.Members.First(m => m.Player == ev.Player);
+
+            if (!member.CustomRole.DropInventoryOnDeath)
             {
-                Bucket.SpawnBucket.Remove(ev.Player.Id);
-
-                ev.IsAllowed = false;
-
-                if (Plugin.CachedSpawnList.Contains(ev.Player))
-                {
-                    LogManager.Debug($"Spawning custom team role for {ev.Player.Nickname} ({ev.Player.Id})");
-                    Timing.CallDelayed(0.1f, () => { Plugin.NextTeam.TrySpawnPlayer(ev.Player, ev.NewRole); });
-                }
-                else
-                {
-                    LogManager.Debug($"Skipping respawn for {ev.Player.Nickname} ({ev.Player.Id}), not selected for spawn.");
-                }
-
-                if (!TeamCleanerEnabled)
-                {
-                    TeamCleanerEnabled = true;
-                    TeamCleaner = Task.Run(async () =>
-                    {
-                        await Task.Delay(2500);
-                        Plugin.NextTeam = null;
-                        DefaultSpawnWaves.CustomTeamSpawnedThisWave = false;
-                        TeamCleanerEnabled = false;
-                    });
-                }
+                LogManager.Debug($"Clearing inventory for {ev.Player.Nickname} ({member.CustomRole.Name})");
+                ev.Player.ClearInventory(true, true);
             }
 
-            Timing.CallDelayed(0.2f, () =>
+            Timing.CallDelayed(0.1f, () =>
             {
-                List<SummonedTeam> teamsToRemove = [];
+                if (team.IsEliminated) return;
 
-                foreach (var team in SummonedTeam.List)
+                if (team.Members.All(m => !m.Player.IsAlive))
                 {
-                    if (team.IsTeamEliminated())
-                    {
-                        LogManager.Debug($"Team {team.Team.Name} has been eliminated. Scheduling for removal.");
-                        teamsToRemove.Add(team);
-                    }
-                }
-
-                foreach (var team in teamsToRemove)
-                {
-                    team.Destroy();
+                    team.IsEliminated = true;
+                    UCTEvents.InvokeTeamEliminated(new TeamEliminatedEventArgs(team));
                 }
             });
-        }
-
-        public void OnDying(DyingEventArgs ev)
-        {
-            SummonedCustomRole playerRole = null;
-            SummonedTeam teamOfPlayer = null;
-            foreach (var team in SummonedTeam.List)
-            {
-                var roleInTeam = team.SummonedPlayersGet(ev.Player);
-                if (roleInTeam != null)
-                {
-                    playerRole = roleInTeam;
-                    teamOfPlayer = team;
-                    break;
-                }
-            }
-
-            if (playerRole != null)
-            {
-                TeamDependent.CheckForTeamElimination(teamOfPlayer);
-                if (playerRole.CustomRole.DropInventoryOnDeath)
-                {
-                    Log.Debug($"Player {ev.Player.Nickname} with role {playerRole.CustomRole.Name} is dying. Items will be dropped (default behavior).");
-                    return;
-                }
-
-                Log.Debug($"Player {ev.Player.Nickname} with role {playerRole.CustomRole.Name} is dying. Clearing Items.");
-                ev.Player.ClearInventory(true);
-            }
         }
     }
 }

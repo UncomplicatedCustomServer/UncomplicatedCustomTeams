@@ -1,279 +1,79 @@
-﻿using Exiled.API.Enums;
-using Exiled.API.Features;
-using Exiled.Loader;
-using MEC;
+﻿using LabApi.Features.Wrappers;
+using LabApi.Loader.Features.Paths;
+using LabApi.Loader.Features.Yaml;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using UncomplicatedCustomRoles.API.Enums;
-using UncomplicatedCustomRoles.API.Features.Behaviour;
-using UncomplicatedCustomTeams.API.Features;
-using UnityEngine;
+using UncomplicatedCustomTeams.API.Features.Definitions;
+using UncomplicatedCustomTeams.API.Features.Services;
+using UncomplicatedCustomTeams.Utilities.Errors;
+using Team = UncomplicatedCustomTeams.API.Features.Definitions.Team;
 
 namespace UncomplicatedCustomTeams.Utilities
 {
     internal class FileConfigs
     {
-        internal string Dir = Path.Combine(Paths.Configs, "UncomplicatedCustomTeams");
+        private readonly string _baseDir = Path.Combine(PathManager.Configs.FullName, "UncomplicatedCustomTeams");
+        internal string Dir;
 
-        private static MethodInfo _loadClipMethod;
-        private static bool _audioReflectionAttempted = false;
-        public List<string> LoadErrors { get; private set; } = [];
-
-        public bool Is(string localDir = "")
+        public FileConfigs()
         {
-            return Directory.Exists(Path.Combine(Dir, localDir));
+            Dir = Path.Combine(_baseDir, Server.Port.ToString());
         }
+
+        public bool Is(string localDir = "") => Directory.Exists(Path.Combine(Dir, localDir));
 
         public string[] List(string localDir = "")
         {
-            return Directory.GetFiles(Path.Combine(Dir, localDir));
+            string path = Path.Combine(Dir, localDir);
+            return Directory.Exists(path) ? Directory.GetFiles(path, "*.yml") : [];
         }
 
         public void LoadAll(string localDir = "")
         {
-            LoadErrors.Clear();
-            AutoUpdater.EnsureConfigIsUpToDate(localDir);
-            AddCustomRoleTeams(localDir);
-            LoadAction(Team.List.Add, localDir);
-        }
-
-
-        private void InitializeAudioReflection()
-        {
-            if (_audioReflectionAttempted) return;
-            _audioReflectionAttempted = true;
-
-            try
-            {
-                Assembly audioAssembly = AppDomain.CurrentDomain.GetAssemblies()
-                    .FirstOrDefault(a => a.GetName().Name.Contains("AudioPlayerApi"));
-
-                if (audioAssembly != null)
-                {
-                    Type storageType = audioAssembly.GetTypes().FirstOrDefault(t => t.Name == "AudioClipStorage");
-                    if (storageType != null)
-                    {
-                        _loadClipMethod = storageType.GetMethod("LoadClip", BindingFlags.Public | BindingFlags.Static);
-                        if (_loadClipMethod != null)
-                            LogManager.Debug("AudioPlayerApi integration linked successfully.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                LogManager.Warn($"Failed to link AudioPlayerApi: {ex.Message}");
-            }
-        }
-
-        public void LoadAction(Action<Team> action, string localDir = "")
-        {
             Team.List.Clear();
-            InitializeAudioReflection();
+
+            Welcome(localDir);
+            LoadConfigs(localDir);
+        }
+
+        private void LoadConfigs(string localDir)
+        {
+            if (!Is(localDir))
+            {
+                LogManager.Warn($"Directory not found: {Path.Combine(Dir, localDir)}");
+                return;
+            }
+
             foreach (string file in List(localDir))
             {
+                if (!TeamConfigValidator.ValidateFile(file))
+                {
+                    LogManager.Warn($"Skipping file {Path.GetFileName(file)} due to validation errors.");
+                    continue;
+                }
+
                 try
                 {
-                    if (Directory.Exists(file))
-                        continue;
+                    var data = YamlConfigParser.Deserializer.Deserialize<Dictionary<string, List<Team>>>(File.ReadAllText(file));
+                    if (data == null || !data.TryGetValue("teams", out var teams)) continue;
 
-                    if (file.Split().First() == ".")
-                        return;
-
-                    if (!ErrorManager.CustomTypeChecker(file))
+                    foreach (Team team in teams)
                     {
-                        LogManager.Error($"Skipping file {file} due to validation errors.");
-                        continue;
-                    }
-
-                    Dictionary<string, List<Team>> data = Loader.Deserializer.Deserialize<Dictionary<string, List<Team>>>(File.ReadAllText(file));
-
-                    foreach (Team team in data["teams"])
-                    {
-                        bool hasCustomSound = team.SoundPaths != null && team.SoundPaths.Any(s => !string.IsNullOrEmpty(s.Path) && !s.Path.Contains("/path/to/your"));
-
-                        if (hasCustomSound && team.IsCassieAnnouncementEnabled)
-                        {
-                            LogManager.Warn($"Team \"{team.Name}\" has both Cassie and SoundPath. Both will play.");
-                        }
-
-                        if (hasCustomSound && _loadClipMethod != null)
-                        {
-                            for (int i = 0; i < team.SoundPaths.Count; i++)
-                            {
-                                var soundEntry = team.SoundPaths[i];
-                                if (!string.IsNullOrEmpty(soundEntry.Path) && !soundEntry.Path.Contains("/path/to/your"))
-                                {
-                                    string clipId = $"sound_{team.Id}_{i}";
-                                    try
-                                    {
-                                        _loadClipMethod.Invoke(null, [soundEntry.Path, clipId]);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        LogManager.Warn($"Audio loading error for team {team.Name}: {e.InnerException?.Message ?? e.Message}");
-                                    }
-                                }
-                            }
-                        }
-
-                        if ((team.SpawnConditions.SpawnWave == API.Enums.WaveType.NtfWave || team.SpawnConditions.SpawnWave == API.Enums.WaveType.ChaosWave)
-                            && team.SpawnConditions.SpawnDelay > 0)
-                        {
-                            string warning = $"Setting SpawnWave '{team.SpawnConditions.SpawnWave}' with SpawnDelay won't work.";
-                            string suggestion = "Remove 'SpawnDelay' if you're using NtfWave or ChaosWave.";
-                            ErrorManager.Add(file, warning, suggestion: suggestion);
-                            LogManager.Warn($"{warning}\n {suggestion} \nIgnoring delay for team '{team.Name}' (ID: {team.Id}).");
-                            team.SpawnConditions.SpawnDelay = 0f;
-                        }
-
-                        if (team.SpawnConditions.RequiresSpawnPosition() && team.SpawnConditions.SpawnPosition == Vector3.zero)
-                        {
-                            string message = $"SpawnWave '{team.SpawnConditions.SpawnWave}' requires a SpawnPosition, but none was set.";
-                            string suggestion = "Set a valid SpawnPosition (x,y,z) for custom spawn waves.";
-                            ErrorManager.Add(file, message, suggestion: suggestion);
-                            LogManager.Error($"{message}\n {suggestion}\nCheck team -> {team.Name} with ID {team.Id}");
+                        if (!TeamConfigValidator.ValidateAndSanitizeTeam(team, file))
                             continue;
-                        }
 
-                        if (team.SpawnConditions.SpawnWave == API.Enums.WaveType.ScpDeath &&
-                            (string.IsNullOrWhiteSpace(team.SpawnConditions.TargetScp) ||
-                             team.SpawnConditions.TargetScp.Equals("None", StringComparison.OrdinalIgnoreCase)))
-                        {
-                            string message = "You set 'ScpDeath' as spawn type but didn't specify an SCP role.";
-                            string suggestion = "Set the 'TargetScp' field to an existing SCP role name.";
-                            ErrorManager.Add(file, message, suggestion: suggestion);
-                            LogManager.Error($"{message}\n {suggestion}\nCheck team -> {team.Name} with ID {team.Id}");
-                            continue;
-                        }
+                        LogManager.Debug($"Loaded definition for '{team.Name}' (ID: {team.Id}).");
+                        Team.Register(team);
 
-                        if ((team.SpawnConditions.GetUsedItemType() != ItemType.None || team.SpawnConditions.GetCustomItemId() != null) &&
-                            team.SpawnConditions.SpawnWave != API.Enums.WaveType.UsedItem)
-                        {
-                            string message = $"Item set but 'UsedItem' not used as spawn wave.";
-                            string suggestion = "Change SpawnWave to 'UsedItem' or remove the item requirement.";
-                            ErrorManager.Add(file, message, suggestion: suggestion);
-                            LogManager.Error($"{message}\n {suggestion}\nCheck team ->  {team.Name}  with ID  {team.Id}");
-                            continue;
-                        }
-
-                        if (Team.List.Any(t => t.Id == team.Id))
-                        {
-                            uint originalId = team.Id;
-                            uint newId = 1;
-                            HashSet<uint> usedIds = Team.List.Select(t => t.Id).ToHashSet();
-
-                            while (usedIds.Contains(newId))
-                                newId++;
-
-                            string warning = $"Duplicate team ID detected: {originalId}. Automatically assigned new ID: {newId}.";
-                            string suggestion = $"Ensure team '{team.Name}' has a unique ID next time to avoid auto-correction.";
-                            ErrorManager.Add(file, warning, suggestion: suggestion);
-                            LogManager.Warn($"{warning}\n{suggestion}");
-
-                            team.Id = newId;
-                        }
-
-                        if ((team.SpawnConditions.GetUsedItemType() == ItemType.None && team.SpawnConditions.GetCustomItemId() == null) &&
-                            team.SpawnConditions.SpawnWave == API.Enums.WaveType.UsedItem)
-                        {
-                            string message = "UsedItem value is invalid or missing.";
-                            string suggestion = "Provide a valid ItemType or Custom Item ID.";
-                            ErrorManager.Add(file, message, suggestion: suggestion);
-                            LogManager.Error($"{message}\n{suggestion}\nCheck team -> {team.Name} with ID {team.Id}");
-                            continue;
-                        }
-
-                        HashSet<int> usedRoleIds = [.. Team.List.SelectMany(t => t.Roles).Select(r => r.Id)];
-
-                        foreach (var role in team.Roles)
-                        {
-                            if (usedRoleIds.Contains(role.Id))
-                            {
-                                int originalRoleId = role.Id;
-                                int newRoleId = 1;
-                                while (usedRoleIds.Contains(newRoleId))
-                                    newRoleId++;
-
-                                string warning = $"Duplicate Custom Role ID detected: {originalRoleId}. Automatically assigned new ID: {newRoleId}.";
-                                string suggestion = "Use unique role IDs to avoid this in the future.";
-                                ErrorManager.Add(file, warning, suggestion: suggestion);
-                                LogManager.Warn($"{warning}\n{suggestion}");
-
-                                role.Id = newRoleId;
-                                usedRoleIds.Add(newRoleId);
-                            }
-                            else
-                            {
-                                usedRoleIds.Add(role.Id);
-                            }
-                        }
-
-                        if (Plugin.Instance.Config.UseExiledCustomRoles)
-                        {
-                            Timing.CallDelayed(Plugin.Instance.Config.ExiledCustomRoleCheckDelay, () =>
-                            {
-                                foreach (var role in team.EcrRoles.ToList())
-                                {
-                                    if (!Exiled.CustomRoles.API.Features.CustomRole.TryGet((uint)role.Id, out var cRole))
-                                    {
-                                        string warning = $"Exiled Custom Role of ID {role.Id} not found!";
-                                        string suggestion = "Ensure that the role is properly registered by its plugin in the future.";
-                                        ErrorManager.Add(file, warning, suggestion: suggestion);
-                                        LogManager.Warn($"{warning}\n{suggestion}");
-                                        team.EcrRoles.Remove(role);
-                                    }
-                                }
-                            });
-                        }
-
-                        LogManager.Debug($"Proposed to the registerer the external team '{team.Name}' (ID: {team.Id}) from file: {file}");
-                        action(team);
-
-
-                        Timing.CallDelayed(5f, () =>
-                        {
-                            foreach (var role in team.Roles)
-                            {
-                                if (!UncomplicatedCustomRoles.API.Features.CustomRole.TryGet(role.Id, out _) &&
-                                    role is UncomplicatedCustomRoles.API.Features.CustomRole ucrRole)
-                                {
-                                    ucrRole.SpawnSettings ??= new SpawnBehaviour
-                                    {
-                                        Spawn = SpawnType.KeepCurrentPositionSpawn,
-                                        SpawnRooms = new List<RoomType> { RoomType.Unknown },
-                                        SpawnRoles = new List<PlayerRoles.RoleTypeId> { PlayerRoles.RoleTypeId.None },
-                                        CanReplaceRoles = new List<PlayerRoles.RoleTypeId> { PlayerRoles.RoleTypeId.None },
-                                        MaxPlayers = 10,
-                                        MinPlayers = 1,
-                                        SpawnChance = 0f,
-                                        SpawnZones = new List<ZoneType>(),
-                                        SpawnPoints = new List<string>(),
-                                        RequiredPermission = string.Empty
-                                    };
-
-                                    var result = UncomplicatedCustomRoles.API.Features.CustomRole.Register(ucrRole);
-                                    LogManager.Debug($"Registered existing UCT -> UCR Custom role: {ucrRole.Name} (ID: {ucrRole.Id}) => {result}");
-                                }
-                            }
-                        });
+                        RoleManager.RegisterTeamRoles(team);
+                        AudioService.PreloadTeamAudio(team);
                     }
                 }
                 catch (Exception ex)
                 {
-                    var line = (ex is YamlDotNet.Core.YamlException yamlEx) ? yamlEx.Start.Line : (int?)null;
-                    var column = (ex is YamlDotNet.Core.YamlException yamlEx2) ? yamlEx2.Start.Column : (int?)null;
-
-                    ErrorManager.Add(
-                        file: file,
-                        message: ex.Message,
-                        line: line,
-                        column: column,
-                        suggestion: ErrorManager.GetSuggestionFromMessage(ex.Message)
-                    );
-                    LogManager.Error($"Failed to parse {file}. YAML Exception: {ex.Message}");
+                    LogManager.Error($"Failed to load {Path.GetFileName(file)}: {ex.Message}");
+                    ErrorManager.Add(file, ex.Message, suggestion: "Check YAML syntax and structure.");
                 }
             }
         }
@@ -282,112 +82,60 @@ namespace UncomplicatedCustomTeams.Utilities
         {
             if (!Is(localDir))
             {
-                Directory.CreateDirectory(Path.Combine(Dir, localDir));
-
-                File.WriteAllText(Path.Combine(Dir, localDir, "example-team.yml"), Loader.Serializer.Serialize(new Dictionary<string, List<Team>>() {
-                  {
-                    "teams", new List<Team>()
-                    {
-                        new()
-                        {
-                            Id = 1
-                        }
-                    }
-                  }
-                }));
-
-                LogManager.Info($"Plugin does not have a role folder, generated one in {Path.Combine(Dir, localDir)}");
-            }
-        }
-
-        public void AddCustomRoleTeams(string localDir = "")
-        {
-            string dir = Path.Combine(Paths.Configs, "UncomplicatedCustomTeams", localDir);
-
-            if (!Directory.Exists(dir))
-            {
-                return;
-            }
-
-            foreach (string filePath in Directory.GetFiles(dir, "*.yml"))
-            {
                 try
                 {
-                    string fileContent = (File.ReadAllText(filePath));
+                    Directory.CreateDirectory(Path.Combine(Dir, localDir));
 
-                    var configData = Loader.Deserializer.Deserialize<Dictionary<string, List<Dictionary<string, object>>>>(fileContent);
-
-                    if (!configData.ContainsKey("teams") || configData["teams"] == null)
+                    var exampleTeam = new Team
                     {
-                        LogManager.Error($"File {filePath} does not contain a 'teams' section. Skipping.");
-                        continue;
-                    }
+                        Id = 1,
+                        Name = "Example Team"
+                    };
 
-                    foreach (var yamlTeam in configData["teams"])
+                    exampleTeam.Roles.Add(new UncomplicatedCustomRole
                     {
-                        if (!yamlTeam.ContainsKey("name") || yamlTeam["name"] == null)
-                            continue;
+                        Id = 1,
+                        Team = PlayerRoles.Team.ClassD,
+                        SpawnSettings = null,
+                        CanEscape = false,
+                        RoleAfterEscape = null,
+                        MaxPlayers = 1,
+                        Priority = API.Enums.RolePriority.First,
+                        DropInventoryOnDeath = true,
+                        IsGodmodeEnabled = false,
+                        IsBypassEnabled = false,
+                        IsNoclipEnabled = false,
+                        CustomFlags = null
+                    });
 
-                        string teamName = yamlTeam["name"].ToString();
+                    exampleTeam.Roles.Add(new UncomplicatedCustomRole
+                    {
+                        Id = 2,
+                        Team = PlayerRoles.Team.ClassD,
+                        SpawnSettings = null,
+                        CanEscape = false,
+                        RoleAfterEscape = null,
+                        CustomFlags = null,
+                        Priority = API.Enums.RolePriority.Second,
+                        DropInventoryOnDeath = true,
+                        IsGodmodeEnabled = false,
+                        IsBypassEnabled = false,
+                        IsNoclipEnabled = false,
+                        MaxPlayers = 1
+                    });
 
+                    var exampleData = new Dictionary<string, List<Team>>
+                    {
+                        { "teams", [exampleTeam] }
+                    };
 
-                        if (!yamlTeam.ContainsKey("roles") || yamlTeam["roles"] == null)
-                        {
-                            continue;
-                        }
+                    File.WriteAllText(Path.Combine(Dir, "example-team.yml"), YamlConfigParser.Serializer.Serialize(exampleData));
 
-                        if (yamlTeam["roles"] is not List<object> rolesList)
-                        {
-                            continue;
-                        }
-
-                        if (!yamlTeam.TryGetValue("ecr_roles", out var ecrRolesObj) || ecrRolesObj == null)
-                        {
-                            LogManager.Debug($"{teamName} has no ecr_roles entry, generating default...");
-                            yamlTeam["ecr_roles"] = new List<Dictionary<string, object>> { new() { { "id", 999 }, { "max_players", 1 }, { "priority", "Fifth" } } };
-                        }
-                        else if (ecrRolesObj is List<object> ecrRolesList)
-                        {
-                            if (ecrRolesList.Count == 0)
-                            {
-                                LogManager.Debug($"{teamName} has empty ecr_roles list, generating default...");
-                                ecrRolesList.Add(new Dictionary<string, object> { { "id", 999 }, { "max_players", 1 }, { "priority", "Fifth" } });
-                            }
-                        }
-                        else
-                        {
-                            LogManager.Debug($"{teamName} has invalid ecr_roles format, skipping...");
-                        }
-
-                        var roles = new List<Dictionary<string, object>>();
-                        foreach (var item in rolesList)
-                        {
-                            if (item is Dictionary<object, object> tempDict)
-                            {
-                                var fixedDict = tempDict.ToDictionary(k => k.Key.ToString(), v => v.Value);
-                                roles.Add(fixedDict);
-                            }
-                            else if (item is Dictionary<string, object> correctDict)
-                            {
-                                roles.Add(correctDict);
-                            }
-                            else
-                            {
-                                LogManager.Debug($"Error: Element in 'roles' is not a valid dictionary! Type: {item?.GetType()} | Value: {item}");
-                            }
-                        }
-                    }
+                    LogManager.Info($"Plugin does not have a team folder, generated one in {Path.Combine(Dir)}");
                 }
                 catch (Exception ex)
                 {
-                    if (Plugin.Instance.Config.Debug)
-                    {
-                        LogManager.Error($"Error processing file {filePath}: {ex.Message}\n{ex.StackTrace}");
-                    }
-                    else
-                    {
-                        LogManager.Error($"Error processing file {filePath}: {ex.Message}");
-                    }
+                    LogManager.Error($"Failed to generate example config: {ex.Message}");
                 }
             }
         }

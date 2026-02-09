@@ -1,51 +1,35 @@
-﻿using Exiled.API.Features;
+﻿using LabApi.Events.Arguments.WarheadEvents;
 using MEC;
 using System.Collections.Generic;
 using System.Linq;
 using UncomplicatedCustomTeams.API.Enums;
-using UncomplicatedCustomTeams.API.Features;
-using UncomplicatedCustomTeams.API.Storage;
+using UncomplicatedCustomTeams.API.Features.Services;
 using UncomplicatedCustomTeams.Utilities;
+using Team = UncomplicatedCustomTeams.API.Features.Definitions.Team;
 
 namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
 {
     internal class AfterWarhead
     {
-        public void OnDetonated()
+        public void OnDetonated(WarheadDetonatedEventArgs _)
         {
-            LogManager.Debug("Warhead detonated, checking for AfterWarhead spawns...");
+            LogManager.Debug("Warhead detonated, checking for spawns...");
 
-            List<Team> teamsToSpawn = Team.EvaluateSpawn(WaveType.AfterWarhead);
+            List<Team> teamsToSpawn = TeamSpawner.EvaluateSpawn(WaveType.AfterWarhead);
 
             if (!teamsToSpawn.Any()) return;
-
-            LogManager.Debug($"EvaluateSpawns found {teamsToSpawn.Count} team(s) to spawn.");
 
             foreach (Team team in teamsToSpawn)
             {
                 CoroutineHandle handle = Timing.CallDelayed(team.SpawnConditions.SpawnDelay, () =>
                 {
-                    Bucket.SpawnBucket = [];
-                    foreach (Player player in Player.List.Where(p => !p.IsAlive && p.Role.Type == PlayerRoles.RoleTypeId.Spectator && !p.IsOverwatchEnabled))
-                        Bucket.SpawnBucket.Add(player.Id);
-
-                    if (Bucket.SpawnBucket.Count == 0) return;
-
-                    Plugin.NextTeam = SummonedTeam.Summon(team, Player.List.Where(p => Bucket.SpawnBucket.Contains(p.Id)));
-
-                    if (Plugin.NextTeam == null) return;
-
-                    LogManager.Debug($"Spawned AfterWarhead team: {Plugin.NextTeam.Team.Name} for {Bucket.SpawnBucket.Count} players.");
-
-                    foreach (var summonedRole in Plugin.NextTeam.Players)
+                    var spawnedTeam = TeamSpawner.SpawnSpecificTeam(team);
+                    if (spawnedTeam != null)
                     {
-                        LogManager.Debug($"Assigning role to {summonedRole.Player.Nickname} ({summonedRole.Player.Id})...");
-                        summonedRole.AddRole();
+                        LogManager.Debug($"Team with 'AfterWarhead' Spawn Wave spawned successfully: {team.Name}");
                     }
-
-                    LogManager.Debug($"All players for team '{team.Name}' have been assigned roles.");
                 });
-                Plugin.Instance.Handler.ActiveSpawnDelays.Add(handle);
+                Plugin.Singleton.Handler.ActiveSpawnDelays.Add(handle);
             }
         }
     }

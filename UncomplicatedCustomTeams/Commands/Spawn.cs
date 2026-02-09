@@ -1,85 +1,58 @@
 ﻿using CommandSystem;
-using Exiled.API.Features;
-using MEC;
+using LabApi.Features.Wrappers;
 using System.Collections.Generic;
 using System.Linq;
-using UncomplicatedCustomTeams.API.Features;
-using UncomplicatedCustomTeams.API.Storage;
+using UncomplicatedCustomTeams.API.Features.Services;
 using UncomplicatedCustomTeams.Interfaces;
+using Team = UncomplicatedCustomTeams.API.Features.Definitions.Team;
 
 namespace UncomplicatedCustomTeams.Commands
 {
+    [CommandHandler(typeof(RemoteAdminCommandHandler))]
     internal class Spawn : IUCTCommand
     {
         public string Name { get; } = "spawn";
-
         public string Description { get; } = "Force spawn a custom team.";
-
         public string RequiredPermission { get; } = "uct.spawn";
 
         public bool Executor(List<string> arguments, ICommandSender sender, out string response)
         {
-            if (!Round.IsStarted)
+            if (!Round.IsRoundStarted)
             {
                 response = "Round is not started yet!";
                 return false;
             }
 
-            if (arguments.Count < 1 || arguments.Count > 2)
+            if (arguments.Count < 1)
             {
-                response = "Usage: uct spawn <TeamId> <PlayerCount>";
+                response = "Usage: uct spawn <TeamId>";
                 return false;
             }
 
-            if (!uint.TryParse(arguments[0], out uint teamId))
+            if (!uint.TryParse(arguments.ElementAt(0), out uint teamId))
             {
                 response = "Invalid TeamId! It must be a positive integer.";
                 return false;
             }
+
             Team team = Team.List.FirstOrDefault(t => t.Id == teamId);
 
             if (team is null)
             {
-                response = $"Team {uint.Parse(arguments[0])} is not registered!";
+                response = $"Team with ID {teamId} is not registered!";
                 return false;
             }
-            else
+
+            var summonedTeam = TeamSpawner.SpawnSpecificTeam(team);
+
+            if (summonedTeam == null)
             {
-                Bucket.SpawnBucket = [];
-
-                var spectators = Player.List.Where(p => !p.IsAlive && p.Role.Type is PlayerRoles.RoleTypeId.Spectator && !p.IsOverwatchEnabled).ToList();
-
-                int playersToSpawnCount = spectators.Count;
-
-                if (arguments.Count == 2)
-                {
-                    if (!int.TryParse(arguments[1], out int requestedCount) || requestedCount <= 0)
-                    {
-                        response = "Invalid player count! It must be a positive number.";
-                        return false;
-                    }
-                    playersToSpawnCount = requestedCount;
-                }
-
-                var playersToSpawn = spectators.Take(playersToSpawnCount);
-
-                SummonedTeam Summoned = SummonedTeam.Summon(team, playersToSpawn);
-                if (Summoned == null)
-                {
-                    response = $"Failed to spawn team {team.Name}.";
-                    return false;
-                }
-
-                Summoned.SpawnAll();
-
-                response = $"Successfully spawned the team {team.Name} with {Summoned.Players.Count} players!";
-
-                Timing.CallDelayed(1.5f, () =>
-                {
-                    Bucket.SpawnBucket = [];
-                });
-                return true;
+                response = $"Failed to spawn team {team.Name}. Check logs (maybe not enough spectators?).";
+                return false;
             }
+
+            response = $"Successfully spawned team '{team.Name}' with {summonedTeam.Members.Count} players!";
+            return true;
         }
     }
 }

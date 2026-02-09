@@ -1,66 +1,39 @@
-﻿using Exiled.API.Features;
-using Exiled.Events.EventArgs.Map;
+﻿using LabApi.Events.Arguments.ServerEvents;
+using LabApi.Features.Wrappers;
 using MEC;
 using System.Collections.Generic;
 using System.Linq;
 using UncomplicatedCustomTeams.API.Enums;
-using UncomplicatedCustomTeams.API.Features;
-using UncomplicatedCustomTeams.API.Storage;
+using UncomplicatedCustomTeams.API.Features.Services;
 using UncomplicatedCustomTeams.Utilities;
+using Team = UncomplicatedCustomTeams.API.Features.Definitions.Team;
 
 namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
 {
     internal class AfterGeneratorActivated
     {
-        private static List<Generator> EngagedGenerators { get; set; } = [];
         public void OnGeneratorActivating(GeneratorActivatingEventArgs _)
         {
-            EngagedGenerators = [.. Generator.List.Where(g => g.IsEngaged)];
-            int engagedCount = EngagedGenerators.Count;
+            int engagedCount = Generator.List.Count(g => g.Engaged);
+            LogManager.Debug($"Generator engaged. Total: {engagedCount}. Checking spawns...");
 
-            LogManager.Debug($"Generator engaged. Current engaged count: {engagedCount}. Checking for spawns...");
-            List<Team> potentialTeams = Team.EvaluateSpawn(WaveType.AfterGeneratorActivated);
+            List<Team> teamsToSpawn = TeamSpawner.EvaluateSpawn(WaveType.AfterGeneratorActivated);
 
-            if (!potentialTeams.Any())
-            {
-                return;
-            }
-
-            List<Team> teamsToSpawn = [.. potentialTeams.Where(team => engagedCount >= team.SpawnConditions.RequiredEngagedGenerators)];
-
-            if (!teamsToSpawn.Any())
-            {
-                LogManager.Debug("Found potential teams, but none met the RequiredEngagedGenerators condition.");
-                return;
-            }
-
-            LogManager.Debug($"Found {teamsToSpawn.Count} team(s) that meet all conditions.");
+            if (!teamsToSpawn.Any()) return;
 
             foreach (Team team in teamsToSpawn)
             {
+                if (engagedCount < team.SpawnConditions.RequiredEngagedGenerators) continue;
+
                 CoroutineHandle handle = Timing.CallDelayed(team.SpawnConditions.SpawnDelay, () =>
                 {
-                    Bucket.SpawnBucket = [];
-                    foreach (Player player in Player.List.Where(p => !p.IsAlive && p.Role.Type == PlayerRoles.RoleTypeId.Spectator && !p.IsOverwatchEnabled))
-                        Bucket.SpawnBucket.Add(player.Id);
-
-                    if (Bucket.SpawnBucket.Count == 0) return;
-
-                    Plugin.NextTeam = SummonedTeam.Summon(team, Player.List.Where(p => Bucket.SpawnBucket.Contains(p.Id)));
-
-                    if (Plugin.NextTeam == null) return;
-
-                    LogManager.Debug($"Spawning team: {Plugin.NextTeam.Team.Name} for {Bucket.SpawnBucket.Count} players.");
-
-                    foreach (var summonedRole in Plugin.NextTeam.Players)
+                    var spawnedTeam = TeamSpawner.SpawnSpecificTeam(team);
+                    if (spawnedTeam != null)
                     {
-                        summonedRole.AddRole();
+                        LogManager.Debug($"Team with 'AfterGeneratorActivated' Spawn Wave spawned successfully: {team.Name}");
                     }
-
-                    LogManager.Debug($"All players for team '{team.Name}' have been assigned roles.");
                 });
-
-                Plugin.Instance.Handler.ActiveSpawnDelays.Add(handle);
+                Plugin.Singleton.Handler.ActiveSpawnDelays.Add(handle);
             }
         }
     }

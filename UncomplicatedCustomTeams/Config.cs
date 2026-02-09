@@ -1,20 +1,14 @@
-﻿using Exiled.API.Interfaces;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 namespace UncomplicatedCustomTeams
 {
-    internal class Config : IConfig
+    internal class Config
     {
-        [Description("Is the plugin enabled?")]
-        public bool IsEnabled { get; set; } = true;
-
         [Description("Do enable the developer (debug) mode?")]
         public bool Debug { get; set; } = false;
         [Description("Enable or disable credit tags functionality.")]
         public bool EnableCreditTags { get; set; } = true;
-        public bool UseExiledCustomRoles { get; set; } = false;
-
-        [Description("How long to wait for Exiled CustomRoles to be registered before checking for registry?")]
-        public float ExiledCustomRoleCheckDelay { get; set; } = 10f;
+        [Description("Enable or disable the auto-updater.")]
+        public bool EnableAutoUpdater { get; set; } = true;
     }
 }

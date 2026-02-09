@@ -1,5 +1,5 @@
 ﻿using CommandSystem;
-using Exiled.Permissions.Extensions;
+using LabApi.Features.Permissions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +14,7 @@ namespace UncomplicatedCustomTeams.Commands
 
         public override string Command { get; } = "uct";
 
-        public override string[] Aliases { get; } = new string[] { };
+        public override string[] Aliases { get; } = [];
 
         public override string Description { get; } = "Manage the UCT features.";
 
@@ -30,14 +30,13 @@ namespace UncomplicatedCustomTeams.Commands
             RegisteredCommands.Add(new ForceNextWave());
         }
 
-        public List<IUCTCommand> RegisteredCommands { get; } = new();
+        public List<IUCTCommand> RegisteredCommands { get; } = [];
 
         protected override bool ExecuteParent(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
             if (arguments.Count() == 0)
             {
-                // Help page
-                response = $"\n>> UncomplicatedCustomTeams v{Plugin.Instance.Version} <<\nby FoxWorn3365 & .Piwnica\n\nAvailable commands:";
+                response = $"\n>> UncomplicatedCustomTeams v{Plugin.Singleton.Version} <<\nby FoxWorn3365 & .Piwnica\n\nAvailable commands:";
 
                 foreach (IUCTCommand Command in RegisteredCommands)
                 {
@@ -48,18 +47,12 @@ namespace UncomplicatedCustomTeams.Commands
             }
             else
             {
-                // Arguments compactor:
-                List<string> Arguments = new();
-                foreach (string Argument in arguments.Where(arg => arg != arguments.At(0)))
-                {
-                    Arguments.Add(Argument);
-                }
+                List<string> Arguments = [.. arguments.Where(arg => arg != arguments.At(0))];
 
                 IUCTCommand Command = RegisteredCommands.Where(command => command.Name == arguments.At(0)).FirstOrDefault();
 
-                if (Command is not null && sender.CheckPermission(Command.RequiredPermission))
+                if (Command is not null && sender.HasPermissions(Command.RequiredPermission))
                 {
-                    // Let's call the command
                     return Command.Executor(Arguments, sender, out response);
                 }
                 else

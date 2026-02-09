@@ -1,9 +1,8 @@
 ﻿using CommandSystem;
 using System.Collections.Generic;
 using System.Text;
-using UncomplicatedCustomTeams.API.Features;
 using UncomplicatedCustomTeams.Interfaces;
-
+using Team = UncomplicatedCustomTeams.API.Features.Definitions.Team;
 
 namespace UncomplicatedCustomTeams.Commands
 {
@@ -12,7 +11,7 @@ namespace UncomplicatedCustomTeams.Commands
     {
         public string Name { get; } = "list";
 
-        public string Description { get; } = "Displays all registered custom teams.";
+        public string Description { get; } = "Displays all registered Custom Teams.";
 
         public string RequiredPermission { get; } = "uct.list";
 

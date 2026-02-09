@@ -1,11 +1,14 @@
 ﻿using CommandSystem;
-using Exiled.API.Features;
+using LabApi.Features.Wrappers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using UncomplicatedCustomTeams.API.Features;
+using UncomplicatedCustomTeams.API.Events;
+using UncomplicatedCustomTeams.API.Features.Definitions;
+using UncomplicatedCustomTeams.API.Features.Runtime;
 using UncomplicatedCustomTeams.Interfaces;
 using UncomplicatedCustomTeams.Utilities;
+using UncomplicatedCustomTeams.Utilities.Errors;
 
 namespace UncomplicatedCustomTeams.Commands
 {
@@ -13,82 +16,54 @@ namespace UncomplicatedCustomTeams.Commands
     internal class Reload : IUCTCommand
     {
         public string Name => "reload";
-        public string Description => "Reloads every custom team loaded and searches for new ones to load.";
+        public string Description => "Reloads every custom team loaded and searches for new ones.";
         public string RequiredPermission => "uct.reload";
 
         public bool Executor(List<string> arguments, ICommandSender sender, out string response)
         {
-            if (!Round.IsStarted)
+            if (Round.IsRoundStarted && SummonedTeam.List.Any(team => team.Members.Any(m => m.Player.IsAlive)))
             {
-                response = "Round is not started yet!";
+                response = "Cannot reload configuration while a Custom Team is active/alive on the server.";
                 return false;
             }
-
-            if (SummonedTeam.List.Any(team => team.HasAlivePlayers()))
-            {
-                response = "An active custom team has been detected. Reloading has been cancelled.";
-                return false;
-            }
-            new FileConfigs().Welcome(Server.Port.ToString());
 
             try
             {
-                LogManager.Info("Starting team reload...");
+                LogManager.Info("Reloading configurations initiated by administrator...");
+
                 ErrorManager.Clear();
                 Team.List.Clear();
-                LogManager.Info("Cleared existing teams list.");
+                SummonedTeam.List.Clear();
 
-                FileConfigs fileConfigs = new();
-                fileConfigs.LoadAll();
-                fileConfigs.LoadAll(Server.Port.ToString());
-                CommentsSystem.AddCommentsToYaml();
-                CommentsSystem.AddCommentsToYaml(Server.Port.ToString());
-                LogManager.Info($"Reloaded teams from the config. Current count: {Team.List.Count}");
+                Plugin.Singleton.FileConfigs.LoadAll();
 
-                if (Team.List.Count == 0)
+                UCTEvents.InvokeDefinitionsLoaded();
+
+                int teamCount = Team.List.Count;
+                int errorCount = ErrorManager.Errors.Count;
+
+                if (teamCount == 0)
                 {
-                    response = "WARNING: No teams were loaded! Check your team config files!";
-                    LogManager.Warn("WARNING: No teams were loaded! Check your team config files!");
+                    response = errorCount > 0
+                        ? $"No teams loaded and {errorCount} errors detected! Check 'uct errors'."
+                        : "Reload successful, but 0 teams were found/loaded.";
+
                     return false;
                 }
 
-                if (ErrorManager.Errors.Any())
+                if (errorCount > 0)
                 {
-                    StringBuilder sb = new();
-                    sb.AppendLine("There were errors during the team config check:");
-                    foreach (var e in ErrorManager.Errors)
-                    {
-                        sb.AppendLine($"{e.File}: {e.Message} ({e.Suggestion})");
-                    }
-
-                    response = sb.ToString();
-                    LogManager.Warn(response);
-                    return false;
+                    response = $"Reloaded {teamCount} teams, but {errorCount} errors were detected.\nUse uct errors to view details.";
+                    return true;
                 }
 
-                if (fileConfigs.LoadErrors.Any())
-                {
-                    StringBuilder sb = new();
-                    sb.AppendLine("There were errors during the team config check:");
-                    foreach (var err in fileConfigs.LoadErrors)
-                    {
-                        sb.AppendLine(err);
-                    }
-
-                    response = sb.ToString();
-                    LogManager.Warn(response);
-                    return false;
-                }
-
-                LogManager.Info($"Successfully loaded {Team.List.Count} teams.");
-                response = $"All custom teams have been reloaded successfully. Loaded {Team.List.Count} teams.";
-                LogManager.Info(response);
+                response = $"Configuration reloaded successfully!\nLoaded <b>{teamCount}</b> custom teams.";
                 return true;
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                response = $"An error occurred while reloading teams: {ex.Message}. This was likely caused by a configuration mistake.";
-                LogManager.Error(response);
+                LogManager.Error($"Critical error during reload: {ex}");
+                response = $"Critical error occurred while reloading: {ex.Message}";
                 return false;
             }
         }

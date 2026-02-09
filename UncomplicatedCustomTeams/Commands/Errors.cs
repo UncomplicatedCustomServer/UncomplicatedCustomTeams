@@ -1,9 +1,9 @@
 ﻿using CommandSystem;
-using Exiled.Permissions.Extensions;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using UncomplicatedCustomTeams.Interfaces;
-using UncomplicatedCustomTeams.Utilities;
+using UncomplicatedCustomTeams.Utilities.Errors;
 
 namespace UncomplicatedCustomTeams.Commands
 {
@@ -16,29 +16,35 @@ namespace UncomplicatedCustomTeams.Commands
 
         public bool Executor(List<string> arguments, ICommandSender sender, out string response)
         {
-            if (!sender.CheckPermission(RequiredPermission))
-            {
-                response = "You do not have permission to use this command.";
-                return false;
-            }
-
             if (ErrorManager.Errors.Count == 0)
             {
-                response = "No YAML errors were detected!";
+                response = "<color=#4caf50>✅ No YAML configuration errors were detected.</color>";
                 return true;
             }
 
             StringBuilder sb = new();
+            sb.AppendLine($"<color=#ff5555>Found {ErrorManager.Errors.Count} error(s) in configuration files:</color>");
+            sb.AppendLine();
+
             foreach (var err in ErrorManager.Errors)
             {
-                sb.AppendLine($"<color=#FFFFFF>📄</color> <b>File:</b> {System.IO.Path.GetFileName(err.File)}");
+                string fileName = Path.GetFileName(err.File);
+
+                sb.AppendLine($"<color=#FFFFFF>📄 <b>File:</b> {fileName}</color>");
 
                 if (err.Line.HasValue)
-                    sb.AppendLine($"<color=#00FFFF>🔢</color> Line: {err.Line.Value}, Column: {err.Column}");
+                {
+                    sb.AppendLine($"<color=#00FFFF>🔢 <b>Position:</b> Line {err.Line}, Column {err.Column}</color>");
+                }
 
-                sb.AppendLine($"<color=red>❌</color> Error: {err.Message}");
-                sb.AppendLine($"<color=#FFFF00>💡</color> Suggestion: {err.Suggestion}");
-                sb.AppendLine();
+                sb.AppendLine($"<color=#ff5555>❌ <b>Error:</b> {err.Message}</color>");
+
+                if (!string.IsNullOrWhiteSpace(err.Suggestion))
+                {
+                    sb.AppendLine($"<color=#FFFF00>💡 <b>Tip:</b> {err.Suggestion}</color>");
+                }
+
+                sb.AppendLine(new string('-', 30));
             }
 
             response = sb.ToString();

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace UncomplicatedCustomRoles.Manager.NET
+namespace UncomplicatedCustomTeams.Manager
 {
 #nullable enable
 

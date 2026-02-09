@@ -1,13 +1,10 @@
-﻿using Exiled.API.Features;
-using Exiled.Loader;
-using MEC;
+﻿using MEC;
 using System;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text.Json;
 using UncomplicatedCustomRoles.Extensions;
-using UncomplicatedCustomRoles.Manager.NET;
 using UncomplicatedCustomTeams.Utilities;
 
 namespace UncomplicatedCustomTeams.Manager
@@ -25,7 +22,6 @@ namespace UncomplicatedCustomTeams.Manager
             {
                 string data = Plugin.HttpManager.VersionInfo();
                 HttpStatusCode code = data.GetStatusCode(out string msg);
-
                 if (code is not HttpStatusCode.OK)
                 {
                     LogManager.Warn($"Failed to gain the current version info from our central servers: API endpoint says {msg ?? "Message is null"}");
@@ -33,7 +29,6 @@ namespace UncomplicatedCustomTeams.Manager
                 }
 
                 VersionInfo = JsonSerializer.Deserialize<VersionInfo>(data);
-
                 if (VersionInfo is null)
                 {
                     LogManager.Silent($"Failed to convert API endpoint answer to VersionInfo.\nContent: {msg ?? "Message is null"}");
@@ -42,12 +37,11 @@ namespace UncomplicatedCustomTeams.Manager
 
                 if (VersionInfo.PreRelease)
                 {
-                    LogManager.Info($"\nNOTICE!\nYou are currently using the version v{Plugin.Instance.Version}, who's a PRE-RELEASE or an EXPERIMENTAL RELESE of UncomplicatedCustomTeams!\nLatest stable release: {Plugin.HttpManager.LatestVersion}\nNOTE: This is NOT a stable version, so there can be bugs and malfunctions, for this reason we do not recommend use in production.");
-                    if (VersionInfo.ForceDebug && !Log.DebugEnabled.Contains(Plugin.Instance.Assembly))
+                    LogManager.Info($"\nNOTICE!\nYou are currently using the version v{Plugin.Singleton.Version}, who's a PRE-RELEASE or an EXPERIMENTAL RELESE of UncomplicatedCustomTeams!\nLatest stable release: {Plugin.HttpManager.LatestVersion}\nNOTE: This is NOT a stable version, so there can be bugs and malfunctions, for this reason we do not recommend use in production.");
+                    if (VersionInfo.ForceDebug && !(Plugin.Singleton.Config?.Debug ?? true))
                     {
                         LogManager.Info("Debug logs have been activated!");
-                        Plugin.Instance.Config.Debug = true;
-                        Log.DebugEnabled.Add(Plugin.Instance.Assembly);
+                        Plugin.Singleton.Config.Debug = true;
                     }
                 }
                 else
@@ -55,12 +49,10 @@ namespace UncomplicatedCustomTeams.Manager
                     LogManager.Info($"You are using UncomplicatedCustomTeams v{VersionInfo.Name}{(VersionInfo.CustomName is not null ? $" '{VersionInfo.CustomName}'" : string.Empty)}!");
                 }
 
-                // Check integrity
-                string hash = HashFile(Plugin.Instance.Assembly.GetPath());
+                string hash = HashFile(Plugin.Singleton.FilePath);
                 if (hash != VersionInfo.Hash)
-                {
                     HashNotMatchMessageSender(hash);
-                }
+
                 else
                     CorrectHash = true;
 
