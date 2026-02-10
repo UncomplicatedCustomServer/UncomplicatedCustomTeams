@@ -3,6 +3,7 @@ using LabApi.Features;
 using LabApi.Features.Wrappers;
 using LabApi.Loader.Features.Plugins;
 using LabApi.Loader.Features.Plugins.Enums;
+using MEC;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -55,29 +56,10 @@ namespace UncomplicatedCustomTeams
 
             Handler.SubscribeToSpawnWaves();
 
-            Task.Run(async () =>
-            {
-                await AutoUpdater.RunAsync();
-
-                if (HttpManager.LatestVersion.CompareTo(Version) > 0)
-                {
-                    LogManager.Warn($"You are NOT using the latest version of UncomplicatedCustomTeams!\nCurrent: v{Version} | Latest available: v{HttpManager.LatestVersion}\nDownload it from GitHub: https://github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest");
-                }
-
-                VersionManager.Init();
-            });
-
-            FileConfigs.Welcome();
-            FileConfigs.LoadAll();
+            Timing.RunCoroutine(StartUpProcess());
 
             _harmony = new($"com.ucs.uct_labapi-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
             _harmony.PatchAll();
-
-            LogManager.Info($"Successfully loaded {Team.List.Count} teams!");
-            foreach (var team in Team.List)
-            {
-                LogManager.Debug($"Loaded team: Name: {team.Name} | ID: {team.Id}");
-            }
         }
 
         public override void Disable()
@@ -96,6 +78,49 @@ namespace UncomplicatedCustomTeams
 
             FileConfigs = null;
             Singleton = null;
+        }
+
+        private IEnumerator<float> StartUpProcess()
+        {
+            FileConfigs.Welcome();
+
+            LogManager.Info("Checking for updates...");
+
+            Task updateTask = Task.Run(async () =>
+            {
+                await AutoUpdater.RunAsync(Server.Port.ToString());
+
+                if (HttpManager.LatestVersion.CompareTo(Version) > 0)
+                    LogManager.Warn($"You are NOT using the latest version of UncomplicatedCustomTeams!\nCurrent: v{Version} | Latest available: v{HttpManager.LatestVersion}\nDownload it from GitHub: https://github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest");
+
+                VersionManager.Init();
+            });
+
+            while (!updateTask.IsCompleted)
+            {
+                yield return Timing.WaitForSeconds(0.1f);
+            }
+
+            if (updateTask.IsFaulted)
+            {
+                Exception ex = updateTask.Exception?.InnerException ?? updateTask.Exception;
+                if (ex is TaskCanceledException || ex is System.IO.IOException)
+                {
+                    LogManager.Warn($"[AutoUpdater] Update timed out or failed to connect. Skipping update.");
+                }
+                else
+                {
+                    LogManager.Warn($"[AutoUpdater] Failed: {ex?.Message}");
+                }
+            }
+            else
+            {
+                LogManager.Info("Update check complete.");
+            }
+
+            LogManager.Info("Loading configurations...");
+
+            FileConfigs.Reload();
         }
     }
 }

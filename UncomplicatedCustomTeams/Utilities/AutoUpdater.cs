@@ -1,4 +1,5 @@
-﻿using LabApi.Loader.Features.Paths;
+﻿using LabApi.Features.Wrappers;
+using LabApi.Loader.Features.Paths;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,13 +7,12 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace UncomplicatedCustomTeams.Utilities
 {
     public static class AutoUpdater
     {
-        private const string DefaultConfigUrl = "https://raw.githubusercontent.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/refs/heads/main/UncomplicatedCustomTeams/Resources/DefaultConfig.yml";
+        private const string DefaultConfigUrl = "https://raw.githubusercontent.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/main/UncomplicatedCustomTeams/Resources/DefaultConfig.yml";
 
         private static readonly HttpClient HttpClient = new()
         {
@@ -21,28 +21,37 @@ namespace UncomplicatedCustomTeams.Utilities
         };
 
         private static readonly IDeserializer Deserializer = new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .IgnoreUnmatchedProperties()
             .Build();
 
         private static readonly ISerializer Serializer = new SerializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .DisableAliases()
             .Build();
 
         public static async Task RunAsync(string localDir = "")
         {
-            if (Plugin.Singleton == null || !Plugin.Singleton.Config.EnableAutoUpdater) return;
+            if (Plugin.Singleton?.Config == null || !Plugin.Singleton.Config.EnableAutoUpdater) return;
 
             try
             {
+                string dir = Path.Combine(PathManager.Configs.FullName, "UncomplicatedCustomTeams", localDir);
+                LogManager.Debug($"[AutoUpdater] Checking for configs in: {dir}");
+
+                if (!Directory.Exists(dir))
+                {
+                    LogManager.Warn($"[AutoUpdater] Directory not found: {dir}");
+                    return;
+                }
+
                 string defaultYaml = await DownloadTextAsync(DefaultConfigUrl);
-                if (string.IsNullOrEmpty(defaultYaml)) return;
+                if (string.IsNullOrEmpty(defaultYaml))
+                {
+                    LogManager.Warn("[AutoUpdater] Downloaded config is empty or failed.");
+                    return;
+                }
 
                 var defaultObj = Deserializer.Deserialize<Dictionary<string, object>>(defaultYaml);
                 if (defaultObj == null) return;
-
-                string dir = Path.Combine(PathManager.Configs.FullName, "UncomplicatedCustomTeams", localDir);
-                if (!Directory.Exists(dir)) return;
 
                 foreach (string filePath in Directory.GetFiles(dir, "*.yml"))
                 {
@@ -51,7 +60,7 @@ namespace UncomplicatedCustomTeams.Utilities
             }
             catch (Exception ex)
             {
-                LogManager.Warn($"Failed to update configs: {ex.Message}");
+                LogManager.Warn($"[AutoUpdater] Critical error: {ex.Message}");
             }
         }
 
@@ -66,17 +75,21 @@ namespace UncomplicatedCustomTeams.Utilities
 
                 if (MergeRecursive(userObj, defaultObj))
                 {
-                    LogManager.Info($"Updating outdated config file: {Path.GetFileName(filePath)}");
+                    LogManager.Info($"[AutoUpdater] Updating outdated config file: {Path.GetFileName(filePath)}");
 
                     var normalized = NormalizeYamlObject(userObj);
                     string updatedYaml = Serializer.Serialize(normalized);
 
                     await FileUtils.WriteAllTextAsync(filePath, updatedYaml);
                 }
+                else
+                {
+                    LogManager.Debug($"[AutoUpdater] File {Path.GetFileName(filePath)} is up to date.");
+                }
             }
             catch (Exception ex)
             {
-                LogManager.Warn($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
+                LogManager.Warn($"[AutoUpdater] Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
             }
         }
 
@@ -89,16 +102,16 @@ namespace UncomplicatedCustomTeams.Utilities
                 {
                     return await response.Content.ReadAsStringAsync();
                 }
-
-                LogManager.Warn($"Failed to download default config. Status: {response.StatusCode}");
+                LogManager.Warn($"[AutoUpdater] Failed to download default config. Status: {response.StatusCode}");
                 return null;
             }
             catch (Exception ex)
             {
-                LogManager.Warn($"Network error while downloading config: {ex.Message}");
+                LogManager.Warn($"[AutoUpdater] Network error: {ex.Message}");
                 return null;
             }
         }
+
         private static bool MergeRecursive(IDictionary<string, object> target, IDictionary<string, object> source)
         {
             bool changed = false;
@@ -111,7 +124,7 @@ namespace UncomplicatedCustomTeams.Utilities
                 {
                     target[kvp.Key] = kvp.Value;
                     changed = true;
-                    LogManager.Debug($"Added missing key: {kvp.Key}");
+                    LogManager.Debug($"[AutoUpdater] Found missing key: '{kvp.Key}'. Adding...");
                 }
                 else if (kvp.Value is IDictionary<object, object> sourceDict && target[kvp.Key] is IDictionary<object, object> targetDict)
                 {
@@ -120,8 +133,36 @@ namespace UncomplicatedCustomTeams.Utilities
 
                     if (MergeRecursive(tDict, sDict))
                     {
-                        target[kvp.Key] = tDict.ToDictionary(k => (object)k.Key, v => v.Value);
+                        foreach (var updatedKvp in tDict) targetDict[updatedKvp.Key] = updatedKvp.Value;
                         changed = true;
+                    }
+                }
+                else if (kvp.Value is IList<object> sourceList && target[kvp.Key] is IList<object> targetList)
+                {
+                    if (sourceList.Count > 0 && sourceList[0] is IDictionary<object, object> templateItem)
+                    {
+                        var templateDict = templateItem.ToDictionary(k => k.Key.ToString(), v => v.Value);
+
+                        foreach (var targetItem in targetList)
+                        {
+                            if (targetItem is IDictionary<object, object> targetItemDict)
+                            {
+                                var tItemDict = targetItemDict.ToDictionary(k => k.Key.ToString(), v => v.Value);
+
+                                if (MergeRecursive(tItemDict, templateDict))
+                                {
+                                    foreach (var updatedField in tItemDict)
+                                    {
+                                        if (!targetItemDict.ContainsKey(updatedField.Key))
+                                        {
+                                            targetItemDict[updatedField.Key] = updatedField.Value;
+                                            LogManager.Debug($"[AutoUpdater] Added missing list field '{updatedField.Key}' to a team.");
+                                        }
+                                    }
+                                    changed = true;
+                                }
+                            }
+                        }
                     }
                 }
             }

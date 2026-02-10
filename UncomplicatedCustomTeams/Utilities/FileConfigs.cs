@@ -4,7 +4,9 @@ using LabApi.Loader.Features.Yaml;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using UncomplicatedCustomTeams.API.Events;
 using UncomplicatedCustomTeams.API.Features.Definitions;
+using UncomplicatedCustomTeams.API.Features.Runtime;
 using UncomplicatedCustomTeams.API.Features.Services;
 using UncomplicatedCustomTeams.Utilities.Errors;
 using Team = UncomplicatedCustomTeams.API.Features.Definitions.Team;
@@ -35,6 +37,29 @@ namespace UncomplicatedCustomTeams.Utilities
 
             Welcome(localDir);
             LoadConfigs(localDir);
+        }
+
+        public void Reload(string localDir = "")
+        {
+            ErrorManager.Clear();
+            Team.List.Clear();
+            SummonedTeam.List.Clear();
+
+            Plugin.Singleton.FileConfigs.LoadAll(localDir);
+
+            UCTEvents.InvokeDefinitionsLoaded();
+
+            LogManager.Info($"Process finished. Loaded {Team.List.Count} teams.");
+
+            if (ErrorManager.Errors.Count > 0)
+            {
+                LogManager.Warn($"Warning: {ErrorManager.Errors.Count} errors detected in YAML files. Use 'uct errors' to view them.");
+            }
+
+            foreach (var team in Team.List)
+            {
+                LogManager.Debug($"Loaded team: {team.Name} (ID: {team.Id})");
+            }
         }
 
         private void LoadConfigs(string localDir)
