@@ -1,30 +1,19 @@
 teams:
 - id: 1
-  name: GOC
+  name: Example Team
   min_players: 1
   max_spawns: -1
   spawn_chance: 100
   allow_concurrent_spawns: false
   spawn_conditions:
     spawn_wave: NtfWave
-    spawn_position:
-      x: 0
-      y: 0
-      z: 0
-    spawn_rotation:
-      x: 0
-      y: 0
-      z: 0
-    used_item: None
-    target_scp: None
-    is_scp0492_counted_as_scp: false
-    required_alive_roles: []
-    roles_affected_on_round_start: []
     spawn_delay: 0
+    settings: {}
   is_cassie_announcement_enabled: true
   cassie_message: team arrived
   cassie_translation: Team arrived!
   is_noisy: true
+  glitch_scale: 1
   win_condition:
     prevent_round_end_if_alive: true
     allied_teams: []
@@ -33,8 +22,6 @@ teams:
   - path: /path/to/your/ogg/file
     delay: 0
   sound_volume: 1
-  team_alive_to_win:
-  - ClassD
   roles:
   - max_players: 1
     priority: First
@@ -93,7 +80,7 @@ teams:
     - KeycardJanitor
     custom_items_inventory: []
     ammo:
-      Nato9: 10
+      Ammo9x19: 10
     damage_multiplier: 1
     spawn_settings: 
     custom_flags: 
@@ -155,16 +142,8 @@ teams:
     - KeycardJanitor
     custom_items_inventory: []
     ammo:
-      Nato9: 10
+      Ammo9x19: 10
     damage_multiplier: 1
     spawn_settings: 
     custom_flags: 
     ignore_spawn_system: false
-  ecr_roles:
-  - max_players: 1
-    priority: None
-    drop_inventory_on_death: true
-    is_godmode_enabled: false
-    is_bypass_enabled: false
-    is_noclip_enabled: false
-    id: 1
