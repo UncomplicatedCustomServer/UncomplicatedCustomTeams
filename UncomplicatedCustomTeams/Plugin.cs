@@ -51,7 +51,7 @@ namespace UncomplicatedCustomTeams
             Bucket.SpawnBucket.Clear();
             SummonedTeam.List.Clear();
             ServerHandler.RoundRestarted += Handler.OnRestartingRound;
-            PlayerHandler.Dying += Handler.OnDying;
+            PlayerHandler.ChangedRole += Handler.OnChangedRole;
             ServerHandler.RoundEnding += Handler.OnEndingRound;
 
             Handler.SubscribeToSpawnWaves();
@@ -65,7 +65,7 @@ namespace UncomplicatedCustomTeams
         public override void Disable()
         {
             ServerHandler.RoundRestarted -= Handler.OnRestartingRound;
-            PlayerHandler.Dying -= Handler.OnDying;
+            PlayerHandler.ChangedRole -= Handler.OnChangedRole;
             ServerHandler.RoundEnding -= Handler.OnEndingRound;
 
             Handler.UnsubscribeToSpawnWaves();
@@ -83,15 +83,32 @@ namespace UncomplicatedCustomTeams
         private IEnumerator<float> StartUpProcess()
         {
             FileConfigs.Welcome();
-
-            LogManager.Info("Checking for updates...");
+            LogManager.Info("Checking for updates and verifying version...");
 
             Task updateTask = Task.Run(async () =>
             {
-                await AutoUpdater.RunAsync(Server.Port.ToString());
+                try
+                {
+                    HttpManager.LoadLatestVersion();
+                }
+                catch (Exception ex)
+                {
+                    LogManager.Warn($"Failed to fetch version info: {ex.Message}. Defaulting to 'main' branch.");
+                }
+
+                string branch = "main";
+                if (Singleton.Version > HttpManager.LatestVersion)
+                {
+                    branch = "PRE-UCT";
+                    LogManager.Warn($"[AutoUpdater] Experimental/Dev build detected (Local: {Version} > Remote: {HttpManager.LatestVersion}). Using 'PRE-UCT' config branch.");
+                }
+
+                await AutoUpdater.RunAsync(Server.Port.ToString(), branch);
 
                 if (HttpManager.LatestVersion.CompareTo(Version) > 0)
+                {
                     LogManager.Warn($"You are NOT using the latest version of UncomplicatedCustomTeams!\nCurrent: v{Version} | Latest available: v{HttpManager.LatestVersion}\nDownload it from GitHub: https://github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest");
+                }
 
                 VersionManager.Init();
             });
@@ -104,14 +121,7 @@ namespace UncomplicatedCustomTeams
             if (updateTask.IsFaulted)
             {
                 Exception ex = updateTask.Exception?.InnerException ?? updateTask.Exception;
-                if (ex is TaskCanceledException || ex is System.IO.IOException)
-                {
-                    LogManager.Warn($"[AutoUpdater] Update timed out or failed to connect. Skipping update.");
-                }
-                else
-                {
-                    LogManager.Warn($"[AutoUpdater] Failed: {ex?.Message}");
-                }
+                LogManager.Warn($"[AutoUpdater] Warning: {ex?.Message}");
             }
             else
             {
@@ -119,7 +129,6 @@ namespace UncomplicatedCustomTeams
             }
 
             LogManager.Info("Loading configurations...");
-
             FileConfigs.Reload();
         }
     }

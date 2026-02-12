@@ -57,6 +57,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
+    <Reference Include="CommandSystem.Core">
+      <HintPath>D:\Instalki\Steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\CommandSystem.Core.dll</HintPath>
+    </Reference>
     <Reference Include="Mirror, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\Mirror.dll</HintPath>
@@ -65,12 +68,15 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\Mono.Security.dll</HintPath>
     </Reference>
+    <Reference Include="NorthwoodLib">
+      <HintPath>D:\Instalki\Steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\NorthwoodLib.dll</HintPath>
+    </Reference>
     <Reference Include="Pooling">
       <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\Pooling.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="UncomplicatedCustomRoles-EXILED">
-      <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\UncomplicatedCustomRoles-EXILED.dll</HintPath>
+    <Reference Include="UncomplicatedCustomRoles-LabAPI">
+      <HintPath>D:\Instalki\Steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\UncomplicatedCustomRoles-LabAPI.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\UnityEngine.dll</HintPath>
@@ -87,49 +93,65 @@
   <ItemGroup>
     <Compile Include="API\Enums\RolePriority.cs" />
     <Compile Include="API\Enums\WaveType.cs" />
-    <Compile Include="API\Features\ExiledCustomRole.cs" />
+    <Compile Include="API\Events\EventArgs\TeamEliminatedEventArgs.cs" />
+    <Compile Include="API\Events\EventArgs\TeamSpawnedEventArgs.cs" />
+    <Compile Include="API\Events\EventArgs\TeamSpawningEventArgs.cs" />
+    <Compile Include="API\Events\UCTEvents.cs" />
+    <Compile Include="API\Extensions\SpawnDataExtensions.cs" />
+    <Compile Include="API\Extensions\TeamExtensions.cs" />
+    <Compile Include="API\Features\Definitions\SpawnData.cs" />
+    <Compile Include="API\Features\Definitions\Team.cs" />
+    <Compile Include="API\Features\Definitions\UncomplicatedCustomRole.cs" />
     <Compile Include="API\Features\LogEntry.cs" />
-    <Compile Include="API\Features\SummonedCustomRole.cs" />
-    <Compile Include="API\Features\SummonedTeam.cs" />
-    <Compile Include="API\Features\Team.cs" />
-    <Compile Include="API\Features\UncomplicatedCustomRole.cs" />
+    <Compile Include="API\Features\Runtime\SummonedCustomRole.cs" />
+    <Compile Include="API\Features\Runtime\SummonedTeam.cs" />
+    <Compile Include="Integrations\AudioPlayer.cs" />
+    <Compile Include="API\Features\Services\RoleManager.cs" />
+    <Compile Include="API\Features\Services\TeamSpawner.cs" />
     <Compile Include="API\Storage\Bucket.cs" />
+    <Compile Include="Commands\Active.cs" />
     <Compile Include="Commands\CommandParent.cs" />
     <Compile Include="Commands\Errors.cs" />
     <Compile Include="Commands\ForceNextWave.cs" />
     <Compile Include="Commands\Generate.cs" />
-    <Compile Include="Commands\Reload.cs" />
     <Compile Include="Commands\List.cs" />
-    <Compile Include="Commands\Owner.cs" />
-    <Compile Include="Commands\Spawn.cs" />
     <Compile Include="Commands\LogShare.cs" />
-    <Compile Include="Commands\Active.cs" />
+    <Compile Include="Commands\Owner.cs" />
+    <Compile Include="Commands\Reload.cs" />
+    <Compile Include="Commands\Spawn.cs" />
     <Compile Include="Config.cs" />
+    <Compile Include="EventHandlers\MainHandler.cs" />
     <Compile Include="EventHandlers\SpawnWaves\AfterDecontamination.cs" />
     <Compile Include="EventHandlers\SpawnWaves\AfterGeneratorActivated.cs" />
     <Compile Include="EventHandlers\SpawnWaves\AfterWarhead.cs" />
     <Compile Include="EventHandlers\SpawnWaves\DefaultSpawnWaves.cs" />
-    <Compile Include="EventHandlers\MainHandler.cs" />
     <Compile Include="EventHandlers\SpawnWaves\RoundStarted.cs" />
     <Compile Include="EventHandlers\SpawnWaves\ScpDeath.cs" />
     <Compile Include="EventHandlers\SpawnWaves\TeamDependent.cs" />
     <Compile Include="EventHandlers\SpawnWaves\UsedItem.cs" />
+    <Compile Include="Integrations\ECI.cs" />
+    <Compile Include="Integrations\UCI.cs" />
     <Compile Include="Interfaces\IUCTCommand.cs" />
     <Compile Include="Interfaces\IUCTCustomRole.cs" />
+    <Compile Include="Patches\PreventWaveAnnouncementPatch.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\AutoUpdater.cs" />
-    <Compile Include="Utilities\CommentsSystem.cs" />
-    <Compile Include="Utilities\ErrorManager.cs" />
+    <Compile Include="Utilities\Errors\ErrorManager.cs" />
+    <Compile Include="Utilities\Errors\FileUtils.cs" />
+    <Compile Include="Utilities\Errors\TeamConfigValidator.cs" />
     <Compile Include="Utilities\FileConfigs.cs" />
     <Compile Include="Utilities\HttpManager.cs" />
     <Compile Include="Utilities\LogManager.cs" />
     <Compile Include="Utilities\VersionInfo.cs" />
-    <Compile Include="VersionManager.cs" />
+    <Compile Include="Utilities\VersionManager.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ExMod.Exiled">
-      <Version>9.12.6</Version>
+    <PackageReference Include="Lib.Harmony">
+      <Version>2.4.2</Version>
+    </PackageReference>
+    <PackageReference Include="Northwood.LabAPI">
+      <Version>1.1.5</Version>
     </PackageReference>
     <PackageReference Include="System.Net.Http">
       <Version>4.3.4</Version>

@@ -12,7 +12,7 @@ namespace UncomplicatedCustomTeams.Utilities
 {
     public static class AutoUpdater
     {
-        private const string DefaultConfigUrl = "https://raw.githubusercontent.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/main/UncomplicatedCustomTeams/Resources/DefaultConfig.yml";
+        private const string BaseConfigUrl = "https://raw.githubusercontent.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/{0}/UncomplicatedCustomTeams/Resources/DefaultConfig.yml";
 
         private static readonly HttpClient HttpClient = new()
         {
@@ -28,14 +28,16 @@ namespace UncomplicatedCustomTeams.Utilities
             .DisableAliases()
             .Build();
 
-        public static async Task RunAsync(string localDir = "")
+        public static async Task RunAsync(string localDir = "", string branch = "main")
         {
             if (Plugin.Singleton?.Config == null || !Plugin.Singleton.Config.EnableAutoUpdater) return;
 
             try
             {
+                string finalUrl = string.Format(BaseConfigUrl, branch);
+
                 string dir = Path.Combine(PathManager.Configs.FullName, "UncomplicatedCustomTeams", localDir);
-                LogManager.Debug($"[AutoUpdater] Checking for configs in: {dir}");
+                LogManager.Debug($"[AutoUpdater] Checking for configs in: {dir} (Source: {branch})");
 
                 if (!Directory.Exists(dir))
                 {
@@ -43,10 +45,10 @@ namespace UncomplicatedCustomTeams.Utilities
                     return;
                 }
 
-                string defaultYaml = await DownloadTextAsync(DefaultConfigUrl);
+                string defaultYaml = await DownloadTextAsync(finalUrl);
                 if (string.IsNullOrEmpty(defaultYaml))
                 {
-                    LogManager.Warn("[AutoUpdater] Downloaded config is empty or failed.");
+                    LogManager.Warn($"[AutoUpdater] Downloaded config is empty or failed. URL: {finalUrl}");
                     return;
                 }
 

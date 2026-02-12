@@ -8,6 +8,7 @@ using UncomplicatedCustomTeams.API.Events;
 using UncomplicatedCustomTeams.API.Features.Definitions;
 using UncomplicatedCustomTeams.API.Features.Runtime;
 using UncomplicatedCustomTeams.API.Features.Services;
+using UncomplicatedCustomTeams.Integrations;
 using UncomplicatedCustomTeams.Utilities.Errors;
 using Team = UncomplicatedCustomTeams.API.Features.Definitions.Team;
 
@@ -92,7 +93,7 @@ namespace UncomplicatedCustomTeams.Utilities
                         Team.Register(team);
 
                         RoleManager.RegisterTeamRoles(team);
-                        AudioService.PreloadTeamAudio(team);
+                        AudioPlayer.PreloadTeamAudio(team);
                     }
                 }
                 catch (Exception ex)

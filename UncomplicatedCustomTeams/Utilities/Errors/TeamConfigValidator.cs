@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using UncomplicatedCustomTeams.API;
 using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Features.Definitions;
 using UnityEngine;
@@ -95,39 +96,41 @@ namespace UncomplicatedCustomTeams.Utilities.Errors
                 team.SpawnConditions.SpawnDelay = 0f;
             }
 
-            if (team.SpawnConditions.RequiresSpawnPosition() && team.SpawnConditions.SpawnPosition == Vector3.zero)
+            if (TeamExtensions.IsCustomPositionWave(team.SpawnConditions.SpawnWave) && team.SpawnConditions.GetSpawnPosition() == Vector3.zero)
             {
                 LogValidationError(file,
                     $"SpawnWave '{team.SpawnConditions.SpawnWave}' requires a SpawnPosition, but none was set (0,0,0).",
-                    "Set a valid SpawnPosition (x,y,z) for this Custom Team Spawn Wave type.");
+                    "Add pos_x, pos_y, pos_z to settings for this Custom Team Spawn Wave type.");
                 return false;
             }
 
-            if (team.SpawnConditions.SpawnWave == WaveType.ScpDeath &&
-                (string.IsNullOrWhiteSpace(team.SpawnConditions.TargetScp) ||
-                    team.SpawnConditions.TargetScp.Equals("None", StringComparison.OrdinalIgnoreCase)))
+            if (team.SpawnConditions.SpawnWave == WaveType.ScpDeath)
             {
-                LogValidationError(file,
-                    "Spawn Wave is 'ScpDeath' but no TargetScp is specified.",
-                    "Set the 'TargetScp' field to an existing SCP role or SCPs team.");
-                return false;
+                string target = team.SpawnConditions.GetTargetScp();
+                if (string.IsNullOrWhiteSpace(target) || target.Equals("None", StringComparison.OrdinalIgnoreCase))
+                {
+                    LogValidationError(file,
+                        "Spawn Wave is 'ScpDeath' but no TargetScp is specified in settings.",
+                        "Add 'target_scp: Scp173' (or other) to settings.");
+                    return false;
+                }
             }
 
-            bool hasItemDefined = team.SpawnConditions.GetUsedItemType() != ItemType.None || team.SpawnConditions.GetCustomItemId() != null;
+            bool hasItemDefined = team.SpawnConditions.GetUsedItem() != ItemType.None || team.SpawnConditions.GetCustomItemId() != null;
 
             if (hasItemDefined && team.SpawnConditions.SpawnWave != WaveType.UsedItem)
             {
                 LogValidationError(file,
-                    "An Item is defined in SpawnConditions, but SpawnWave is not 'UsedItem'.",
-                    "Change SpawnWave to 'UsedItem' or remove the item requirement.");
+                    "An Item is defined in settings, but SpawnWave is not 'UsedItem'.",
+                    "Change SpawnWave to 'UsedItem' or remove the item from settings.");
                 return false;
             }
 
             if (!hasItemDefined && team.SpawnConditions.SpawnWave == WaveType.UsedItem)
             {
                 LogValidationError(file,
-                    "SpawnWave is 'UsedItem', but no valid ItemType or Custom Item ID is provided.",
-                    "Provide a valid ItemType or Custom Item ID.");
+                    "SpawnWave is 'UsedItem', but no valid ItemType or Custom Item ID is provided in settings.",
+                    "Add for example 'used_item: Medkit' or 'custom_item_id: 1' to settings.");
                 return false;
             }
 
@@ -135,11 +138,9 @@ namespace UncomplicatedCustomTeams.Utilities.Errors
             {
                 uint originalId = team.Id;
                 uint newId = 1;
+                HashSet<uint> usedIds = [.. Team.List.Select(t => t.Id)];
 
-                HashSet<uint> usedIds = Team.List.Select(t => t.Id).ToHashSet();
-
-                while (usedIds.Contains(newId))
-                    newId++;
+                while (usedIds.Contains(newId)) newId++;
 
                 string warning = $"Duplicate team ID detected: {originalId}. Automatically reassigning to ID: {newId}.";
                 string suggestion = $"Update config for team '{team.Name}' to use ID: {newId} to avoid this warning.";
@@ -167,15 +168,15 @@ namespace UncomplicatedCustomTeams.Utilities.Errors
                 return false;
             }
 
-            string targetScp = team.SpawnConditions.TargetScp;
-            if (!string.IsNullOrWhiteSpace(targetScp) && !targetScp.Equals("None", StringComparison.OrdinalIgnoreCase))
+            if (team.SpawnConditions.SpawnWave == WaveType.ScpDeath)
             {
+                string targetScp = team.SpawnConditions.GetTargetScp();
                 bool isValidScp = (Enum.TryParse(targetScp, true, out RoleTypeId _) && targetScp.StartsWith("Scp", StringComparison.OrdinalIgnoreCase))
                                   || targetScp.Equals("SCPs", StringComparison.OrdinalIgnoreCase);
 
                 if (!isValidScp)
                 {
-                    LogValidationError(filePath, $"Invalid TargetSCP '{targetScp}' for team {team.Name}.", "TargetSCP must be a valid SCP RoleTypeId or 'SCPs' (Team).");
+                    LogValidationError(filePath, $"Invalid TargetSCP '{targetScp}' in settings for team {team.Name}.", "TargetSCP must be a valid SCP RoleTypeId or 'SCPs'.");
                     return false;
                 }
             }
@@ -200,7 +201,6 @@ namespace UncomplicatedCustomTeams.Utilities.Errors
 
             return true;
         }
-
 
         private static bool ValidateRoles(Team team, string filePath)
         {
