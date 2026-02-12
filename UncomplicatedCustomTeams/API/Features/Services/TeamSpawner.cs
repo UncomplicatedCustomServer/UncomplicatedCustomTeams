@@ -58,9 +58,9 @@ namespace UncomplicatedCustomTeams.API.Features.Services
                 return false;
             }
 
-            if (team.SpawnConditions.RequiredAliveRoles.Count > 0)
+            if (team.SpawnConditions.GetRequiredAliveRoles().Count > 0)
             {
-                bool anyAlive = Player.List.Any(p => p.IsAlive && team.SpawnConditions.RequiredAliveRoles.Contains(p.Role));
+                bool anyAlive = Player.List.Any(p => p.IsAlive && team.SpawnConditions.GetRequiredAliveRoles().Contains(p.Role));
                 if (!anyAlive) return false;
             }
 

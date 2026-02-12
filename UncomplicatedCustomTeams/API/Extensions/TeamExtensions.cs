@@ -1,11 +1,12 @@
 ﻿using LabApi.Features.Wrappers;
 using PlayerRoles;
 using System.Linq;
+using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Features.Runtime;
 
 namespace UncomplicatedCustomTeams.API
 {
-    public static class Extensions
+    public static class TeamExtensions
     {
         /// <summary>
         /// Gets the <see cref="SummonedTeam"/> the player belongs to, or null if none.
@@ -37,6 +38,23 @@ namespace UncomplicatedCustomTeams.API
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Reloads all teams and configurations.
+        /// </summary>
+        public static void Reload()
+        {
+            if (Plugin.Singleton == null || Plugin.Singleton.FileConfigs == null) return;
+            Plugin.Singleton.FileConfigs.Reload();
+        }
+
+        /// <summary>
+        /// Checks if the given <see cref="WaveType"/> requires a custom position.
+        /// </summary>
+        public static bool IsCustomPositionWave(WaveType wave)
+        {
+            return wave == WaveType.AfterDecontamination || wave == WaveType.AfterWarhead || wave == WaveType.RoundStarted || wave == WaveType.ScpDeath || wave == WaveType.UsedItem || wave == WaveType.TeamDependent || wave == WaveType.AfterGeneratorActivated;
         }
     }
 }

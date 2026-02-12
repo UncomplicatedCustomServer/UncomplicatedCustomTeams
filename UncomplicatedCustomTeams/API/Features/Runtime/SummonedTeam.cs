@@ -5,8 +5,8 @@ using System.Linq;
 using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Events;
 using UncomplicatedCustomTeams.API.Features.Definitions;
-using UncomplicatedCustomTeams.API.Features.Services;
 using UncomplicatedCustomTeams.API.Storage;
+using UncomplicatedCustomTeams.Integrations;
 using UncomplicatedCustomTeams.Utilities;
 
 namespace UncomplicatedCustomTeams.API.Features.Runtime
@@ -69,7 +69,7 @@ namespace UncomplicatedCustomTeams.API.Features.Runtime
 
             instance.AssignRoles(players);
             instance.SpawnMembers();
-            AudioService.PlayTeamAnnouncement(definition);
+            AudioPlayer.PlayTeamAnnouncement(definition);
 
             definition.CurrentSpawnCount++;
 

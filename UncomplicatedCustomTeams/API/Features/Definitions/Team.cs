@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Linq;
 using YamlDotNet.Serialization;
+using static RoundSummary;
 
 namespace UncomplicatedCustomTeams.API.Features.Definitions
 {
@@ -86,5 +87,25 @@ namespace UncomplicatedCustomTeams.API.Features.Definitions
         /// The list of roles that constitute this team.
         /// </summary>
         public List<UncomplicatedCustomRole> Roles { get; set; } = [];
+
+        public class SoundPathEntry
+        {
+            /// <summary>
+            /// The path to the sound file.
+            /// </summary>
+            public string Path { get; set; } = "/path/to/your/ogg/file";
+
+            /// <summary>
+            /// The delay in seconds before this sound is played.
+            /// </summary>
+            public float Delay { get; set; } = 0f;
+        }
+
+        public class RoundEndRule
+        {
+            public bool PreventRoundEndIfAlive { get; set; } = true;
+            public List<PlayerRoles.Team> AlliedTeams { get; set; } = [];
+            public LeadingTeam WinningTeam { get; set; } = LeadingTeam.Draw;
+        }
     }
 }

@@ -70,9 +70,9 @@ namespace UncomplicatedCustomTeams.API.Features.Runtime
                 Player.SetRole(finalRole, RoleChangeReason.RemoteAdmin, RoleSpawnFlags.AssignInventory);
             }
             Vector3 spawnPos;
-            if (Team.Definition.SpawnConditions.SpawnPosition != Vector3.zero)
+            if (Team.Definition.SpawnConditions.GetSpawnPosition() != Vector3.zero)
             {
-                spawnPos = Team.Definition.SpawnConditions.SpawnPosition;
+                spawnPos = Team.Definition.SpawnConditions.GetSpawnPosition();
                 LogManager.Debug($"Using custom Vector3 spawn position: {spawnPos}");
             }
             else
@@ -97,7 +97,7 @@ namespace UncomplicatedCustomTeams.API.Features.Runtime
             }
             CustomRole.Spawn(Player);
 
-            Vector3 spawnAngle = Team.Definition.SpawnConditions.SpawnRotation;
+            Vector3 spawnAngle = Team.Definition.SpawnConditions.GetSpawnRotation();
             Quaternion spawnRot = Quaternion.Euler(spawnAngle);
             Player.Position = spawnPos;
             Player.Rotation = spawnRot;
