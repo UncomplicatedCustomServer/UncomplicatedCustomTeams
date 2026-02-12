@@ -1,5 +1,6 @@
 ﻿using MEC;
 using System.Linq;
+using UncomplicatedCustomTeams.API;
 using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Events.EventArgs;
 using UncomplicatedCustomTeams.API.Features.Services;
@@ -37,7 +38,7 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
 
             var teamsToSpawn = Team.List.Where(t =>
                 t.SpawnConditions.SpawnWave == WaveType.TeamDependent &&
-                (isDeathTrigger ? t.SpawnConditions.AfterTeamDeath == triggerTeamId : t.SpawnConditions.AfterTeamSpawn == triggerTeamId)
+                (isDeathTrigger ? t.SpawnConditions.GetAfterTeamDeath() == triggerTeamId : t.SpawnConditions.GetAfterTeamSpawn() == triggerTeamId)
             ).ToList();
 
             if (!teamsToSpawn.Any()) return;

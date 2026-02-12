@@ -3,6 +3,7 @@ using LabApi.Features.Wrappers;
 using MEC;
 using System.Collections.Generic;
 using System.Linq;
+using UncomplicatedCustomTeams.API;
 using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Features.Services;
 using UncomplicatedCustomTeams.Utilities;
@@ -23,7 +24,7 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
 
             foreach (Team team in teamsToSpawn)
             {
-                if (engagedCount < team.SpawnConditions.RequiredEngagedGenerators) continue;
+                if (engagedCount < team.SpawnConditions.GetRequiredGenerators()) continue;
 
                 CoroutineHandle handle = Timing.CallDelayed(team.SpawnConditions.SpawnDelay, () =>
                 {

@@ -2,6 +2,7 @@
 using MEC;
 using System.Collections.Generic;
 using System.Linq;
+using UncomplicatedCustomTeams.API;
 using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Events;
 using UncomplicatedCustomTeams.API.Events.EventArgs;
@@ -28,7 +29,7 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
             {
                 CoroutineHandle handle = Timing.CallDelayed(team.SpawnConditions.SpawnDelay, () =>
                 {
-                    var affectedRoles = team.SpawnConditions.RolesAffectedOnRoundStart;
+                    var affectedRoles = team.SpawnConditions.GetRolesAffectedOnRoundStart();
                     if (affectedRoles == null || !affectedRoles.Any()) return;
 
                     var candidatePlayers = Player.List

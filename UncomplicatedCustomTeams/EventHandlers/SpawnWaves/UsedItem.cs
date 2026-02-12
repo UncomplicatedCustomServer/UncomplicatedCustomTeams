@@ -2,6 +2,7 @@
 using MEC;
 using System.Collections.Generic;
 using System.Linq;
+using UncomplicatedCustomTeams.API;
 using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Features.Definitions;
 using UncomplicatedCustomTeams.API.Features.Services;
@@ -27,11 +28,17 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
                 if (requiredCustomId.HasValue)
                 {
                     if (UCI.IsCustomItem(ev.UsableItem, requiredCustomId.Value))
+                    {
                         itemMatches = true;
+                    }
+                    else if (ECI.IsCustomItem(ev.UsableItem.Serial, requiredCustomId.Value))
+                    {
+                        itemMatches = true;
+                    }
                 }
                 else
                 {
-                    if (ev.UsableItem.Type == spawnData.GetUsedItemType())
+                    if (ev.UsableItem.Type == spawnData.GetUsedItem())
                         itemMatches = true;
                 }
 

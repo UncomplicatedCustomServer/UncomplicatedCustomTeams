@@ -107,7 +107,7 @@ namespace UncomplicatedCustomTeams
             }
         }
 
-        public void OnDying(PlayerDyingEventArgs ev)
+        public void OnChangedRole(PlayerChangedRoleEventArgs ev)
         {
             if (ev.Player == null) return;
 
