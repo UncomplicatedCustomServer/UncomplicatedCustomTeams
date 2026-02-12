@@ -147,3 +147,11 @@ teams:
     spawn_settings: 
     custom_flags: 
     ignore_spawn_system: false
+  ecr_roles:
+  - max_players: 1
+    priority: None
+    drop_inventory_on_death: true
+    is_godmode_enabled: false
+    is_bypass_enabled: false
+    is_noclip_enabled: false
+    id: 1
