@@ -25,7 +25,7 @@ namespace UncomplicatedCustomTeams.API.Features.Services
         /// <param name="wave">The wave type to check.</param>
         public static void TrySpawnWave(WaveType wave)
         {
-            var candidates = Team.List.Where(t => t.SpawnConditions.SpawnWave == wave).ToList();
+            var candidates = Team.List.Where(t => t.SpawnConditions.SpawnWave == wave || t.SpawnConditions.SpawnOnBothWaves).ToList();
 
             if (candidates.Count == 0) return;
 
@@ -105,7 +105,7 @@ namespace UncomplicatedCustomTeams.API.Features.Services
         {
             List<Team> winningTeams = [];
 
-            var eligibleTeams = Team.List.Where(t => t.SpawnConditions.SpawnWave == wave).ToList();
+            var eligibleTeams = Team.List.Where(t => t.SpawnConditions.SpawnWave == wave || t.SpawnConditions.SpawnOnBothWaves).ToList();
 
             if (!eligibleTeams.Any())
             {

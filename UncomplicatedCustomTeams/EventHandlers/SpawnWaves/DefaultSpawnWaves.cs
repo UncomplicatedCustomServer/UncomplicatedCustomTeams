@@ -35,7 +35,7 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
 
             if (ForcedNextWave && NextWaveDefinition != null)
             {
-                if (NextWaveDefinition.SpawnConditions.SpawnWave == faction)
+                if (NextWaveDefinition.SpawnConditions.SpawnWave == faction || NextWaveDefinition.SpawnConditions.SpawnOnBothWaves)
                 {
                     if (IgnoreSpawnChance || new System.Random().Next(0, 100) < NextWaveDefinition.SpawnChance)
                     {
@@ -58,18 +58,32 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
             else if (ForceAnyCustomTeam)
             {
                 ForceAnyCustomTeam = false;
-                var available = Team.List.Where(t => t.SpawnConditions.SpawnWave == faction).ToList();
+                var available = Team.List.Where(t => t.SpawnConditions.SpawnWave == faction || t.SpawnConditions.SpawnOnBothWaves).ToList();
                 if (available.Any())
                     selectedTeam = available[UnityEngine.Random.Range(0, available.Count)];
             }
             else
             {
-                var candidates = Team.List.Where(t => t.SpawnConditions.SpawnWave == faction).ToList();
+                var candidates = Team.List.Where(t => t.SpawnConditions.SpawnWave == faction || t.SpawnConditions.SpawnOnBothWaves).ToList();
                 foreach (var team in candidates)
                 {
                     if (team.MaxSpawns != -1 && team.CurrentSpawnCount >= team.MaxSpawns) continue;
 
-                    if (new System.Random().Next(0, 100) < team.SpawnChance)
+                    uint currentSpawnChance = team.SpawnChance;
+
+                    if (team.SpawnConditions.SpawnOnBothWaves)
+                    {
+                        if (faction == WaveType.NtfWave && team.SpawnConditions.SpawnChanceNtf >= 0)
+                        {
+                            currentSpawnChance = (uint)team.SpawnConditions.SpawnChanceNtf;
+                        }
+                        else if (faction == WaveType.ChaosWave && team.SpawnConditions.SpawnChanceChaos >= 0)
+                        {
+                            currentSpawnChance = (uint)team.SpawnConditions.SpawnChanceChaos;
+                        }
+                    }
+
+                    if (new System.Random().Next(0, 100) < currentSpawnChance)
                     {
                         selectedTeam = team;
                         if (!team.AllowConcurrentSpawns) break;

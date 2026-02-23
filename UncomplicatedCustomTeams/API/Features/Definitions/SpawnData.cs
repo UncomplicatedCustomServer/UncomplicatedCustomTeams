@@ -15,6 +15,24 @@ namespace UncomplicatedCustomTeams.API.Features.Definitions
         public WaveType SpawnWave { get; set; } = WaveType.NtfWave;
 
         /// <summary>
+        /// Determines whether the team is eligible to spawn during both MTF and Chaos spawn waves. 
+        /// Note: This feature applies ONLY to NtfWave and ChaosWave types.
+        /// </summary>
+        public bool SpawnOnBothWaves { get; set; } = false;
+
+        /// <summary>
+        /// The spawn chance (0-100) specifically for the Nine-Tailed Fox wave. 
+        /// Overrides the team's default SpawnChance if SpawnOnBothWaves is true.
+        /// </summary>
+        public int SpawnChanceNtf { get; set; } = -1;
+
+        /// <summary>
+        /// The spawn chance (0-100) specifically for the Chaos Insurgency wave.
+        /// Overrides the team's default SpawnChance if SpawnOnBothWaves is true.
+        /// </summary>
+        public int SpawnChanceChaos { get; set; } = -1;
+
+        /// <summary>
         /// Delay in seconds before spawning after the condition is met.
         /// </summary>
         public float SpawnDelay { get; set; } = 0f;
