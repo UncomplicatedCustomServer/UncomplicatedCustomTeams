@@ -113,6 +113,9 @@ namespace UncomplicatedCustomTeams
                 VersionManager.Init();
             });
 
+            LogManager.Info("Loading configurations...");
+            FileConfigs.Reload();
+
             while (!updateTask.IsCompleted)
             {
                 yield return Timing.WaitForSeconds(0.1f);
@@ -127,9 +130,6 @@ namespace UncomplicatedCustomTeams
             {
                 LogManager.Info("Update check complete.");
             }
-
-            LogManager.Info("Loading configurations...");
-            FileConfigs.Reload();
         }
     }
 }

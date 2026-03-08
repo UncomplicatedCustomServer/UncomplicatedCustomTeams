@@ -105,7 +105,10 @@ namespace UncomplicatedCustomTeams.API.Features.Services
         {
             List<Team> winningTeams = [];
 
-            var eligibleTeams = Team.List.Where(t => t.SpawnConditions.SpawnWave == wave || t.SpawnConditions.SpawnOnBothWaves).ToList();
+            var eligibleTeams = Team.List.Where(t =>
+                t.SpawnConditions.SpawnWave == wave ||
+                (t.SpawnConditions.SpawnOnBothWaves && (wave == WaveType.NtfWave || wave == WaveType.ChaosWave))
+            ).ToList();
 
             if (!eligibleTeams.Any())
             {

@@ -104,14 +104,7 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
             LogManager.Info($"Replaced {faction} with custom team: {selectedTeam.Name}");
 
             CustomTeamSpawnedThisWave = true;
-
-            foreach (var member in summonedTeam.Members)
-            {
-                if (ev.Roles.ContainsKey(member.Player))
-                {
-                    ev.Roles.Remove(member.Player);
-                }
-            }
+            ev.Roles.Clear();
         }
     }
 }

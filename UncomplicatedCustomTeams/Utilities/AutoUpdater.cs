@@ -16,7 +16,7 @@ namespace UncomplicatedCustomTeams.Utilities
 
         private static readonly HttpClient HttpClient = new()
         {
-            Timeout = TimeSpan.FromSeconds(10),
+            Timeout = TimeSpan.FromSeconds(5),
             DefaultRequestHeaders = { { "User-Agent", "UncomplicatedCustomTeams-Updater" } }
         };
 
