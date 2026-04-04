@@ -13,7 +13,7 @@ namespace UncomplicatedCustomTeams.Integrations
     public static class AudioPlayer
     {
         private static MethodInfo _loadClipMethod;
-        private static MethodInfo _createOrGetMethod;
+        private static MethodInfo _createMethod;
         private static MethodInfo _addSpeakerMethod;
         private static MethodInfo _addClipMethod;
         private static bool _reflectionInitialized = false;
@@ -47,17 +47,25 @@ namespace UncomplicatedCustomTeams.Integrations
                 Type playerType = audioAssembly.GetTypes().FirstOrDefault(t => t.Name == "AudioPlayer" && t.IsClass);
                 if (playerType != null)
                 {
-                    _createOrGetMethod = playerType.GetMethods(BindingFlags.Public | BindingFlags.Static)
-                        .FirstOrDefault(m => m.Name == "CreateOrGet");
+                    _createMethod = playerType.GetMethods(BindingFlags.Public | BindingFlags.Static)
+                        .FirstOrDefault(m => m.Name == "Create" && m.GetParameters().Length > 0 && m.GetParameters()[0].ParameterType == typeof(string));
+
+                    if (_createMethod == null)
+                    {
+                        _createMethod = playerType.GetMethods(BindingFlags.Public | BindingFlags.Static)
+                            .FirstOrDefault(m => m.Name == "CreateOrGet" && m.GetParameters().Length > 0 && m.GetParameters()[0].ParameterType == typeof(string));
+                    }
 
                     _addSpeakerMethod = playerType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                        .FirstOrDefault(m => m.Name == "AddSpeaker" && m.GetParameters().Length == 5);
+                        .OrderByDescending(m => m.GetParameters().Length)
+                        .FirstOrDefault(m => m.Name == "AddSpeaker" && m.GetParameters().Length > 0 && m.GetParameters()[0].ParameterType == typeof(string));
 
                     _addClipMethod = playerType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                        .FirstOrDefault(m => m.Name == "AddClip");
+                        .OrderByDescending(m => m.GetParameters().Length)
+                        .FirstOrDefault(m => m.Name == "AddClip" && m.GetParameters().Length > 0 && m.GetParameters()[0].ParameterType == typeof(string));
                 }
 
-                if (_loadClipMethod != null && _createOrGetMethod != null)
+                if (_loadClipMethod != null && _createMethod != null)
                     LogManager.Debug("[AudioPlayer] AudioPlayerApi integration linked successfully.");
             }
             catch (Exception ex)
@@ -113,81 +121,86 @@ namespace UncomplicatedCustomTeams.Integrations
         {
             InitializeReflection();
 
-            if (_createOrGetMethod == null || _addSpeakerMethod == null || _addClipMethod == null)
+            if (_createMethod == null || _addSpeakerMethod == null || _addClipMethod == null)
                 yield break;
 
-            string startClipId = null;
-            int startIndex = -1;
-            float startDelay = 0f;
+            float volume = Mathf.Clamp(team.SoundVolume > 1.5f ? team.SoundVolume / 100f : team.SoundVolume, 0.1f, 1.5f);
 
             for (int i = 0; i < team.SoundPaths.Count; i++)
             {
-                var s = team.SoundPaths[i];
-                if (!string.IsNullOrEmpty(s.Path) && !s.Path.Contains("/path/to/your"))
-                {
-                    startClipId = $"sound_{team.Id}_{i}";
-                    startIndex = i;
-                    startDelay = s.Delay;
-                    break;
-                }
-            }
+                var sound = team.SoundPaths[i];
+                if (string.IsNullOrEmpty(sound.Path) || sound.Path.Contains("/path/to/your")) continue;
 
-            if (startClipId == null) yield break;
+                if (sound.Delay > 0f) yield return Timing.WaitForSeconds(sound.Delay);
 
-            if (startDelay > 0f) yield return Timing.WaitForSeconds(startDelay);
+                string clipId = $"sound_{team.Id}_{i}";
+                string uniquePlayerName = $"TeamAudio_{team.Id}_{i}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
 
-            object audioPlayerInstance;
-            try
-            {
-                object[] parameters = [
-                    $"Global_Audio_{team.Id}",
-                    startClipId,
-                    null,
-                    false,
-                    true,
-                    null,
-                    (byte)0,
-                    null,
-                    null
-                    ];
-
-                audioPlayerInstance = _createOrGetMethod.Invoke(null, parameters);
-            }
-            catch (Exception ex)
-            {
-                LogManager.Error($"[AudioPlayer] Failed to create Audio Player: {ex.InnerException?.Message ?? ex.Message}");
-                yield break;
-            }
-
-            if (audioPlayerInstance != null)
-            {
+                object audioPlayerInstance;
                 try
                 {
-                    _addSpeakerMethod.Invoke(audioPlayerInstance, ["Main", 1.0f, false, 0f, 5000f]);
+                    var createParamsInfos = _createMethod.GetParameters();
+                    var createParams = new object[createParamsInfos.Length];
+                    createParams[0] = uniquePlayerName;
+
+                    for (int p = 1; p < createParamsInfos.Length; p++)
+                    {
+                        createParams[p] = createParamsInfos[p].HasDefaultValue
+                            ? createParamsInfos[p].DefaultValue
+                            : (createParamsInfos[p].ParameterType.IsValueType ? Activator.CreateInstance(createParamsInfos[p].ParameterType) : null);
+                    }
+
+                    audioPlayerInstance = _createMethod.Invoke(null, createParams);
                 }
                 catch (Exception ex)
                 {
-                    LogManager.Warn($"[AudioPlayer] Failed to add speaker: {ex.Message}");
+                    LogManager.Error($"[AudioPlayer] Failed to create Audio Player: {ex.InnerException?.Message ?? ex.Message}");
+                    continue;
                 }
 
-                float volume = Mathf.Clamp(team.SoundVolume > 1.5f ? team.SoundVolume / 100f : team.SoundVolume, 0.1f, 1.5f);
-
-                for (int i = 0; i < team.SoundPaths.Count; i++)
+                if (audioPlayerInstance != null)
                 {
-                    if (i == startIndex) continue;
-
-                    var sound = team.SoundPaths[i];
-                    if (string.IsNullOrEmpty(sound.Path) || sound.Path.Contains("/path/to/")) continue;
-
-                    if (sound.Delay > 0f) yield return Timing.WaitForSeconds(sound.Delay);
-
                     try
                     {
-                        _addClipMethod.Invoke(audioPlayerInstance, [$"sound_{team.Id}_{i}", volume, false, true]);
+                        var spInfos = _addSpeakerMethod.GetParameters();
+                        var speakerParams = new object[spInfos.Length];
+                        speakerParams[0] = "Main";
+                        for (int sp = 1; sp < spInfos.Length; sp++)
+                        {
+                            var pType = spInfos[sp].ParameterType;
+                            var pName = spInfos[sp].Name.ToLower();
+
+                            if (pType == typeof(bool) && pName.Contains("spatial")) speakerParams[sp] = false;
+                            else if (pType == typeof(float) && pName.Contains("max")) speakerParams[sp] = 5000f;
+                            else speakerParams[sp] = spInfos[sp].HasDefaultValue ? spInfos[sp].DefaultValue : (pType.IsValueType ? Activator.CreateInstance(pType) : null);
+                        }
+                        _addSpeakerMethod.Invoke(audioPlayerInstance, speakerParams);
                     }
                     catch (Exception ex)
                     {
-                        LogManager.Error($"[AudioPlayer] Error queuing next clip: {ex.Message}");
+                        LogManager.Warn($"[AudioPlayer] Failed to add speaker: {ex.Message}");
+                    }
+
+                    try
+                    {
+                        var cpInfos = _addClipMethod.GetParameters();
+                        var clipParams = new object[cpInfos.Length];
+                        clipParams[0] = clipId;
+                        for (int cp = 1; cp < cpInfos.Length; cp++)
+                        {
+                            var pType = cpInfos[cp].ParameterType;
+                            var pName = cpInfos[cp].Name.ToLower();
+
+                            if (pType == typeof(float) && pName.Contains("volume")) clipParams[cp] = volume;
+                            else if (pType == typeof(bool) && pName.Contains("loop")) clipParams[cp] = false;
+                            else if (pType == typeof(bool) && pName.Contains("destroy")) clipParams[cp] = true;
+                            else clipParams[cp] = cpInfos[cp].HasDefaultValue ? cpInfos[cp].DefaultValue : (pType.IsValueType ? Activator.CreateInstance(pType) : null);
+                        }
+                        _addClipMethod.Invoke(audioPlayerInstance, clipParams);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogManager.Error($"[AudioPlayer] Error playing clip {clipId}: {ex.Message}");
                     }
                 }
             }
