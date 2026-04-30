@@ -47,7 +47,7 @@ namespace UncomplicatedCustomTeams.Commands
 
             if (summonedTeam == null)
             {
-                response = $"Failed to spawn team {team.Name}. Check logs (maybe not enough spectators?).";
+                response = $"Failed to spawn team {team.Name}. Check logs (maybe not enough spectators)?";
                 return false;
             }
 

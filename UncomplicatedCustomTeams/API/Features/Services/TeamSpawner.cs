@@ -72,15 +72,34 @@ namespace UncomplicatedCustomTeams.API.Features.Services
 
         /// <summary>
         /// Forces a specific <see cref="Team"/> to spawn immediately, utilizing available spectators.
+        /// Can optionally enforce spawn limits and required alive role conditions.
         /// </summary>
         /// <param name="team">The team definition to spawn.</param>
+        /// <param name="checkMaxSpawns">If true, aborts the spawn if the team has reached its MaxSpawns limit.</param>
+        /// <param name="checkAliveRoles">If true, aborts the spawn if the required alive roles are not present on the server.</param>
         /// <returns>The created <see cref="SummonedTeam"/> instance, or null if failed.</returns>
-        public static SummonedTeam SpawnSpecificTeam(Team team)
+        public static SummonedTeam SpawnSpecificTeam(Team team, bool checkMaxSpawns = false, bool checkAliveRoles = false)
         {
+            if (checkMaxSpawns && team.MaxSpawns != -1 && team.CurrentSpawnCount >= team.MaxSpawns)
+            {
+                LogManager.Debug($"Cannot spawn team {team.Name}. Max spawns reached.");
+                return null;
+            }
+
+            if (checkAliveRoles && team.SpawnConditions.GetRequiredAliveRoles().Count > 0)
+            {
+                bool anyAlive = Player.List.Any(p => p.IsAlive && team.SpawnConditions.GetRequiredAliveRoles().Contains(p.Role));
+                if (!anyAlive)
+                {
+                    LogManager.Debug($"Cannot spawn team {team.Name}. Required alive roles not present on the server.");
+                    return null;
+                }
+            }
+
             var players = GetSpectatorsForTeam(team);
             if (players.Count == 0)
             {
-                LogManager.Debug($"Cannot spawn team {team.Name}. No spectators available.");
+                LogManager.Debug($"Cannot spawn team {team.Name}. No spectators available or minimum player requirement not met.");
                 return null;
             }
 
