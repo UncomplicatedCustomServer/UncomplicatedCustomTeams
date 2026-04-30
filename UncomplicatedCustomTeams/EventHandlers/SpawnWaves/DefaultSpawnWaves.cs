@@ -1,4 +1,5 @@
 ﻿using LabApi.Events.Arguments.ServerEvents;
+using Respawning.Waves;
 using System.Linq;
 using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Events;
@@ -29,6 +30,8 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
                 _ => WaveType.None
             };
 
+            bool isMiniWave = ev.Wave.Base is IMiniWave;
+
             if (faction == WaveType.None) return;
 
             Team selectedTeam = null;
@@ -58,13 +61,21 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
             else if (ForceAnyCustomTeam)
             {
                 ForceAnyCustomTeam = false;
-                var available = Team.List.Where(t => t.SpawnConditions.SpawnWave == faction || t.SpawnConditions.SpawnOnBothWaves).ToList();
+                var available = Team.List.Where(t =>
+                    (t.SpawnConditions.SpawnWave == faction || t.SpawnConditions.SpawnOnBothWaves) &&
+                    (!isMiniWave || t.SpawnConditions.AllowMiniWaves)
+                ).ToList();
+
                 if (available.Any())
                     selectedTeam = available[UnityEngine.Random.Range(0, available.Count)];
             }
             else
             {
-                var candidates = Team.List.Where(t => t.SpawnConditions.SpawnWave == faction || t.SpawnConditions.SpawnOnBothWaves).ToList();
+                var candidates = Team.List.Where(t =>
+                    (t.SpawnConditions.SpawnWave == faction || t.SpawnConditions.SpawnOnBothWaves) &&
+                    (!isMiniWave || t.SpawnConditions.AllowMiniWaves)
+                ).ToList();
+
                 foreach (var team in candidates)
                 {
                     if (team.MaxSpawns != -1 && team.CurrentSpawnCount >= team.MaxSpawns) continue;

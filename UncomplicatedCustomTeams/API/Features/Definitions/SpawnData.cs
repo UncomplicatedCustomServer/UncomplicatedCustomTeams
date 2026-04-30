@@ -15,6 +15,11 @@ namespace UncomplicatedCustomTeams.API.Features.Definitions
         public WaveType SpawnWave { get; set; } = WaveType.NtfWave;
 
         /// <summary>
+        /// Allow this team to spawn during mini-waves.
+        /// </summary>
+        public bool AllowMiniWaves { get; set; } = false;
+
+        /// <summary>
         /// Determines whether the team is eligible to spawn during both MTF and Chaos spawn waves. 
         /// Note: This feature applies ONLY to NtfWave and ChaosWave types.
         /// </summary>
