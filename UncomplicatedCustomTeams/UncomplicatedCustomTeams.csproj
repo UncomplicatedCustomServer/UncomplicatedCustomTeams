@@ -73,8 +73,8 @@
       <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\Pooling.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="UncomplicatedCustomRoles-LabAPI">
-      <HintPath>D:\Instalki\Steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\UncomplicatedCustomRoles-LabAPI.dll</HintPath>
+    <Reference Include="UncomplicatedCustomRoles">
+      <HintPath>..\..\..\..\Downloads\UncomplicatedCustomRoles.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\UnityEngine.dll</HintPath>

@@ -1,5 +1,4 @@
-﻿using LabApi.Features.Wrappers;
-using LabApi.Loader.Features.Paths;
+﻿using LabApi.Loader.Features.Paths;
 using System;
 using System.Collections.Generic;
 using System.IO;
