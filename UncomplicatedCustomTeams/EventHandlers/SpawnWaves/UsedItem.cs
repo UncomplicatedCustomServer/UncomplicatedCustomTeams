@@ -46,7 +46,7 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
 
                 LogManager.Debug($"Item '{ev.UsableItem.Type}' matches team '{teamToSpawn.Name}' and passed RNG.");
 
-                Timing.CallDelayed(teamToSpawn.SpawnConditions.SpawnDelay, () =>
+                CoroutineHandle handle = Timing.CallDelayed(teamToSpawn.SpawnConditions.SpawnDelay, () =>
                 {
                     var spawnedTeam = TeamSpawner.SpawnSpecificTeam(teamToSpawn);
                     if (spawnedTeam != null)
@@ -54,6 +54,7 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
                         LogManager.Debug($"Team with 'UsedItem' Spawn Wave spawned successfully: {teamToSpawn.Name}");
                     }
                 });
+                Plugin.Singleton.Handler.ActiveSpawnDelays.Add(handle);
             }
         }
     }

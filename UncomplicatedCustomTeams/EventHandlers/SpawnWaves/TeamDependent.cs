@@ -51,7 +51,7 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
 
         private void SpawnTeam(Team team)
         {
-            Timing.CallDelayed(team.SpawnConditions.SpawnDelay, () =>
+            CoroutineHandle handle = Timing.CallDelayed(team.SpawnConditions.SpawnDelay, () =>
             {
                 var spawned = TeamSpawner.SpawnSpecificTeam(team);
 
@@ -64,6 +64,7 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
                     LogManager.Warn($"Dependent Team '{team.Name}' failed to spawn.");
                 }
             });
+            Plugin.Singleton.Handler.ActiveSpawnDelays.Add(handle);
         }
     }
 }

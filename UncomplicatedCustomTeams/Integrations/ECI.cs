@@ -71,8 +71,7 @@ namespace UncomplicatedCustomTeams.Integrations
 
                 if (customItemInstance == null) return false;
 
-                IEnumerable serials = _trackedSerialsProp.GetValue(customItemInstance) as IEnumerable;
-                if (serials == null) return false;
+                if (_trackedSerialsProp.GetValue(customItemInstance) is not IEnumerable serials) return false;
 
                 foreach (var s in serials)
                 {

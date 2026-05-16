@@ -48,12 +48,12 @@ internal class HttpManager
     /// <summary>
     /// Gets the CreditTag storage for the plugin, downloaded from our central server
     /// </summary>
-    public Dictionary<string, Triplet<string, string, bool>> Credits { get; internal set; } = new();
+    public Dictionary<string, Triplet<string, string, bool>> Credits { get; internal set; } = [];
 
     /// <summary>
     /// Gets the role of the given player (as steamid@64) inside UCT
     /// </summary>
-    public List<string> IsJobRole { get; } = new();
+    public List<string> IsJobRole { get; } = [];
 
     /// <summary>
     /// Gets the latest <see cref="Version"/> of the plugin, loaded by the UCS cloud
@@ -113,7 +113,7 @@ internal class HttpManager
 
     public void LoadCreditTags()
     {
-        Credits = new();
+        Credits = [];
         try
         {
             Dictionary<string, Dictionary<string, JsonElement>> Data = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, JsonElement>>>(HttpQuery.Get($"https://api.ucserver.it/credits.json"));
