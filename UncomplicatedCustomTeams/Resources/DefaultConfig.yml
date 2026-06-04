@@ -7,6 +7,10 @@ teams:
   allow_concurrent_spawns: false
   spawn_conditions:
     spawn_wave: NtfWave
+    allow_mini_waves: false
+    spawn_on_both_waves: false
+    spawn_chance_ntf: -1
+    spawn_chance_chaos: -1
     spawn_delay: 0
     settings: {}
   is_cassie_announcement_enabled: true
@@ -25,6 +29,7 @@ teams:
   roles:
   - max_players: 1
     priority: First
+    permissions_required: []
     drop_inventory_on_death: true
     is_godmode_enabled: false
     is_bypass_enabled: false
@@ -55,6 +60,7 @@ teams:
       maximum: 0
       regeneration_amount: 2
       regeneration_delay: 7.5
+      regeneration_speed: 0
     effects: []
     stamina:
       regen_multiplier: 1
@@ -87,6 +93,7 @@ teams:
     ignore_spawn_system: false
   - max_players: 1
     priority: Second
+    permissions_required: []
     drop_inventory_on_death: true
     is_godmode_enabled: false
     is_bypass_enabled: false
@@ -117,6 +124,7 @@ teams:
       maximum: 0
       regeneration_amount: 2
       regeneration_delay: 7.5
+      regeneration_speed: 0
     effects: []
     stamina:
       regen_multiplier: 1
