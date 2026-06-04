@@ -6,7 +6,7 @@ using UncomplicatedCustomTeams.API.Features.Definitions;
 namespace UncomplicatedCustomTeams.API.Events.EventArgs
 {
     /// <summary>
-    /// Arguments for the UCTEvents.TeamSpawning event.
+    /// Arguments for the <see cref="UCTEvents.TeamSpawning"/> event.
     /// Fired BEFORE a custom team is actually spawned.
     /// </summary>
     public class TeamSpawningEventArgs(Team team, Dictionary<Player, IUCTCustomRole> playersToSpawn) : System.EventArgs

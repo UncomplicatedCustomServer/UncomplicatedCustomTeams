@@ -52,7 +52,7 @@ internal class HttpManager
     public Dictionary<string, Triplet<string, string, bool>> Credits { get; internal set; } = [];
 
     /// <summary>
-    /// Gets the role of the given player (as steamid@64) inside UCR
+    /// Gets the role of the given player (as steamid@64) inside UCT
     /// </summary>
     public List<string> IsJobRole { get; } = [];
 
