@@ -22,7 +22,7 @@ namespace UncomplicatedCustomTeams
         public override string Name => "UncomplicatedCustomTeams";
         public override string Description => "Customize your SCP:SL server with Custom Teams!";
         public override string Author => "FoxWorn3365 & .piwnica2137";
-        public override Version Version => new(2, 0, 0, 0);
+        public override Version Version => new(2, 1, 0, 0);
         public override Version RequiredApiVersion => new(LabApiProperties.CompiledVersion);
         public override LoadPriority Priority => LoadPriority.Medium;
         public static SummonedTeam NextTeam { get; set; } = null;
@@ -110,7 +110,14 @@ namespace UncomplicatedCustomTeams
                     LogManager.Warn($"You are NOT using the latest version of UncomplicatedCustomTeams!\nCurrent: v{Version} | Latest available: v{HttpManager.LatestVersion}\nDownload it from GitHub: https://github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest");
                 }
 
-                VersionManager.Init();
+                if (Version.CompareTo(HttpManager.LatestVersion) <= 0)
+                {
+                    VersionManager.Init();
+                }
+                else
+                {
+                    LogManager.Debug("Pre-Release build detected: Skipped fetching version details from the API.");
+                }
             });
 
             LogManager.Info("Loading configurations...");

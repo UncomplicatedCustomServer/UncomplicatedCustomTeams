@@ -74,7 +74,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="UncomplicatedCustomRoles">
-      <HintPath>..\..\..\..\Downloads\UncomplicatedCustomRoles.dll</HintPath>
+      <HintPath>D:\Instalki\Steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\UncomplicatedCustomRoles.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>D:\instalki\steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\UnityEngine.dll</HintPath>
@@ -131,6 +131,9 @@
     <Compile Include="Integrations\UCI.cs" />
     <Compile Include="Interfaces\IUCTCommand.cs" />
     <Compile Include="Interfaces\IUCTCustomRole.cs" />
+    <Compile Include="Messages\PresenceMessage.cs" />
+    <Compile Include="Messages\OwnerMessage.cs" />
+    <Compile Include="Messages\ShareLogMessage.cs" />
     <Compile Include="Patches\PreventWaveAnnouncementPatch.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -149,13 +152,13 @@
       <Version>2.4.2</Version>
     </PackageReference>
     <PackageReference Include="Northwood.LabAPI">
-      <Version>1.1.6.1</Version>
+      <Version>1.1.7</Version>
     </PackageReference>
     <PackageReference Include="System.Net.Http">
       <Version>4.3.4</Version>
     </PackageReference>
     <PackageReference Include="System.Text.Json">
-      <Version>10.0.2</Version>
+      <Version>10.0.8</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
