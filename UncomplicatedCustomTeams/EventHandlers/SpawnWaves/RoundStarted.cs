@@ -38,7 +38,9 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
 
                     if (!candidatePlayers.Any()) return;
 
-                    var ev = new TeamSpawningEventArgs(team, candidatePlayers);
+                    var playersToSpawn = TeamSpawner.AssignRoles(team, candidatePlayers);
+
+                    var ev = new TeamSpawningEventArgs(team, playersToSpawn);
                     UCTEvents.InvokeTeamSpawning(ev);
 
                     if (!ev.IsAllowed || ev.PlayersToSpawn.Count == 0) return;

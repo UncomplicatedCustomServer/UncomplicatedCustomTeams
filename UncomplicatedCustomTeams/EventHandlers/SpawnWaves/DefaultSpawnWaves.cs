@@ -1,10 +1,14 @@
 ﻿using LabApi.Events.Arguments.ServerEvents;
+using LabApi.Features.Wrappers;
 using Respawning.Waves;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using UncomplicatedCustomTeams.API.Enums;
 using UncomplicatedCustomTeams.API.Events;
 using UncomplicatedCustomTeams.API.Events.EventArgs;
 using UncomplicatedCustomTeams.API.Features.Runtime;
+using UncomplicatedCustomTeams.API.Features.Services;
 using UncomplicatedCustomTeams.Utilities;
 using Team = UncomplicatedCustomTeams.API.Features.Definitions.Team;
 
@@ -94,7 +98,7 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
                         }
                     }
 
-                    if (new System.Random().Next(0, 100) < currentSpawnChance)
+                    if (new Random().Next(0, 100) < currentSpawnChance)
                     {
                         selectedTeam = team;
                         if (!team.AllowConcurrentSpawns) break;
@@ -104,7 +108,8 @@ namespace UncomplicatedCustomTeams.EventHandlers.SpawnWaves
 
             if (selectedTeam == null) return;
 
-            var playersToSpawn = ev.SpawningPlayers.ToList();
+            List<Player> availablePlayers = [.. ev.SpawningPlayers];
+            var playersToSpawn = TeamSpawner.AssignRoles(selectedTeam, availablePlayers);
 
             var spawnEv = new TeamSpawningEventArgs(selectedTeam, playersToSpawn);
             UCTEvents.InvokeTeamSpawning(spawnEv);
