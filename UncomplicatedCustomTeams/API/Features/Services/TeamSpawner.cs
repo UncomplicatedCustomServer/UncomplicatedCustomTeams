@@ -157,7 +157,7 @@ namespace UncomplicatedCustomTeams.API.Features.Services
                 .ToList();
 
             Dictionary<Player, IUCTCustomRole> selectedPlayers = [];
-            List<Player> pool = [.. availablePlayers];
+            List<Player> pool = [.. availablePlayers.OrderBy(x => _random.Next())];
 
             foreach (var teamRole in sortedRoles)
             {
@@ -218,7 +218,7 @@ namespace UncomplicatedCustomTeams.API.Features.Services
 
         private static bool HasRequiredPermission(Player player, List<string> requiredPermissions)
         {
-            if (requiredPermissions == null || requiredPermissions.Count == 0)
+            if (requiredPermissions == null || requiredPermissions.Count == 0 || requiredPermissions.All(string.IsNullOrWhiteSpace))
                 return true;
 
             foreach (var requirement in requiredPermissions)
