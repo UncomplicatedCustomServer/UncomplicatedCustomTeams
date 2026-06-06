@@ -54,7 +54,7 @@ namespace UncomplicatedCustomTeams.API
         /// </summary>
         public static bool IsCustomPositionWave(WaveType wave)
         {
-            return wave == WaveType.AfterDecontamination || wave == WaveType.AfterWarhead || wave == WaveType.RoundStarted || wave == WaveType.ScpDeath || wave == WaveType.UsedItem || wave == WaveType.TeamDependent || wave == WaveType.AfterGeneratorActivated;
+            return wave == WaveType.AfterDecontamination || wave == WaveType.AfterWarhead || wave == WaveType.RoundStarted || wave == WaveType.ScpDeath || wave == WaveType.UsedItem || wave == WaveType.TeamDependent || wave == WaveType.AfterGeneratorActivated || wave == WaveType.RoundEnded;
         }
     }
 }

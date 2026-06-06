@@ -103,6 +103,7 @@
     <Compile Include="API\Features\LogEntry.cs" />
     <Compile Include="API\Features\Runtime\SummonedCustomRole.cs" />
     <Compile Include="API\Features\Runtime\SummonedTeam.cs" />
+    <Compile Include="EventHandlers\SpawnWaves\RoundEnded.cs" />
     <Compile Include="Integrations\AudioPlayer.cs" />
     <Compile Include="API\Features\Services\RoleManager.cs" />
     <Compile Include="API\Features\Services\TeamSpawner.cs" />

@@ -21,14 +21,15 @@ namespace UncomplicatedCustomTeams
     {
         public List<CoroutineHandle> ActiveSpawnDelays { get; } = [];
 
-        public AfterDecontamination afterDecontamination = new();
-        public AfterWarhead afterWarhead = new();
-        public DefaultSpawnWaves DefaultSpawnWaves = new();
-        public RoundStarted RoundStarted = new();
-        public ScpDeath ScpDeath = new();
-        public UsedItem UsedItem = new();
-        public TeamDependent TeamDependent = new();
-        public AfterGeneratorActivated AfterGeneratorActivated = new();
+        private readonly AfterDecontamination afterDecontamination = new();
+        private readonly AfterWarhead afterWarhead = new();
+        private readonly DefaultSpawnWaves DefaultSpawnWaves = new();
+        private readonly RoundStarted RoundStarted = new();
+        private readonly ScpDeath ScpDeath = new();
+        private readonly UsedItem UsedItem = new();
+        private readonly TeamDependent TeamDependent = new();
+        private readonly AfterGeneratorActivated AfterGeneratorActivated = new();
+        private readonly RoundEnded RoundEnded = new();
 
         public void SubscribeToSpawnWaves()
         {
@@ -39,6 +40,7 @@ namespace UncomplicatedCustomTeams
             PlayerHandler.Dying += ScpDeath.OnScpDying;
             PlayerHandler.UsedItem += UsedItem.OnItemUsed;
             ServerHandler.GeneratorActivating += AfterGeneratorActivated.OnGeneratorActivating;
+            ServerHandler.RoundEnded += RoundEnded.OnRoundEnded;
 
             UCTEvents.TeamSpawned += TeamDependent.OnTeamSpawned;
             UCTEvents.TeamEliminated += TeamDependent.OnTeamEliminated;
@@ -53,6 +55,7 @@ namespace UncomplicatedCustomTeams
             PlayerHandler.Dying -= ScpDeath.OnScpDying;
             PlayerHandler.UsedItem -= UsedItem.OnItemUsed;
             ServerHandler.GeneratorActivating -= AfterGeneratorActivated.OnGeneratorActivating;
+            ServerHandler.RoundEnded -= RoundEnded.OnRoundEnded;
 
             UCTEvents.TeamSpawned -= TeamDependent.OnTeamSpawned;
             UCTEvents.TeamEliminated -= TeamDependent.OnTeamEliminated;
