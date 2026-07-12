@@ -8,24 +8,47 @@ using UnityEngine;
 
 namespace UncomplicatedCustomTeams.API.Features.Runtime
 {
-    public class SummonedCustomRole(SummonedTeam team, Player player, IUCTCustomRole role)
+    public class SummonedCustomRole
     {
         /// <summary>
         /// The <see cref="LabApi.Features.Wrappers.Player"/> instance
         /// </summary>
-        public Player Player { get; } = player;
+        public Player Player { get; }
 
         /// <summary>
         /// The CustomRole instance for the given player
         /// </summary>
-        public IUCTCustomRole CustomRole { get; } = role;
+        public IUCTCustomRole CustomRole { get; }
 
-        public SummonedTeam Team { get; } = team;
+        public SummonedTeam Team { get; }
 
         /// <summary>
         /// Indicate wether the custom role has been assigned or not
         /// </summary>
         public bool IsRoleSet { get; private set; } = false;
+
+
+        public SummonedCustomRole(SummonedTeam team, Player player, IUCTCustomRole role)
+        {
+            Player = player;
+            Team = team;
+
+            if (role is UncomplicatedCustomRole uctRole && UncomplicatedCustomRoles.API.Features.CustomRole.TryGet(uctRole.Id, out var existingUcrRole))
+            {
+                if (existingUcrRole is IUCTCustomRole uctImportedRole)
+                {
+                    CustomRole = uctImportedRole;
+                }
+                else
+                {
+                    CustomRole = role;
+                }
+            }
+            else
+            {
+                CustomRole = role;
+            }
+        }
 
         public void Destroy()
         {
