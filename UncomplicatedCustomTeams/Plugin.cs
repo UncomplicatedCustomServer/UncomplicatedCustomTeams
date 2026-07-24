@@ -52,6 +52,7 @@ namespace UncomplicatedCustomTeams
             SummonedTeam.List.Clear();
             ServerHandler.RoundRestarted += Handler.OnRestartingRound;
             PlayerHandler.ChangedRole += Handler.OnChangedRole;
+            PlayerHandler.Left += Handler.OnLeft;
             ServerHandler.RoundEnding += Handler.OnEndingRound;
 
             Handler.SubscribeToSpawnWaves();
@@ -66,6 +67,7 @@ namespace UncomplicatedCustomTeams
         {
             ServerHandler.RoundRestarted -= Handler.OnRestartingRound;
             PlayerHandler.ChangedRole -= Handler.OnChangedRole;
+            PlayerHandler.Left -= Handler.OnLeft;
             ServerHandler.RoundEnding -= Handler.OnEndingRound;
 
             Handler.UnsubscribeToSpawnWaves();

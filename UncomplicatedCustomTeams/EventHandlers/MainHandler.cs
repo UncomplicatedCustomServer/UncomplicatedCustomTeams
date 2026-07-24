@@ -136,5 +136,32 @@ namespace UncomplicatedCustomTeams
                 }
             });
         }
+
+        public void OnLeft(PlayerLeftEventArgs ev)
+        {
+            if (ev.Player == null) return;
+
+            var team = SummonedTeam.List.FirstOrDefault(t => t.Members.Any(m => m.Player == ev.Player));
+            if (team == null) return;
+
+            var member = team.Members.First(m => m.Player == ev.Player);
+
+            if (!member.CustomRole.DropInventoryOnDeath)
+            {
+                LogManager.Debug($"Clearing inventory for {ev.Player.Nickname} ({member.CustomRole.Name})");
+                ev.Player.ClearInventory(true, true);
+            }
+
+            Timing.CallDelayed(0.1f, () =>
+            {
+                if (team.IsEliminated) return;
+
+                if (team.Members.All(m => !m.Player.IsAlive))
+                {
+                    team.IsEliminated = true;
+                    UCTEvents.InvokeTeamEliminated(new TeamEliminatedEventArgs(team));
+                }
+            });
+        }
     }
 }
