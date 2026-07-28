@@ -1,10 +1,12 @@
 ﻿using LabApi.Features.Wrappers;
+using System.Collections.Generic;
+using UncomplicatedCustomRoles.API.Features;
 using UncomplicatedCustomRoles.Extensions;
 using UncomplicatedCustomTeams.API.Enums;
 
 namespace UncomplicatedCustomTeams.API.Features.Definitions
 {
-    public class UncomplicatedCustomRole : UncomplicatedCustomRoles.API.Features.CustomRole, IUCTCustomRole
+    public class UncomplicatedCustomRole : CustomRole, IUCTCustomRole
     {
         /// <summary>
         /// The maximum number of players that can have this role in this wave
@@ -16,6 +18,12 @@ namespace UncomplicatedCustomTeams.API.Features.Definitions
         /// The lower the value, the higher the priority.
         /// </summary>
         public RolePriority Priority { get; set; } = RolePriority.First;
+
+        /// <summary>
+        /// A list of required group or permission needed to spawn as this role.
+        /// Evaluates group first, then falls back to permission.
+        /// </summary>
+        public List<string> PermissionsRequired { get; set; } = [];
 
         /// <summary>
         /// Whether the items should be dropped on ground upon death for this role.
@@ -39,7 +47,14 @@ namespace UncomplicatedCustomTeams.API.Features.Definitions
 
         public void Spawn(Player player)
         {
-            player.SetCustomRole(this);
+            if (CustomRole.TryGet(this.Id, out var existingUCRRole))
+            {
+                player.SetCustomRole(existingUCRRole);
+            }
+            else
+            {
+                player.SetCustomRole(this);
+            }
         }
     }
 }

@@ -11,6 +11,7 @@
         RoundStarted,
         ScpDeath,
         TeamDependent,
-        AfterGeneratorActivated
+        AfterGeneratorActivated,
+        RoundEnded
     }
 }

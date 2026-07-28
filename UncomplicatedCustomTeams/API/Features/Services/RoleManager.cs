@@ -1,4 +1,6 @@
-﻿using UncomplicatedCustomRoles.API.Enums;
+﻿using System;
+using System.Collections.Generic;
+using UncomplicatedCustomRoles.API.Enums;
 using UncomplicatedCustomRoles.API.Features;
 using UncomplicatedCustomRoles.API.Features.Behaviour;
 using UncomplicatedCustomTeams.API.Features.Definitions;
@@ -12,6 +14,8 @@ namespace UncomplicatedCustomTeams.API.Features.Services
     /// </summary>
     public static class RoleManager
     {
+        private static readonly HashSet<int> UCTRegisteredRoles = [];
+
         /// <summary>
         /// Ensures that the role is properly registered in UCR.
         /// </summary>
@@ -21,13 +25,22 @@ namespace UncomplicatedCustomTeams.API.Features.Services
 
             if (CustomRole.TryGet(role.Id, out _))
             {
-                return;
+                if (UCTRegisteredRoles.Contains(role.Id))
+                {
+                    return;
+                }
+                else
+                {
+                    LogManager.Info($"Found an external UCR role with ID {role.Id}. Skipping internal registration, importing...");
+                    return;
+                }
             }
 
             role.SpawnSettings ??= GetDefaultSpawnBehaviour();
 
             if (CustomRole.Register(role) == LoadStatusType.Success)
             {
+                UCTRegisteredRoles.Add(role.Id);
                 LogManager.Debug($"Registered Custom Role '{role.Name}' (ID: {role.Id}).");
             }
             else

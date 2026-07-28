@@ -1,5 +1,6 @@
 ﻿using LabApi.Features.Wrappers;
 using PlayerRoles;
+using System.Collections.Generic;
 using UncomplicatedCustomTeams.API.Enums;
 using YamlDotNet.Serialization;
 
@@ -17,6 +18,12 @@ namespace UncomplicatedCustomTeams.API.Features
         /// The lower the value, the higher the priority.
         /// </summary>
         public RolePriority Priority { get; set; }
+
+        /// <summary>
+        /// A list of required group or permission needed to spawn as this role.
+        /// Evaluates group first, then falls back to permission.
+        /// </summary>
+        public List<string> PermissionsRequired { get; set; }
 
         /// <summary>
         /// Whether the items should be dropped on ground upon death for this role.

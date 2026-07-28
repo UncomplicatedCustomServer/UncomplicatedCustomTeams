@@ -21,14 +21,15 @@ namespace UncomplicatedCustomTeams
     {
         public List<CoroutineHandle> ActiveSpawnDelays { get; } = [];
 
-        public AfterDecontamination afterDecontamination = new();
-        public AfterWarhead afterWarhead = new();
-        public DefaultSpawnWaves DefaultSpawnWaves = new();
-        public RoundStarted RoundStarted = new();
-        public ScpDeath ScpDeath = new();
-        public UsedItem UsedItem = new();
-        public TeamDependent TeamDependent = new();
-        public AfterGeneratorActivated AfterGeneratorActivated = new();
+        private readonly AfterDecontamination afterDecontamination = new();
+        private readonly AfterWarhead afterWarhead = new();
+        private readonly DefaultSpawnWaves DefaultSpawnWaves = new();
+        private readonly RoundStarted RoundStarted = new();
+        private readonly ScpDeath ScpDeath = new();
+        private readonly UsedItem UsedItem = new();
+        private readonly TeamDependent TeamDependent = new();
+        private readonly AfterGeneratorActivated AfterGeneratorActivated = new();
+        private readonly RoundEnded RoundEnded = new();
 
         public void SubscribeToSpawnWaves()
         {
@@ -39,6 +40,7 @@ namespace UncomplicatedCustomTeams
             PlayerHandler.Dying += ScpDeath.OnScpDying;
             PlayerHandler.UsedItem += UsedItem.OnItemUsed;
             ServerHandler.GeneratorActivating += AfterGeneratorActivated.OnGeneratorActivating;
+            ServerHandler.RoundEnded += RoundEnded.OnRoundEnded;
 
             UCTEvents.TeamSpawned += TeamDependent.OnTeamSpawned;
             UCTEvents.TeamEliminated += TeamDependent.OnTeamEliminated;
@@ -53,6 +55,7 @@ namespace UncomplicatedCustomTeams
             PlayerHandler.Dying -= ScpDeath.OnScpDying;
             PlayerHandler.UsedItem -= UsedItem.OnItemUsed;
             ServerHandler.GeneratorActivating -= AfterGeneratorActivated.OnGeneratorActivating;
+            ServerHandler.RoundEnded -= RoundEnded.OnRoundEnded;
 
             UCTEvents.TeamSpawned -= TeamDependent.OnTeamSpawned;
             UCTEvents.TeamEliminated -= TeamDependent.OnTeamEliminated;
@@ -108,6 +111,33 @@ namespace UncomplicatedCustomTeams
         }
 
         public void OnChangedRole(PlayerChangedRoleEventArgs ev)
+        {
+            if (ev.Player == null) return;
+
+            var team = SummonedTeam.List.FirstOrDefault(t => t.Members.Any(m => m.Player == ev.Player));
+            if (team == null) return;
+
+            var member = team.Members.First(m => m.Player == ev.Player);
+
+            if (!member.CustomRole.DropInventoryOnDeath)
+            {
+                LogManager.Debug($"Clearing inventory for {ev.Player.Nickname} ({member.CustomRole.Name})");
+                ev.Player.ClearInventory(true, true);
+            }
+
+            Timing.CallDelayed(0.1f, () =>
+            {
+                if (team.IsEliminated) return;
+
+                if (team.Members.All(m => !m.Player.IsAlive))
+                {
+                    team.IsEliminated = true;
+                    UCTEvents.InvokeTeamEliminated(new TeamEliminatedEventArgs(team));
+                }
+            });
+        }
+
+        public void OnLeft(PlayerLeftEventArgs ev)
         {
             if (ev.Player == null) return;
 

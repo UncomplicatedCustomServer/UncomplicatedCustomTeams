@@ -22,9 +22,16 @@ namespace UncomplicatedCustomTeams.Manager
             {
                 string data = Plugin.HttpManager.VersionInfo();
                 HttpStatusCode code = data.GetStatusCode(out string msg);
+                if (code == HttpStatusCode.NotFound)
+                {
+                    LogManager.Debug($"Version {Plugin.Singleton.Version} is not registered in the central database yet. Skipping detailed version info.");
+                    return;
+                }
+
                 if (code is not HttpStatusCode.OK)
                 {
-                    LogManager.Warn($"Failed to gain the current version info from our central servers: API endpoint says {msg ?? "Message is null"}");
+                    string errorDetail = string.IsNullOrEmpty(msg) ? "No additional message provided by API." : msg;
+                    LogManager.Warn($"Failed to gain the current version info from our central servers. HTTP Status: {code}. Details: {errorDetail}");
                     return;
                 }
 

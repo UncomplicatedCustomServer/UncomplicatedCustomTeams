@@ -63,11 +63,11 @@ namespace UncomplicatedCustomTeams.API.Features.Runtime
         /// <param name="definition">The team configuration to use.</param>
         /// <param name="players">The list of players to add to this team.</param>
         /// <returns>The created <see cref="SummonedTeam"/> instance.</returns>
-        public static SummonedTeam Create(Team definition, List<Player> players)
+        public static SummonedTeam Create(Team definition, Dictionary<Player, IUCTCustomRole> playerRoles)
         {
             var instance = new SummonedTeam(definition);
 
-            instance.AssignRoles(players);
+            instance.AssignRoles(playerRoles);
             instance.SpawnMembers();
             AudioPlayer.PlayTeamAnnouncement(definition);
 
@@ -81,47 +81,23 @@ namespace UncomplicatedCustomTeams.API.Features.Runtime
             return instance;
         }
 
-        private void AssignRoles(List<Player> players)
+        private void AssignRoles(Dictionary<Player, IUCTCustomRole> playerRoles)
         {
-            var random = new System.Random();
-            var roleQueue = Definition.TeamRoles
-                .Where(r => r.Priority != RolePriority.None)
-                .GroupBy(r => r.Priority)
-                .OrderBy(g => g.Key);
-
-            int assignedCount = 0;
-            int totalCapacity = Definition.TeamRoles.Sum(r => r.MaxPlayers);
-
             Plugin.CachedSpawnList.Clear();
             Bucket.SpawnBucket.Clear();
 
-            foreach (Player player in players)
+            foreach (var kvp in playerRoles)
             {
-                if (assignedCount >= totalCapacity) break;
+                Player player = kvp.Key;
+                IUCTCustomRole role = kvp.Value;
 
-                bool assigned = false;
-                foreach (var priorityGroup in roleQueue)
-                {
-                    var shuffledRoles = priorityGroup.OrderBy(_ => random.Next());
+                var member = new SummonedCustomRole(this, player, role);
+                Members.Add(member);
 
-                    foreach (var role in shuffledRoles)
-                    {
-                        if (CountMembersWithRole(role) < role.MaxPlayers)
-                        {
-                            var member = new SummonedCustomRole(this, player, role);
-                            Members.Add(member);
+                Plugin.CachedSpawnList.Add(player);
+                Bucket.SpawnBucket.Add(player.PlayerId);
 
-                            Plugin.CachedSpawnList.Add(player);
-                            Bucket.SpawnBucket.Add(player.PlayerId);
-
-                            LogManager.Debug($"{player.Nickname} assigned to {role.Name} (Priority: {role.Priority})");
-                            assignedCount++;
-                            assigned = true;
-                            break;
-                        }
-                    }
-                    if (assigned) break;
-                }
+                LogManager.Debug($"{player.Nickname} assigned to {role.Name} (Priority: {role.Priority}) based on TeamSpawner evaluation.");
             }
         }
 

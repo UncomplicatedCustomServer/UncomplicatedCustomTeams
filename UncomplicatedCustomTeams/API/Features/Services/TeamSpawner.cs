@@ -1,4 +1,5 @@
-﻿using LabApi.Features.Wrappers;
+﻿using LabApi.Features.Permissions;
+using LabApi.Features.Wrappers;
 using PlayerRoles;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,10 +36,10 @@ namespace UncomplicatedCustomTeams.API.Features.Services
             {
                 if (CanSpawn(team))
                 {
-                    var players = GetSpectatorsForTeam(team);
-                    if (players.Count == 0) continue;
+                    var playerRoles = GetSpectatorsForTeam(team);
+                    if (playerRoles.Count == 0) continue;
 
-                    var ev = new TeamSpawningEventArgs(team, players);
+                    var ev = new TeamSpawningEventArgs(team, playerRoles);
                     UCTEvents.InvokeTeamSpawning(ev);
 
                     if (!ev.IsAllowed || ev.PlayersToSpawn.Count == 0) continue;
@@ -48,26 +49,6 @@ namespace UncomplicatedCustomTeams.API.Features.Services
                     if (!team.AllowConcurrentSpawns) break;
                 }
             }
-        }
-
-        private static bool CanSpawn(Team team)
-        {
-            if (team.MaxSpawns != -1 && team.CurrentSpawnCount >= team.MaxSpawns)
-            {
-                LogManager.Debug($"Team {team.Name} reached max spawns.");
-                return false;
-            }
-
-            if (team.SpawnConditions.GetRequiredAliveRoles().Count > 0)
-            {
-                bool anyAlive = Player.List.Any(p => p.IsAlive && team.SpawnConditions.GetRequiredAliveRoles().Contains(p.Role));
-                if (!anyAlive) return false;
-            }
-
-            int roll = _random.Next(0, 100);
-            bool success = roll < team.SpawnChance;
-            LogManager.Debug($"Team {team.Name} spawn roll: {roll} < {team.SpawnChance} = {success}");
-            return success;
         }
 
         /// <summary>
@@ -168,7 +149,43 @@ namespace UncomplicatedCustomTeams.API.Features.Services
             return winningTeams;
         }
 
-        private static List<Player> GetSpectatorsForTeam(Team team)
+        public static Dictionary<Player, IUCTCustomRole> AssignRoles(Team team, List<Player> availablePlayers)
+        {
+            var sortedRoles = team.TeamRoles
+                .Where(role => role.Priority != RolePriority.None)
+                .OrderBy(role => role.Priority)
+                .ToList();
+
+            Dictionary<Player, IUCTCustomRole> selectedPlayers = [];
+            List<Player> pool = [.. availablePlayers.OrderBy(x => _random.Next())];
+
+            foreach (var teamRole in sortedRoles)
+            {
+                int max = teamRole.MaxPlayers;
+                int assignedCount = 0;
+
+                for (int i = 0; i < pool.Count; i++)
+                {
+                    if (assignedCount >= max)
+                        break;
+
+                    Player potentialPlayer = pool[i];
+
+                    if (HasRequiredPermission(potentialPlayer, teamRole.PermissionsRequired))
+                    {
+                        selectedPlayers.Add(potentialPlayer, teamRole);
+                        pool.RemoveAt(i);
+                        assignedCount++;
+
+                        i--;
+                    }
+                }
+            }
+
+            return selectedPlayers;
+        }
+
+        private static Dictionary<Player, IUCTCustomRole> GetSpectatorsForTeam(Team team)
         {
             if (team == null)
                 return [];
@@ -185,22 +202,7 @@ namespace UncomplicatedCustomTeams.API.Features.Services
 
             List<Player> spectators = [.. allPlayers.Where(p => !p.IsAlive && p.Role == RoleTypeId.Spectator && !p.IsOverwatchEnabled)];
 
-            var sortedRoles = team.TeamRoles
-                .Where(role => role.Priority != RolePriority.None)
-                .OrderBy(role => role.Priority)
-                .ToList();
-
-            List<Player> selectedPlayers = [];
-            int index = 0;
-
-            foreach (var teamRole in sortedRoles)
-            {
-                int max = teamRole.MaxPlayers;
-                for (int i = 0; i < max && index < spectators.Count; i++, index++)
-                {
-                    selectedPlayers.Add(spectators[index]);
-                }
-            }
+            var selectedPlayers = AssignRoles(team, spectators);
 
             if (selectedPlayers.Count == 0)
             {
@@ -212,6 +214,53 @@ namespace UncomplicatedCustomTeams.API.Features.Services
             }
 
             return selectedPlayers;
+        }
+
+        private static bool HasRequiredPermission(Player player, List<string> requiredPermissions)
+        {
+            if (requiredPermissions == null || requiredPermissions.Count == 0 || requiredPermissions.All(string.IsNullOrWhiteSpace))
+                return true;
+
+            foreach (var requirement in requiredPermissions)
+            {
+                if (string.IsNullOrWhiteSpace(requirement))
+                    continue;
+
+                if (!string.IsNullOrEmpty(player.GroupName) && player.GroupName.Equals(requirement, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    LogManager.Debug($"Player {player.Nickname} has required group '{requirement}' for team role.");
+                    return true;
+                }
+
+                if (player.HasPermission(requirement))
+                {
+                    LogManager.Debug($"Player {player.Nickname} has required permission '{requirement}' for team role.");
+                    return true;
+                }
+            }
+
+            LogManager.Debug($"Player {player.Nickname} does not meet any of the required permissions/groups for team role.");
+            return false;
+        }
+
+        private static bool CanSpawn(Team team)
+        {
+            if (team.MaxSpawns != -1 && team.CurrentSpawnCount >= team.MaxSpawns)
+            {
+                LogManager.Debug($"Team {team.Name} reached max spawns.");
+                return false;
+            }
+
+            if (team.SpawnConditions.GetRequiredAliveRoles().Count > 0)
+            {
+                bool anyAlive = Player.List.Any(p => p.IsAlive && team.SpawnConditions.GetRequiredAliveRoles().Contains(p.Role));
+                if (!anyAlive) return false;
+            }
+
+            int roll = _random.Next(0, 100);
+            bool success = roll < team.SpawnChance;
+            LogManager.Debug($"Team {team.Name} spawn roll: {roll} < {team.SpawnChance} = {success}");
+            return success;
         }
     }
 }
