@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using UncomplicatedCustomTeams.API.Extensions;
 using UncomplicatedCustomTeams.API.Features.Definitions;
 using UncomplicatedCustomTeams.Utilities;
 using UnityEngine;
@@ -148,9 +149,12 @@ namespace UncomplicatedCustomTeams.Integrations
         {
             if (!string.IsNullOrEmpty(team.CassieMessage) && team.IsCassieAnnouncementEnabled)
             {
+                string processedMessage = team.CassieMessage.ProcessCassieVariables();
+                string processedTranslation = team.CassieTranslation.ProcessCassieVariables();
+
                 Announcer.Message(
-                    team.CassieMessage,
-                    team.CassieTranslation,
+                    processedMessage,
+                    processedTranslation,
                     playBackground: team.IsNoisy,
                     glitchScale: team.GlitchScale
                 );

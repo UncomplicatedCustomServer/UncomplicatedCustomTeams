@@ -95,6 +95,7 @@
     <Compile Include="API\Events\EventArgs\TeamSpawnedEventArgs.cs" />
     <Compile Include="API\Events\EventArgs\TeamSpawningEventArgs.cs" />
     <Compile Include="API\Events\UCTEvents.cs" />
+    <Compile Include="API\Extensions\CassieExtensions.cs" />
     <Compile Include="API\Extensions\SpawnDataExtensions.cs" />
     <Compile Include="API\Extensions\TeamExtensions.cs" />
     <Compile Include="API\Features\Definitions\SpawnData.cs" />
