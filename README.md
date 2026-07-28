@@ -14,6 +14,9 @@ UncomplicatedCustomTeams allows you to create custom squads that replace the def
 - Adjustable team spawn chances and player limits  
 - Easy configuration through YAML files  
 
+## WIKI
+Click [here](https://docs.uct.ucserver.it) to check out UCT's WIKI
+
 ## Installation  
 1. Download the latest release from the [GitHub Releases](https://github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest).  
 2. Ensure that you have [UncomplicatedCustomRoles](https://github.com/UncomplicatedCustomServer/UncomplicatedCustomRoles) and [AudioPlayerAPI](https://github.com/Killers0992/AudioPlayerApi) installed.  
