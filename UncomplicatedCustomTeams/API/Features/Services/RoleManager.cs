@@ -27,8 +27,7 @@ namespace UncomplicatedCustomTeams.API.Features.Services
             {
                 if (UCTRegisteredRoles.Contains(role.Id))
                 {
-                    LogManager.Error($"Role with ID {role.Id} ({role.Name}) has already been registered by UCT!");
-                    throw new InvalidOperationException($"Role duplication! ID {role.Id} has already been used by UCT.");
+                    return;
                 }
                 else
                 {
