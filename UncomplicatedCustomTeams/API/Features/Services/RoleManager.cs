@@ -36,7 +36,7 @@ namespace UncomplicatedCustomTeams.API.Features.Services
                 }
             }
 
-            role.SpawnSettings ??= GetDefaultSpawnBehaviour();
+            role.SpawnSettings = GetDefaultSpawnBehaviour();
 
             if (CustomRole.Register(role) == LoadStatusType.Success)
             {
@@ -56,7 +56,6 @@ namespace UncomplicatedCustomTeams.API.Features.Services
         {
             foreach (var role in team.Roles)
             {
-                role.SpawnSettings ??= GetDefaultSpawnBehaviour();
                 EnsureIsRegistered(role);
             }
         }
