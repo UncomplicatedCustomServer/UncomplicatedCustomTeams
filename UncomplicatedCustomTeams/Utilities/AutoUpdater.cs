@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using UncomplicatedCustomTeams.API.Features.Definitions;
 using YamlDotNet.Serialization;
 
 namespace UncomplicatedCustomTeams.Utilities
@@ -119,7 +120,43 @@ namespace UncomplicatedCustomTeams.Utilities
 
             foreach (var kvp in source)
             {
-                if (kvp.Key == "roles") continue;
+                if (kvp.Key == "roles")
+                {
+                    if (!target.ContainsKey(kvp.Key))
+                    {
+                        target[kvp.Key] = kvp.Value;
+                        changed = true;
+                        LogManager.Debug($"[AutoUpdater] Found missing key: '{kvp.Key}'. Adding...");
+                        continue;
+                    }
+
+                    if (kvp.Value is IList<object> sourceRoles && sourceRoles.Count > 0 && sourceRoles[0] is IDictionary<object, object> templateRole)
+                    {
+                        var templateDict = templateRole.ToDictionary(k => k.Key.ToString(), v => v.Value);
+
+                        if (target[kvp.Key] is IList<object> targetRoles)
+                        {
+                            foreach (var targetRoleItem in targetRoles)
+                            {
+                                if (targetRoleItem is IDictionary<object, object> targetRoleDict)
+                                {
+                                    var tRoleDictStr = targetRoleDict.ToDictionary(k => k.Key.ToString(), v => v.Value);
+
+                                    foreach (string field in UncomplicatedCustomRole.UCTSpecificKeys)
+                                    {
+                                        if (templateDict.TryGetValue(field, out var defaultValue) && !tRoleDictStr.ContainsKey(field))
+                                        {
+                                            targetRoleDict[field] = defaultValue;
+                                            changed = true;
+                                            LogManager.Debug($"[AutoUpdater] Added missing UCT field '{field}' to a role.");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    continue;
+                }
 
                 if (!target.ContainsKey(kvp.Key))
                 {

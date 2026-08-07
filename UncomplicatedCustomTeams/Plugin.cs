@@ -22,7 +22,7 @@ namespace UncomplicatedCustomTeams
         public override string Name => "UncomplicatedCustomTeams";
         public override string Description => "Customize your SCP:SL server with Custom Teams!";
         public override string Author => "FoxWorn3365 & .piwnica2137";
-        public override Version Version => new(2, 1, 0, 0);
+        public override Version Version => new(2, 1, 1, 0);
         public override Version RequiredApiVersion => new(LabApiProperties.CompiledVersion);
         public override LoadPriority Priority => LoadPriority.Medium;
         public static SummonedTeam NextTeam { get; set; } = null;
