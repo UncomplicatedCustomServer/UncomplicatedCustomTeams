@@ -27,6 +27,14 @@ namespace UncomplicatedCustomTeams.API
             if (teamA != null && teamB != null && teamA == teamB)
                 return true;
 
+            if (teamA != null && teamB != null && teamA != teamB)
+            {
+                bool aAlliesB = teamA.Definition.WinCondition.AlliedCustomTeams.Contains(teamB.Definition.Id);
+                bool bAlliesA = teamB.Definition.WinCondition.AlliedCustomTeams.Contains(teamA.Definition.Id);
+
+                return aAlliesB || bAlliesA;
+            }
+
             if (teamA != null && teamB == null)
             {
                 return teamA.Definition.WinCondition.AlliedTeams.Contains(target.Role.GetTeam());

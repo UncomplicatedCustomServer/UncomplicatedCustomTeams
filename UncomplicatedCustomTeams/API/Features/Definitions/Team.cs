@@ -104,6 +104,7 @@ namespace UncomplicatedCustomTeams.API.Features.Definitions
         {
             public bool PreventRoundEndIfAlive { get; set; } = true;
             public List<PlayerRoles.Team> AlliedTeams { get; set; } = [];
+            public List<uint> AlliedCustomTeams { get; set; } = [];
             public LeadingTeam WinningTeam { get; set; } = LeadingTeam.Draw;
         }
     }

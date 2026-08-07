@@ -5,6 +5,7 @@ using MEC;
 using PlayerRoles;
 using System.Collections.Generic;
 using System.Linq;
+using UncomplicatedCustomTeams.API;
 using UncomplicatedCustomTeams.API.Events;
 using UncomplicatedCustomTeams.API.Events.EventArgs;
 using UncomplicatedCustomTeams.API.Features.Runtime;
@@ -89,11 +90,12 @@ namespace UncomplicatedCustomTeams
                     ev.IsAllowed = false;
                 }
 
-                var enemies = Player.List.Where(p =>
-                    p.IsAlive &&
-                    !summonedTeam.Members.Any(m => m.Player == p) &&
-                    !rules.AlliedTeams.Contains(p.Role.GetTeam())
-                );
+                var member = summonedTeam.Members.FirstOrDefault(m => m.Player.IsAlive)?.Player;
+
+                if (member == null)
+                    continue;
+
+                var enemies = Player.List.Where(p => p.IsAlive && !member.IsCustomTeamAlly(p));
 
                 if (!enemies.Any())
                 {
