@@ -118,7 +118,7 @@ namespace UncomplicatedCustomTeams.API.Features.Runtime
                         break;
                 }
             }
-            CustomRole.Spawn(Player);
+            CustomRole.Set(Player);
 
             Vector3 spawnAngle = Team.Definition.SpawnConditions.GetSpawnRotation();
             Quaternion spawnRot = Quaternion.Euler(spawnAngle);

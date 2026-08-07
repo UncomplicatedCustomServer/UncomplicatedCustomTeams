@@ -1,5 +1,6 @@
 ﻿using LabApi.Features.Wrappers;
 using System.Collections.Generic;
+using System.Linq;
 using UncomplicatedCustomRoles.API.Features;
 using UncomplicatedCustomRoles.Extensions;
 using UncomplicatedCustomTeams.API.Enums;
@@ -45,15 +46,35 @@ namespace UncomplicatedCustomTeams.API.Features.Definitions
         /// </summary>
         public bool IsNoclipEnabled { get; set; }
 
-        public void Spawn(Player player)
+        public static readonly string[] UCTSpecificKeys =
+        [
+            ToSnakeCase(nameof(MaxPlayers)),
+            ToSnakeCase(nameof(Priority)),
+            ToSnakeCase(nameof(PermissionsRequired)),
+            ToSnakeCase(nameof(DropInventoryOnDeath)),
+            ToSnakeCase(nameof(IsGodmodeEnabled)),
+            ToSnakeCase(nameof(IsBypassEnabled)),
+            ToSnakeCase(nameof(IsNoclipEnabled))
+        ];
+
+        private static string ToSnakeCase(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return text;
+
+            return
+                string.Concat(text.Select((x, i) => i > 0 && char.IsUpper(x) ? "_" + x : x.ToString())).ToLower();
+        }
+
+        public void Set(Player player)
         {
             if (CustomRole.TryGet(this.Id, out var existingUCRRole))
             {
-                player.SetCustomRole(existingUCRRole);
+                player.SetCustomRoleAttributes(existingUCRRole);
             }
             else
             {
-                player.SetCustomRole(this);
+                player.SetCustomRoleAttributes(this);
             }
         }
     }

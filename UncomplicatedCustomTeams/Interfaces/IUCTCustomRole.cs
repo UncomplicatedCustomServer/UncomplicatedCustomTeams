@@ -52,6 +52,6 @@ namespace UncomplicatedCustomTeams.API.Features
         [YamlIgnore]
         public RoleTypeId Role { get; }
 
-        public void Spawn(Player player);
+        public void Set(Player player);
     }
 }
