@@ -4,7 +4,7 @@ UncomplicatedCustomTeams allows you to create custom squads that replace the def
 
 ## Requirements  
 - [UncomplicatedCustomRoles](https://github.com/UncomplicatedCustomServer/UncomplicatedCustomRoles) **>= 9.0.0**  
-- [AudioPlayerAPI](https://github.com/Killers0992/AudioPlayerApi) (required for custom sound playback)
+- [AudioPlayerAPI](https://github.com/Killers0992/AudioPlayerApi) (optional, required for custom sound playback)
 
 ## Features  
 - Create fully customizable respawn teams  
@@ -20,7 +20,7 @@ Click [here](https://docs.uct.ucserver.it) to check out UCT's WIKI
 ## Installation  
 1. Download the latest release from the [GitHub Releases](https://github.com/UncomplicatedCustomServer/UncomplicatedCustomTeams/releases/latest).  
 2. Ensure that you have [UncomplicatedCustomRoles](https://github.com/UncomplicatedCustomServer/UncomplicatedCustomRoles) and [AudioPlayerAPI](https://github.com/Killers0992/AudioPlayerApi) installed.  
-3. Place the `.dll` file into your `Exiled/Plugins` directory.  
+3. Place the `.dll` file into your `LabAPI/plugins/global` directory.  
 4. Restart your server to generate the configuration files.  
 5. Configure your custom teams in the generated configuration files.  
 
