@@ -21,6 +21,7 @@ teams:
   win_condition:
     prevent_round_end_if_alive: true
     allied_teams: []
+    allied_custom_teams: []
     winning_team: Draw
   sound_paths:
   - path: /path/to/your/ogg/file
